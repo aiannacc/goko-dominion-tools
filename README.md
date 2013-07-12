@@ -18,8 +18,6 @@ Work in Progress:
 
 Contributions are welcome.
 
----
-
 ### Installation
 
 You'll need Python v3.3.2+ and the following PyPi packages:
@@ -30,8 +28,6 @@ You'll need Python v3.3.2+ and the following PyPi packages:
 - tornado (3.1)
 
 You can either connect to a remote database of parsed games or create your own. To create your own, you'll also need PostgreSQL. The log download and parsing script requires a \*NIX environment with bash, perl, zcat, split, and wget.
-
----
 
 ### Database Setup
 
@@ -53,11 +49,9 @@ To download and parse logs from the Goko log archive:
 
 where <logdir> is the local directory where you want to store unparsed logs, `<codebase>` is this project's root, and `<dates>` are formatted like YYYYMMDD.
 
-Games before May 13, 2013 don't include rating system information, but we can deduce which games were played in 'adventure' mode using the names of the players.
+Games before May 13, 2013 don't include rating system information, but we can deduce which games were played in 'adventure' mode using the names of the players:
 
     $ psql -d goko < db/list_adventure_bots.sql
-
----
 
 ### Server setup
 
