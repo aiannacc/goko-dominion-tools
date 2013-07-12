@@ -246,7 +246,7 @@ class SearchHandler(tornado.web.RequestHandler):
                     errors.append("Too many games for bot '%s'" % p2)
 
                 try:
-                    f = open('requests', 'a')
+                    f = open('requests.log', 'a')
                     f.write(repr(self.request)+'\n')
                     f.write(repr((p1q, p2q, p1rankq, minturnsq, maxturnsq,
                             kreq_cards, botq, guestq, ratingq, pcountq,

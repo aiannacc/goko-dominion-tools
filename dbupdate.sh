@@ -1,5 +1,17 @@
 #/bin/bash
 
+# Usage:   dbupdate <dates...>
+# Example: dbupdate 20130614
+# Example: dbupdate 20130614 20130501
+# Example: dbupdate 201306*
+#
+# Downloads game logs for the given day, then parses them into the database.
+# Skips download for logs that already exist locally. Skips import for logs
+# that are already in the database.
+#
+# Thanks to nutki on forum.dominionstrategy.com for an example script showing
+# how to download logs with wget.
+#
 while [ $# -gt 0 ]
 do
     echo "Day: $1"
