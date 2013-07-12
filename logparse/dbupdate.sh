@@ -1,10 +1,7 @@
 #/bin/bash
 
-# Usage:   dbupdate <dates...>
-# Example: dbupdate 20130614
-# Example: dbupdate 20130614 20130501
-# Example: dbupdate 201306*
-#
+USAGE='dbupdate <logdir> <codebase> <dates...>'
+
 # Downloads game logs for the given day, then parses them into the database.
 # Skips download for logs that already exist locally. Skips import for logs
 # that are already in the database.
@@ -12,17 +9,31 @@
 # This downloads about 4x faster than the Python code I originally wrote. I
 # don't know why. If I figure it out, I'll do it in Python instead.
 #
-# Thanks to nutki on forum.dominionstrategy.com for an example script showing
-# how to download logs with wget.
+# Example: dbupdate ~/gokologs/ ~/code/goko-dominion-tools/ 20130614
+# Example: dbupdate ~/gokologs/ ~/code/goko-dominion-tools/ 20130614 20130615
 #
+# TODO: Verify arguments
+
+# Default logdir and codebase when run on AI's server
+if [ `hostname` = "iron" ]
+then
+    LOGDIR=/mnt/raid/media/dominion/logs/
+    CODEBASE=/home/ai/code/goko-dominion-tools/
+else
+    LOGDIR="$1"
+    CODEBASE="$2"
+    shift
+fi
+
+# Iterate over all given dates
 while [ $# -gt 0 ]
 do
+    # TODO: verify that arguments are dates and properly formatted
+
     echo "Day: $1"
 
     BASE=http://dominionlogs.goko.com/$1/
     THREADS=20
-    LOGDIR=/mnt/raid/media/dominion/logs
-    CODEDIR="`pwd`"
 
     # Create log file directory
     cd "$LOGDIR"
@@ -57,7 +68,7 @@ do
     [ -f _new ] && rm _new
 
     # Parse new logs into database
-    cd $CODEDIR/logparse
+    cd "$CODEBASE"/logparse
     ./log2db.py "$LOGDIR"/$1
     
     shift

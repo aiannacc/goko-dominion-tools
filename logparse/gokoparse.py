@@ -73,7 +73,7 @@ def parse_goko_log(logtext):
     game_over_line = None
     line_number = 0
     for line in logtext.split('\n'):
-        line_number + = 1
+        line_number += 1
 
         m = RE_SUPPLY.match(line)
         if m:
@@ -182,7 +182,7 @@ def parse_goko_log(logtext):
         scards = RE_COMMA.split(m.group(2))
 
         # Count number of players
-        pCount + = 1
+        pCount += 1
 
         # Determine whether a guest is playing
         if RE_GUEST.match(pname):
@@ -198,7 +198,7 @@ def parse_goko_log(logtext):
             adventure = True
 
         # Determine shelters or estates
-        if len(('Hovel', 'Overgrown Estate', 'Necropolis') & scards) > 0:
+        if len(set(['Hovel', 'Overgrown Estate', 'Necropolis']) & set(scards)):
             shelters = 1
 
         # Don't parse games with duplicate bot names
@@ -215,7 +215,7 @@ def parse_goko_log(logtext):
         pname = m.group(1)
         turn_num = int(m.group(2))
         presults[pname].turns = turn_num
-        iOrder + = 1
+        iOrder += 1
         presults[pname].order = iOrder
 
     ## POST GAME ##

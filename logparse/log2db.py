@@ -19,7 +19,7 @@ import gokoparse
 RE_LOGNAME = re.compile(".*(log\.(.*)\.(.*)\.txt)")
 
 # For command-line
-# Usage: ./log2db.py [logdir]
+# Usage: ./log2db.py <logdir>
 # Note: about .06s/log: .03s for db, .015 for parsing, .015 for file access
 if __name__ == "__main__":
     logdir = sys.argv[1]

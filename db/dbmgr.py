@@ -1,28 +1,34 @@
-#start2!/usr/bin/env python
-
+# Base modules
 import hashlib
 import sys
 import os
 import re
 import time
+import socket
 import datetime
+
+# Third party modules
+import postgresql
+
+# Project modules
 from dominiongame import GameResult
 from dominiongame import PlayerResult
 
 # Connect to the "dominionlogs" database
-import postgresql
-db = postgresql.open(user='ai', host='localhost', database='goko')
-
-ps_insert_card = db.prepare("""INSERT INTO card_url VALUES ($1, $2)""")
+if socket.gethostname() == 'iron' and sys.argv[-1] != 'test':
+    db = postgresql.open(user='ai', host='localhost', database='goko')
+else: 
+    db = postgresql.open(user='forum', host='gokologs.drunkensailor.org',
+                         database='goko', password='fds')
 
 
 def insert_card_url(card, url):
+    ps_insert_card = db.prepare("""INSERT INTO card_url VALUES ($1, $2)""")
     ps_insert_card(card, url)
-
-ps_fetch_card = db.prepare("""SELECT url FROM card_url WHERE card=$1""")
 
 
 def fetch_card_image_url(card):
+    ps_fetch_card = db.prepare("""SELECT url FROM card_url WHERE card=$1""")
     x = ps_fetch_card(card)
     return(x[0][0])
 

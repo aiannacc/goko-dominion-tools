@@ -1,342 +1,342 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>{{ title }}</title>
-        <meta http-equiv="Content-Type"
-              content="text/html";charset="UTF-8">
-        <style>
-            body
-            {
-                background-color:#d3d3d3;
-                /*font-family:Arial, Helvetica, sans-serif;*/
-            }
-            td
-            {
-                /*font-variant:small-caps;
-                color:#000000;
-                background-color:#EAF2D3;*/
-            }
-            .left   {text-align:left;}
-            .center {text-align:center;}
-            .right  {text-align:right;}
-        </style>
-    </head>
-    <body>
-        Log Search <a href='/kingdom'>Kingom Visualizer</a><br>
-        <h2>Goko Log Search</h2>
-        <form name="searchform" action="/" method="get" onsubmit="disableSearch()">
-            <table>
-            <tr height="5">
-                <td width="10"></td>
-                <td width="100"></td>
-                <td width="120"></td>
-                <td width="10"></td>
-                <td width="120"></td>
-                <td width="70"></td>
-                <td width="70"></td>
-            </tr>
+  <head>
+    <title>{{ title }}</title>
+    <meta http-equiv="Content-Type"
+        content="text/html";charset="UTF-8">
+    <style>
+      body
+      {
+        background-color:#d3d3d3;
+        /*font-family:Arial, Helvetica, sans-serif;*/
+      }
+      td
+      {
+        /*font-variant:small-caps;
+        color:#000000;
+        background-color:#EAF2D3;*/
+      }
+      .left   {text-align:left;}
+      .center {text-align:center;}
+      .right  {text-align:right;}
+    </style>
+  </head>
+  <body>
+    Log Search <a href='/kingdom'>Kingom Visualizer</a><br>
+    <h2>Goko Log Search</h2>
+    <form name="searchform" action="/" method="get" onsubmit="disableSearch()">
+      <table>
+      <tr height="5">
+        <td width="10"></td>
+        <td width="100"></td>
+        <td width="120"></td>
+        <td width="10"></td>
+        <td width="120"></td>
+        <td width="70"></td>
+        <td width="70"></td>
+      </tr>
 
-            <tr>
+      <tr>
 
-                <td colspan="2">Player 1:</td>
-                <td colspan="1"><input type="text" name="p1" value="{{p1}}" style="width: 99%"</td>
-                <td></td>
-                <td colspan="1"><select name="p1won" style="width: 99%">
-                    <option value="either" {% if p1won=="either" %}selected="selected"{% end %}>All Results</option>
-                    <option value="yes" {% if p1won=="yes" %}selected="selected"{% end %}>P1 Won</option>
-                    <option value="no" {% if p1won=="no" %}selected="selected"{% end %}>P1 Lost</option>
-                    </select>
-                </td>
+        <td colspan="2">Player 1:</td>
+        <td colspan="1"><input type="text" name="p1" value="{{p1}}" style="width: 99%"</td>
+        <td></td>
+        <td colspan="1"><select name="p1won" style="width: 99%">
+          <option value="either" {% if p1won=="either" %}selected="selected"{% end %}>All Results</option>
+          <option value="yes" {% if p1won=="yes" %}selected="selected"{% end %}>P1 Won</option>
+          <option value="no" {% if p1won=="no" %}selected="selected"{% end %}>P1 Lost</option>
+          </select>
+        </td>
 
-            </tr>
-            <tr>
-                
-                <td colspan="2">Player 2:</td>
-                <td colspan="1"><input type="text" name="p2" value="{{p2}}" style="width: 99%"></td>
-                <td></td>
-                <td colspan="2">
-                    <input type="checkbox" 
-                        {% if casesensitive=="on" %}checked{%end%} 
-                        name="casesensitive">
-                    Case Sensitive
-                    <br>
-                </td>
+      </tr>
+      <tr>
+        
+        <td colspan="2">Player 2:</td>
+        <td colspan="1"><input type="text" name="p2" value="{{p2}}" style="width: 99%"></td>
+        <td></td>
+        <td colspan="2">
+          <input type="checkbox" 
+            {% if casesensitive=="on" %}checked{%end%} 
+            name="casesensitive">
+          Case Sensitive
+          <br>
+        </td>
 
-            </tr>
-            <tr>
+      </tr>
+      <tr>
 
-                <td colspan="2">Date Range:</td>
-                <td colspan="1">
-                    <input type="text" name="startdate" 
-                           value="{{startdate}}" style="width: 99%"> 
-                </td>
-                <td style="text-align: center">&#8211;</td>
-                <td colspan="1">
-                    <input type="text" name="enddate" 
-                    value="{{enddate}}" style="width: 99%">
-                </td>
+        <td colspan="2">Date Range:</td>
+        <td colspan="1">
+          <input type="text" name="startdate" 
+               value="{{startdate}}" style="width: 99%"> 
+        </td>
+        <td style="text-align: center">&#8211;</td>
+        <td colspan="1">
+          <input type="text" name="enddate" 
+          value="{{enddate}}" style="width: 99%">
+        </td>
 
-            </tr>
-            <tr>
+      </tr>
+      <tr>
 
-                <td colspan="2">Kingdom:</td>
-                <td colspan="3"><input type="text" name="kreq" value="{{kreq}}" style="width: 99%"></td>
-                <td><button type="submit" name="submit" id="submitsearch" value="Search" style="width: 99%">Search</button></td>
-                <td><button type="submit" name="submit" id="submitclear" value="Clear" style="width: 99%">Clear</button></td>
+        <td colspan="2">Kingdom:</td>
+        <td colspan="3"><input type="text" name="kreq" value="{{kreq}}" style="width: 99%"></td>
+        <td><button type="submit" name="submit" id="submitsearch" value="Search" style="width: 99%">Search</button></td>
+        <td><button type="submit" name="submit" id="submitclear" value="Clear" style="width: 99%">Clear</button></td>
  
-           </tr>
-           <tr>
+       </tr>
+       <tr>
 
-               <th colspan="3"><div style="text-align: left">Game:</div></th>
-               <th colspan="4"><div style="text-align: left">Players:</div></th>
+         <th colspan="3"><div style="text-align: left">Game:</div></th>
+         <th colspan="4"><div style="text-align: left">Players:</div></th>
 
-           </tr>
-           <tr>
+       </tr>
+       <tr>
 
-               <td></td>
-               <td>
-                   Rating:
-               </td>
-               <td>
-                   <span title="Excludes game before May 15">
-                   <select name="rating" style="width: 99%">
-                       <option value="unrated" {% if rating=="unrated" %}selected="selected"{% end %}>Unrated</option>
-                       <option value="casual" {% if rating=="casual" %}selected="selected"{% end %}>Casual</option>
-                       <option value="pro" {% if rating=="pro" %}selected="selected"{% end %}>Pro</option>
-                       <option value="adventure" {% if rating=="adventure" %}selected="selected"{% end %}>Adventures</option>
-                       <option value="unknown" {% if rating=="unknown" %}selected="selected"{% end %}>Unknown (Pre-May 15)</option>
-                       <option value="pro+" {% if rating=="pro+" %}selected="selected"{% end %}>Pro/Unknown</option>
-                       <option value="any" {% if rating=="any" %}selected="selected"{% end %}>Any</option>
-                   </select>
-                   </span>
-               </td>
+         <td></td>
+         <td>
+           Rating:
+         </td>
+         <td>
+           <span title="Excludes game before May 13">
+           <select name="rating" style="width: 99%">
+             <option value="unrated" {% if rating=="unrated" %}selected="selected"{% end %}>Unrated</option>
+             <option value="casual" {% if rating=="casual" %}selected="selected"{% end %}>Casual</option>
+             <option value="pro" {% if rating=="pro" %}selected="selected"{% end %}>Pro</option>
+             <option value="adventure" {% if rating=="adventure" %}selected="selected"{% end %}>Adventures</option>
+             <option value="unknown" {% if rating=="unknown" %}selected="selected"{% end %}>Unknown (Pre-May 13)</option>
+             <option value="pro+" {% if rating=="pro+" %}selected="selected"{% end %}>Pro/Unknown</option>
+             <option value="any" {% if rating=="any" %}selected="selected"{% end %}>Any</option>
+           </select>
+           </span>
+         </td>
 
-               <td></td>
+         <td></td>
 
-               <td>
-                   Num. Players:
-               </td>
-               <td>
-                   <select name="pcount" style="width: 99%">
-                       <option value="one" {% if pcount=="one" %}selected="selected"{% end %}>1</option>
-                       <option value="two" {% if pcount=="two" %}selected="selected"{% end %}>2</option>
-                       <option value="three" {% if pcount=="three" %}selected="selected"{% end %}>3</option>
-                       <option value="four" {% if pcount=="four" %}selected="selected"{% end %}>4</option>
-                       <option value="five" {% if pcount=="five" %}selected="selected"{% end %}>5</option>
-                       <option value="six" {% if pcount=="six" %}selected="selected"{% end %}>6</option>
-                       <option value="any" {% if pcount=="any" %}selected="selected"{% end %}>Any</option>
-                   </select>
-               </td>
+         <td>
+           Num. Players:
+         </td>
+         <td>
+           <select name="pcount" style="width: 99%">
+             <option value="one" {% if pcount=="one" %}selected="selected"{% end %}>1</option>
+             <option value="two" {% if pcount=="two" %}selected="selected"{% end %}>2</option>
+             <option value="three" {% if pcount=="three" %}selected="selected"{% end %}>3</option>
+             <option value="four" {% if pcount=="four" %}selected="selected"{% end %}>4</option>
+             <option value="five" {% if pcount=="five" %}selected="selected"{% end %}>5</option>
+             <option value="six" {% if pcount=="six" %}selected="selected"{% end %}>6</option>
+             <option value="any" {% if pcount=="any" %}selected="selected"{% end %}>Any</option>
+           </select>
+         </td>
 
-           </tr>
-           <tr>
+       </tr>
+       <tr>
 
-               <td></td>
+         <td></td>
 
-               <td>
-                   Colonies?
-               </td>
-               <td>
-                   <select name="colonies" style="width: 99%">
-                       <option value="either" {% if colonies=="either" %}selected="selected"{% end %}>Either</option>
-                       <option value="no" {% if colonies=="no" %}selected="selected"{% end %}>Provinces</option>
-                       <option value="yes" {% if colonies=="yes" %}selected="selected"{% end %}>Colonies</option>
-                   </select>
-               </td>
+         <td>
+           Colonies?
+         </td>
+         <td>
+           <select name="colonies" style="width: 99%">
+             <option value="either" {% if colonies=="either" %}selected="selected"{% end %}>Either</option>
+             <option value="no" {% if colonies=="no" %}selected="selected"{% end %}>Provinces</option>
+             <option value="yes" {% if colonies=="yes" %}selected="selected"{% end %}>Colonies</option>
+           </select>
+         </td>
 
-               <td></td>
-           
-               <td>
-                   Bots?
-               </td>
-               <td>
-                   <select name="bots" style="width: 99%">
-                       <option value="no" {% if bots=="no" %}selected="selected"{% end %}>No</option>
-                       <option value="either" {% if bots=="either" %}selected="selected"{% end %}>Allow</option>
-                       <option value="yes" {% if bots=="yes" %}selected="selected"{% end %}>Require</option>
-                   </select>
-               </td>
+         <td></td>
+       
+         <td>
+           Bots?
+         </td>
+         <td>
+           <select name="bots" style="width: 99%">
+             <option value="no" {% if bots=="no" %}selected="selected"{% end %}>No</option>
+             <option value="either" {% if bots=="either" %}selected="selected"{% end %}>Allow</option>
+             <option value="yes" {% if bots=="yes" %}selected="selected"{% end %}>Require</option>
+           </select>
+         </td>
 
-           </tr>
-           <tr>
+       </tr>
+       <tr>
 
-               <td></td>
+         <td></td>
 
-               <td>
-                   Shelters?
-               </td>
-               <td>
-                   <select name="shelters" style="width: 99%">
-                       <option value="either" {% if shelters=="either" %}selected="selected"{% end %}>Either</option>
-                       <option value="no" {% if shelters=="no" %}selected="selected"{% end %}>Estates</option>
-                       <option value="yes" {% if shelters=="yes" %}selected="selected"{% end %}>Shelters</option>
-                   </select>
-               </td>
+         <td>
+           Shelters?
+         </td>
+         <td>
+           <select name="shelters" style="width: 99%">
+             <option value="either" {% if shelters=="either" %}selected="selected"{% end %}>Either</option>
+             <option value="no" {% if shelters=="no" %}selected="selected"{% end %}>Estates</option>
+             <option value="yes" {% if shelters=="yes" %}selected="selected"{% end %}>Shelters</option>
+           </select>
+         </td>
 
-               <td></td>
+         <td></td>
 
-               <td>
-                   Guests?
-               </td>
-               <td>
-                   <select name="guests" style="width: 99%">
-                       <option value="no" {% if guests=="no" %}selected="selected"{% end %}>No</option>
-                       <option value="either" {% if guests=="either" %}selected="selected"{% end %}>Allow</option>
-                       <option value="yes" {% if guests=="yes" %}selected="selected"{% end %}>Require</option>
-                   </select>
-               </td>
+         <td>
+           Guests?
+         </td>
+         <td>
+           <select name="guests" style="width: 99%">
+             <option value="no" {% if guests=="no" %}selected="selected"{% end %}>No</option>
+             <option value="either" {% if guests=="either" %}selected="selected"{% end %}>Allow</option>
+             <option value="yes" {% if guests=="yes" %}selected="selected"{% end %}>Require</option>
+           </select>
+         </td>
 
-           </tr>
-           <tr>
+       </tr>
+       <tr>
 
-               <td></td>
+         <td></td>
 
-               <td>
-                   Num. Turns:
-               </td>
-               <td>
-                   <span title="Minimum number of turns">
-                   <input type="text" name="minturns" value="{{minturns}}" style="width: 37%">
-                   </span>
-                   &#8211;
-                   <span title="Maximum number of turns">
-                   <input type="text" name="maxturns" value="{{maxturns}}" style="width: 37%">
-                   </span>
-               </td>
+         <td>
+           Num. Turns:
+         </td>
+         <td>
+           <span title="Minimum number of turns">
+           <input type="text" name="minturns" value="{{minturns}}" style="width: 37%">
+           </span>
+           &#8211;
+           <span title="Maximum number of turns">
+           <input type="text" name="maxturns" value="{{maxturns}}" style="width: 37%">
+           </span>
+         </td>
 
-               <td></td>
+         <td></td>
 
-               <td>
-                   <span title="Find games where someone quit?">Quits?</span>
-               </td>
-               <td>
-                   <select name="quit" style="width: 99%">
-                       <option value="either" {% if quit=="either" %}selected="selected"{% end %}>Allow</option>
-                       <option value="no" {% if quit=="no" %}selected="selected"{% end %}>No</option>
-                       <option value="yes" {% if quit=="yes" %}selected="selected"{% end %}>Require</option>
-                   </select>
-               </td>
+         <td>
+           <span title="Find games where someone quit?">Quits?</span>
+         </td>
+         <td>
+           <select name="quit" style="width: 99%">
+             <option value="either" {% if quit=="either" %}selected="selected"{% end %}>Allow</option>
+             <option value="no" {% if quit=="no" %}selected="selected"{% end %}>No</option>
+             <option value="yes" {% if quit=="yes" %}selected="selected"{% end %}>Require</option>
+           </select>
+         </td>
 
-            </tr>
-        </table>
+      </tr>
+    </table>
 
-        <script>
-            function disableSearch()
-            {
-                //document.getElementById("submitsearch").text = "Searching";
-                //document.getElementById("submitsearch").disabled = true;
-                //document.getElementById("submitshow").disabled = true;
-                //document.getElementById("submitolder").disabled = true;
-                //document.getElementById("submitnewer").disabled = true;
-            }
-        </script>
+    <script>
+      function disableSearch()
+      {
+        //document.getElementById("submitsearch").text = "Searching";
+        //document.getElementById("submitsearch").disabled = true;
+        //document.getElementById("submitshow").disabled = true;
+        //document.getElementById("submitolder").disabled = true;
+        //document.getElementById("submitnewer").disabled = true;
+      }
+    </script>
 
-        <hr>
+    <hr>
 
-            {% set offset = (pageno-1)*pagesize %}
-            {% set first = offset + 1 %}
-            {% set last = offset + len(games) %}
-            {% if searchmade and total_num_games > 0%}
-            <table>
-            <tr>
-                <td>Results per page:</td>
-                <td><input type="text" name="pagesize" value="{{pagesize}}" size="2"></td>
-                <td><button id="submitshow" type="submit" name="submit" id="submitter" value="Search" >Show</button></td>
-            </tr>
-            {% if first!=1 or last != total_num_games %}
-            <tr>
-                <td>{{first}} to {{last}} (of {{total_num_games}})</td>
-                <td><input id="submitnewer" type="submit" name="submit" {% if first==1 %}disabled{% end %} value="Newer"></td>
-                <td><input id="submitolder" type="submit" name="submit" {% if last==total_num_games %}disabled{% end %} value="Older"></td>
-            </tr>
-            {% end %}
-            </table>
-            <hr>
-            {% end %}
-            <input type="hidden" name="pageno" value="{{pageno}}">
-        </form>
+      {% set offset = (pageno-1)*pagesize %}
+      {% set first = offset + 1 %}
+      {% set last = offset + len(games) %}
+      {% if searchmade and total_num_games > 0%}
+      <table>
+      <tr>
+        <td>Results per page:</td>
+        <td><input type="text" name="pagesize" value="{{pagesize}}" size="2"></td>
+        <td><button id="submitshow" type="submit" name="submit" id="submitter" value="Search" >Show</button></td>
+      </tr>
+      {% if first!=1 or last != total_num_games %}
+      <tr>
+        <td>{{first}} to {{last}} (of {{total_num_games}})</td>
+        <td><input id="submitnewer" type="submit" name="submit" {% if first==1 %}disabled{% end %} value="Newer"></td>
+        <td><input id="submitolder" type="submit" name="submit" {% if last==total_num_games %}disabled{% end %} value="Older"></td>
+      </tr>
+      {% end %}
+      </table>
+      <hr>
+      {% end %}
+      <input type="hidden" name="pageno" value="{{pageno}}">
+    </form>
 
 
-      {% for error in errors %}
-          {{error}}<br>
-      {% else %}
-        <!-- overall record -->
-        {% if player_record %}
-        <b>2-Player Record:</b>
-        <table cellpadding=2>
-        <tr>
-            <td></td>
-            <td>Win</td>
-            <td>Tie</td>
-            <td>Loss</td>
-        </tr>
-        {% for pname in player_record %}
-        <tr>
-            <td>{{pname}}</td>
-            <td>{{player_record[pname]['wins']}}</td>
-            <td>{{player_record[pname]['ties']}}</td>
-            <td>{{player_record[pname]['losses']}}</td>
-        </tr>
-        {% end %}
-        </table>
-        <hr>
-        {% end %}
+    {% for error in errors %}
+      {{error}}<br>
+    {% else %}
+    <!-- overall record -->
+    {% if player_record %}
+    <b>2-Player Record:</b>
+    <table cellpadding=2>
+    <tr>
+      <td></td>
+      <td>Win</td>
+      <td>Tie</td>
+      <td>Loss</td>
+    </tr>
+    {% for pname in player_record %}
+    <tr>
+      <td>{{pname}}</td>
+      <td>{{player_record[pname]['wins']}}</td>
+      <td>{{player_record[pname]['ties']}}</td>
+      <td>{{player_record[pname]['losses']}}</td>
+    </tr>
+    {% end %}
+    </table>
+    <hr>
+    {% end %}
 
-        {% if games %}
-        <!-- game table -->
-        {% for g in games %}
-            {% set timestr = datetime.datetime.strftime(g.time,'%Y/%m/%d %H:%M PDT') %}
-            {% set dirstr = datetime.datetime.strftime(g.time,'%Y%m%d') %}
-            {% set logurl = "http://dominionlogs.goko.com/%s/%s" % (dirstr,g.logfile) %}
-            {% set formattedurl = "http://dom.retrobox.eu/?/%s/%s" % (dirstr,g.logfile) %}
+    {% if games %}
+    <!-- game table -->
+    {% for g in games %}
+      {% set timestr = datetime.datetime.strftime(g.time,'%Y/%m/%d %H:%M PDT') %}
+      {% set dirstr = datetime.datetime.strftime(g.time,'%Y%m%d') %}
+      {% set logurl = "http://dominionlogs.goko.com/%s/%s" % (dirstr,g.logfile) %}
+      {% set formattedurl = "http://dom.retrobox.eu/?/%s/%s" % (dirstr,g.logfile) %}
 
-            <!-- timestamp and log -->
-            {{timestr}}
+      <!-- timestamp and log -->
+      {{timestr}}
 
-            <!-- player results -->
-            <table border="0" cellpadding="2">
-            <tr>
-                <td><u>Player:</u></td>
-                <td><u>Rank:</u></td>
-                <td><u>VPs:</u></td>
-                <td><u>Turns:</u></td>
-                <td><u>Quit?</u></td>
-            </tr>
-            {% for pname in g.presults %}
-            {% set p = g.presults[pname] %}
-            {% set rankstr = ('','1st','2nd','3rd','4th','5th','6th')[p.rank] %}
-            <tr>
-                <td>{{p.pname}}</td>
-                <td class="right">{{rankstr}}</td>
-                <td class="right">{{p.vps}}</td>
-                <td class="right">{{p.turns}}</td>
-                <td class="right">{{'Quit' if p.quit else ''}}</td>
-            </tr>
-            {% end %}
-            </table>
+      <!-- player results -->
+      <table border="0" cellpadding="2">
+      <tr>
+        <td><u>Player:</u></td>
+        <td><u>Rank:</u></td>
+        <td><u>VPs:</u></td>
+        <td><u>Turns:</u></td>
+        <td><u>Quit?</u></td>
+      </tr>
+      {% for pname in g.presults %}
+      {% set p = g.presults[pname] %}
+      {% set rankstr = ('','1st','2nd','3rd','4th','5th','6th')[p.rank] %}
+      <tr>
+        <td>{{p.pname}}</td>
+        <td class="right">{{rankstr}}</td>
+        <td class="right">{{p.vps}}</td>
+        <td class="right">{{p.turns}}</td>
+        <td class="right">{{'Quit' if p.quit else ''}}</td>
+      </tr>
+      {% end %}
+      </table>
 
-            <!-- kingdom -->
-            <!-- TODO: note colony & shelters -->
-            {% if g.colony %}Colonies,{% else %}Provinces, {% end %}
-            {% if g.shelters %}Shelters{% else %}Estates{% end %}
-            -
-            {% set i=0 %}
-            {% for s in g.supply %}
-                {% if not s in gokoconstants.CORE_CARDS %}
-                    {% set i=i+1 %}
-                    {{s}}{% if i<10 %}, {% end %}
-                {% end %}
-            {% end %}
-            <br>
-
-            <a href="{{ logurl }}">Log</a>
-            <a href="{{ formattedurl }}">Viewer</a>
-            <a href="./kingdom?logurl={{logurl}}&width=100&submit=Search">Kingdom</a>
-
-            <br><br>
-        {% end %}
-        <hr>
+      <!-- kingdom -->
+      <!-- TODO: note colony & shelters -->
+      {% if g.colony %}Colonies,{% else %}Provinces, {% end %}
+      {% if g.shelters %}Shelters{% else %}Estates{% end %}
+      -
+      {% set i=0 %}
+      {% for s in g.supply %}
+        {% if not s in gokoconstants.CORE_CARDS %}
+          {% set i=i+1 %}
+          {{s}}{% if i<10 %}, {% end %}
         {% end %}
       {% end %}
-    </body>
+      <br>
+
+      <a href="{{ logurl }}">Log</a>
+      <a href="{{ formattedurl }}">Viewer</a>
+      <a href="./kingdom?logurl={{logurl}}&width=100&submit=Search">Kingdom</a>
+
+      <br><br>
+    {% end %}
+    <hr>
+    {% end %}
+    {% end %}
+  </body>
 </html>
