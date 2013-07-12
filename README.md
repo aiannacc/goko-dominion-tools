@@ -1,7 +1,7 @@
 goko-dominion-tools
 ===================
 
-Tools for use with [Goko's online Dominion game](play.goko.com/Dominion/gameClient.html).
+Tools for use with [Goko's online Dominion game](https://play.goko.com/Dominion/gameClient.html).
 
 Features:
 
