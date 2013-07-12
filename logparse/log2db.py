@@ -1,34 +1,42 @@
 #!/usr/bin/env python
 
-from datetime import datetime 
+# Base modules
+from datetime import datetime
 import postgresql.exceptions
-import sys, re, os, traceback, gzip, time
-sys.path.append('../db')
+import sys
+import re
+import os
+import traceback
+import gzip
+import time
 
+# Project modules
+sys.path.append('../db')
 from dominiongame import GameResult
-import dbmgr, gokoparse
+import dbmgr
+import gokoparse
 
 RE_LOGNAME = re.compile(".*(log\.(.*)\.(.*)\.txt)")
 
 # For command-line
 # Usage: ./log2db.py [logdir]
 # Note: about .06s/log: .03s for db, .015 for parsing, .015 for file access
-if __name__=="__main__":
+if __name__ == "__main__":
     logdir = sys.argv[1]
     print(logdir)
-    m = re.match('.*/?(201.....)/?$',logdir)
+    m = re.match('.*/?(201.....)/?$', logdir)
     day_str = m.group(1)
     print(day_str)
-    date = datetime.strptime(day_str,'%Y%m%d')
+    date = datetime.strptime(day_str, '%Y%m%d')
 
     dblogs = set(dbmgr.list_logs(date))
     filelogs = set(os.listdir(logdir))
     newlogs = filelogs - dblogs
-    print("%d old logs and %d new logs" % (len(dblogs),len(newlogs)))
+    print("%d old logs and %d new logs" % (len(dblogs), len(newlogs)))
 
     start_time = time.time()
     n = 0
-    games=[]
+    games = []
     for logfile in newlogs:
         logfile_full = sys.argv[1] + '/' + logfile
         try:
@@ -38,9 +46,10 @@ if __name__=="__main__":
             logtime = datetime.fromtimestamp(int(m.group(3))/1000)
 
             try:
-                logtext = open(logfile_full,encoding='utf-8').read()
+                logtext = open(logfile_full, encoding='utf-8').read()
             except UnicodeDecodeError:
-                logtext = gzip.open(logfile_full,'rt',encoding='utf-8').read()
+                logtext = gzip.open(logfile_full, 'rt',
+                                    encoding='utf-8').read()
 
             print('Now handling %s' % (logfile))
             game = gokoparse.parse_goko_log(logtext)
@@ -53,9 +62,7 @@ if __name__=="__main__":
                 games = []
                 elapsed_time = time.time() - start_time
                 n += 10
-                print(n,elapsed_time,elapsed_time/n)
-        except gokoparse.ParseException:
-            print("Parse Exception in %s.  Fuck you, Goko." % logfile)
+                print(n, elapsed_time, elapsed_time/n)
         except gokoparse.WrongPlacesException:
             print("WrongPlacesException in %s.  Fuck you, Goko." % logfile)
         except gokoparse.TurnCountException:
@@ -63,7 +70,7 @@ if __name__=="__main__":
         except postgresql.exceptions.UniqueError:
             print("UniqueError in %s" % logfile)
         except:
-            print('Exception handling %s/%s' % (logdir,logfile))
+            print('Exception handling %s/%s' % (logdir, logfile))
             raise
     for g in games:
         g_arr = [g]
@@ -72,5 +79,5 @@ if __name__=="__main__":
         except postgresql.exceptions.UniqueError:
             print("UniqueError in %s" % logfile)
         except:
-            print('Exception handling %s/%s' % (logdir,logfile))
+            print('Exception handling %s/%s' % (logdir, logfile))
             raise

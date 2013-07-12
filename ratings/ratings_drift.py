@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
-import hashlib, sys, os, re
+import hashlib
+import sys
+import os
+import re
 from datetime import datetime
 
 # Connect to the "dominionlogs" database
 import pymysql
-db  = pymysql.connect(db='dominionlogs',charset='utf8')
+db = pymysql.connect(db='dominionlogs', charset='utf8')
 cur = db.cursor()
 
 qry = 'SELECT * from ratings order by time desc limit %d' % (100*24*60*3)
@@ -16,7 +19,7 @@ changes = {}
 rchanges = {}
 rchangesn = {}
 for r in cur.fetchall():
-    (time,rank,pname,rating) = r
+    (time, rank, pname, rating) = r
     if not pname in last:
         last[pname] = rating
         changes[pname] = {}
@@ -33,7 +36,7 @@ for r in cur.fetchall():
 for p in changes:
     for t in changes[p]:
         timestr = t.strftime('%H:%M')
-        print(timestr,changes[p][t])
+        print(timestr, changes[p][t])
 
 for t in sorted(rchanges):
     timestr = t.strftime('%Y-%m-%d %H:%M')
@@ -42,4 +45,3 @@ for t in sorted(rchanges):
 
         for i in range(len(rchanges[t])):
             print(rchangesn[t][i], rchanges[t][i])
-

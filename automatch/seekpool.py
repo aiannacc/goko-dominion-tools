@@ -15,7 +15,8 @@ import greedymm
 # TODO: should this be part of the class? i.e. object-specific?
 lock = threading.RLock()
 
-# This class should encapsulated all of the seek/match logic, but none of the
+
+# This class should encapsulate all of the seek/match logic, but none of the
 # communication with the players' clients.
 #
 # This class is thread safe, but messages from players' clients may still

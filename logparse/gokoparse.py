@@ -1,64 +1,79 @@
 #!/usr/bin/env python
 
+# Base modules
+import re
+import datetime
+import sys
+
+# Project modules
+import dbmgr
 from gokoconstants import *
-from dominiongame import GameResult,PlayerResult,GainRet
-import re,datetime,sys,dbmgr
+from dominiongame import GameResult
+from dominiongame import PlayerResult
+from dominiongame import GainRet
 
 # Regular expressions used to parse goko logs.  Precompiled for speed.
 RE_RATING = re.compile('Rating system: (.*)')
 RE_SUPPLY = re.compile('[sS]upply cards: (.*)')
-RE_COMMA  = re.compile(', ')
+RE_COMMA = re.compile(', ')
 RE_STARTC = re.compile('(.*) - starting cards: (.*)')
-RE_TURNX  = re.compile('--* (.*): turn ([0-9]*) ([posessed] )?--*')
-RE_GAINS  = re.compile('(.*) \- gains (.*)')
-RE_RETS   = re.compile('(.*) \- returns (.*) to')
-RE_VPS    = re.compile('(.*) - total victory points: (-?\d*)')
+RE_TURNX = re.compile('--* (.*): turn ([0-9]*) ([posessed] )?--*')
+RE_GAINS = re.compile('(.*) \- gains (.*)')
+RE_RETS = re.compile('(.*) \- returns (.*) to')
+RE_VPS = re.compile('(.*) - total victory points: (-?\d*)')
 RE_NTURNS = re.compile('(.*) - turns: (\d*)')
-RE_QUIT   = re.compile('(.*) - quit')
+RE_QUIT = re.compile('(.*) - quit')
 RE_RESIGN = re.compile('(.*) - resigned')
-RE_PLACE  = re.compile('([0-9]).. place: (.*)')
-RE_GUEST  = re.compile('^guest[0-9]*')
+RE_PLACE = re.compile('([0-9]).. place: (.*)')
+RE_GUEST = re.compile('^guest[0-9]*')
 RE_GAMEOVER = re.compile('--* Game Over --*')
 
 advopps = dbmgr.get_advbot_names()
 
+
 class WrongPlacesException(Exception):
     pass
+
+
 class TurnCountException(Exception):
     pass
+
+
 class ParseException(Exception):
     pass
+
 
 def scores_to_ranks(scores):
     ranks = [0] * len(scores)
     for i in range(len(scores)):
         larger = set()
         for j in range(len(scores)):
-            if scores[j]>scores[i]:
+            if scores[j] > scores[i]:
                 larger.add(scores[j])
         ranks[i] = len(larger) + 1
     return(ranks)
 
-# Parse a game log.  Create and return the resulting GameResult object 
+
+# Parse a game log.  Create and return the resulting GameResult object
 def parse_goko_log(logtext):
 
-    # First just sort the log lines.  This doubles the regex matching we have 
+    # First just sort the log lines.  This doubles the regex matching we have
     # to do, but it keeps the code cleaner.
-    supplyl, ratingl = (None,None)
-    startcl, turnl, gainl, retl = ([],[],[],[])
-    vpl, nturnl, quitl, placel = ([],[],[],[])
+    supplyl, ratingl = (None, None)
+    startcl, turnl, gainl, retl = ([], [], [], [])
+    vpl, nturnl, quitl, placel = ([], [], [], [])
     resignl = []
     gains = []
     rets = []
 
     cur_turn = None
     cur_player = None
-    
+
     first_quit_line = None
     game_over_line = None
     line_number = 0
     for line in logtext.split('\n'):
-        line_number += 1
+        line_number + = 1
 
         m = RE_SUPPLY.match(line)
         if m:
@@ -69,7 +84,7 @@ def parse_goko_log(logtext):
             ratingl = m
             continue
         m = RE_STARTC.match(line)
-        if m: 
+        if m:
             startcl.append(m)
             continue
         m = RE_TURNX.match(line)
@@ -84,24 +99,24 @@ def parse_goko_log(logtext):
             pname = m.group(1)
             cname = m.group(2)
             if cname in RUINSES:
-                cpile='Ruins'
+                cpile = 'Ruins'
             elif cname in KNIGHTS:
-                cpile='Knight'
+                cpile = 'Knight'
             else:
-                cpile=cname
-            gains.append(GainRet(cname,cpile,cur_player,cur_turn))
+                cpile = cname
+            gains.append(GainRet(cname, cpile, cur_player, cur_turn))
             continue
         m = RE_RETS.match(line)
         if m:
             pname = m.group(1)
             cname = m.group(2)
             if cname in RUINSES:
-                cpile='Ruins'
+                cpile = 'Ruins'
             elif cname in KNIGHTS:
-                cpile='Knight'
+                cpile = 'Knight'
             else:
-                cpile=cname
-            rets.append(GainRet(cname,cpile,cur_player,cur_turn))
+                cpile = cname
+            rets.append(GainRet(cname, cpile, cur_player, cur_turn))
             continue
         m = RE_VPS.match(line)
         if m:
@@ -118,7 +133,9 @@ def parse_goko_log(logtext):
         m = RE_QUIT.match(line)
         if m:
             quitl.append(m)
-            first_quit_line = first_quit_line if first_quit_line else line_number
+            first_quit_line = (first_quit_line
+                               if first_quit_line
+                               else line_number)
             continue
         m = RE_GAMEOVER.match(line)
         if m:
@@ -130,16 +147,16 @@ def parse_goko_log(logtext):
             continue
 
     # Game data to be parsed
-    supply   = []       # List of supply cards
-    rating   = None     # Rating system used, if available
+    supply = []       # List of supply cards
+    rating = None     # Rating system used, if available
     presults = {}       # player name --> player game info
 
     # Game metadata to be parsed
-    shelters  = False
-    guest     = False
-    bot       = False
-    pCount    = 0
-    colony    = False
+    shelters = False
+    guest = False
+    bot = False
+    pCount = 0
+    colony = False
     adventure = False
 
     ## PRE-GAME SETUP ###
@@ -147,9 +164,9 @@ def parse_goko_log(logtext):
     # Parse supply
     for cname in RE_COMMA.split(supplyl.group(1)):
         if cname in RUINSES:
-            cname='Ruins'
+            cname = 'Ruins'
         elif cname in KNIGHTS:
-            cname='Knight'
+            cname = 'Knight'
         if cname == 'Colony':
             colony = True
         supply.append(cname)
@@ -163,9 +180,9 @@ def parse_goko_log(logtext):
     for m in startcl:
         pname = m.group(1)
         scards = RE_COMMA.split(m.group(2))
-        
+
         # Count number of players
-        pCount += 1
+        pCount + = 1
 
         # Determine whether a guest is playing
         if RE_GUEST.match(pname):
@@ -181,26 +198,24 @@ def parse_goko_log(logtext):
             adventure = True
 
         # Determine shelters or estates
-        if 'Hovel' in scards or 'Overgrown Estate' in scards or 'Necropolis' in scards:
+        if len(('Hovel', 'Overgrown Estate', 'Necropolis') & scards) > 0:
             shelters = 1
 
         # Don't parse games with duplicate bot names
         if pname in presults:
             raise ParseException('Duplicate name: %s' % (pname))
-        else: 
+        else:
             presults[pname] = PlayerResult(pname)
-        
 
     ## GAME TURNS ##
-
+    #
     # Parse turn numbers to obtain player names, order, and turns taken
-
     iOrder = 0
     for m in turnl:
         pname = m.group(1)
         turn_num = int(m.group(2))
         presults[pname].turns = turn_num
-        iOrder +=1
+        iOrder + = 1
         presults[pname].order = iOrder
 
     ## POST GAME ##
@@ -260,7 +275,7 @@ def parse_goko_log(logtext):
     for m in placel:
         pname = m.group(2)
         place = int(m.group(1))
-        # Ignore a Goko bug where player ranks were listed twice (with 
+        # Ignore a Goko bug where player ranks were listed twice (with
         # different results)
         if (presults[pname].rank != place):
             if presults[pname].rank != place:
@@ -271,12 +286,13 @@ def parse_goko_log(logtext):
                 else:
                     raise WrongPlacesException()
 
-    return GameResult(supply,gains,rets,rating,shelters,guest,bot,pCount,colony,presults,adventure)
+    return GameResult(supply, gains, rets, rating, shelters, guest, bot,
+                      pCount, colony, presults, adventure)
 
 # For testing
 # Usage: ./gokoparse.py [logfile]
-if __name__=="__main__":
-    #x = scores_to_ranks([1,4,3,3])
+if __name__ == "__main__":
+    #x = scores_to_ranks([1, 4, 3, 3])
     #print(x)
     logfile = sys.argv[-1]
     g = parse_goko_log(open(logfile).read())

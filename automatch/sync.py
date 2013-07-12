@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 def synchronized(lock):
     """ Synchronization decorator """
     def wrap(f):

@@ -43,15 +43,15 @@ class Matchmaker(metaclass=abc.ABCMeta):
 
 class MatchEncoder(json.JSONEncoder):
     def default(obj):
-        if isinstance(obj,Match):
+        if isinstance(obj, Match):
             out = obj.__dict__
             out.seeks = [self.default(s) for s in obj.seeks]
             return out
-        elif isinstance(obj,Seek):
+        elif isinstance(obj, Seek):
             out = obj.__dict__
             out.reqs = [self.default(r) for r in obj.reqs]
             return out
-        elif isinstance(obj,Requirement):
+        elif isinstance(obj, Requirement):
             return obj.to_dict()
         else:
             return json.JSONEncoder.default(obj)

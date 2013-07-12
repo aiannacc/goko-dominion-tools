@@ -9,19 +9,23 @@
 # Skips download for logs that already exist locally. Skips import for logs
 # that are already in the database.
 #
+# This downloads about 4x faster than the Python code I originally wrote. I
+# don't know why. If I figure it out, I'll do it in Python instead.
+#
 # Thanks to nutki on forum.dominionstrategy.com for an example script showing
 # how to download logs with wget.
 #
 while [ $# -gt 0 ]
 do
     echo "Day: $1"
-    sleep 1
 
     BASE=http://dominionlogs.goko.com/$1/
     THREADS=20
+    LOGDIR=/mnt/raid/media/dominion/logs
+    CODEDIR="`pwd`"
 
     # Create log file directory
-    cd "/mnt/raid/media/dominion/logs/"
+    cd "$LOGDIR"
     [ -d "$1" ] || mkdir "$1"
     cd "$1"
     [ -f "*.gz" ] && rm *.gz
@@ -53,8 +57,8 @@ do
     [ -f _new ] && rm _new
 
     # Parse new logs into database
-    cd /home/ai/dominion/code/logparse/
-    ./log2db.py /mnt/raid/media/dominion/logs/$1
+    cd $CODEDIR/logparse
+    ./log2db.py "$LOGDIR"/$1
     
     shift
 done
