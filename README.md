@@ -47,7 +47,7 @@ To download and parse logs from the Goko log archive:
 
     $ bash logparse/dbupdate.sh <logdir> <codebase> <dates>
 
-where <logdir> is the local directory where you want to store unparsed logs, `<codebase>` is this project's root, and `<dates>` are formatted like YYYYMMDD.
+where `<logdir>` is the local directory where you want to store unparsed logs, `<codebase>` is this project's root, and `<dates>` are formatted like YYYYMMDD.
 
 Games before May 13, 2013 don't include rating system information, but we can deduce which games were played in 'adventure' mode using the names of the players:
 
