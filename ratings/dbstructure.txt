@@ -1,0 +1,44 @@
+mysql> desc game;
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| time       | datetime     | NO   |     | NULL    |       |
+| logfile    | varchar(50)  | NO   | PRI | NULL    |       |
+| pcount     | int(11)      | NO   | MUL | NULL    |       |
+| supply     | varchar(500) | NO   |     | NULL    |       |
+| plist      | varchar(200) | YES  |     | NULL    |       |
+| bot        | tinyint(4)   | YES  |     | 0       |       |
+| colony     | tinyint(4)   | YES  |     | 0       |       |
+| guest      | tinyint(4)   | YES  |     | 0       |       |
+| rating     | varchar(10)  | YES  | MUL | NULL    |       |
+| shelters   | tinyint(4)   | YES  |     | NULL    |       |
+| adventure  | tinyint(4)   | YES  |     | NULL    |       |
+| dup_supply | tinyint(4)   | YES  |     | NULL    |       |
++------------+--------------+------+-----+---------+-------+
+12 rows in set (0.00 sec)
+
+mysql> desc presult;
++-----------+-------------+------+-----+---------+-------+
+| Field     | Type        | Null | Key | Default | Extra |
++-----------+-------------+------+-----+---------+-------+
+| pname     | varchar(50) | NO   | MUL | NULL    |       |
+| vps       | int(11)     | NO   |     | NULL    |       |
+| turns     | int(11)     | NO   |     | NULL    |       |
+| rank      | int(11)     | NO   |     | NULL    |       |
+| quit      | tinyint(1)  | NO   |     | NULL    |       |
+| turnorder | int(11)     | YES  |     | NULL    |       |
+| resign    | tinyint(1)  | NO   |     | NULL    |       |
+| logfile   | varchar(50) | NO   | MUL | NULL    |       |
++-----------+-------------+------+-----+---------+-------+
+8 rows in set (0.00 sec)
+
+mysql> desc ratings;
++--------+-------------+------+-----+---------+-------+
+| Field  | Type        | Null | Key | Default | Extra |
++--------+-------------+------+-----+---------+-------+
+| time   | datetime    | YES  | MUL | NULL    |       |
+| rank   | int(11)     | YES  |     | NULL    |       |
+| player | varchar(50) | YES  | MUL | NULL    |       |
+| rating | int(11)     | YES  | MUL | NULL    |       |
++--------+-------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)
