@@ -1,0 +1,10 @@
+{
+  "host": {
+    "playerId": "{{match.host.playerId}}",
+    "playerName": "{{match.host.playerName}}"
+  },
+  "guest": {
+    "playerId": "{{match.guest.playerId}}",
+    "playerName": "{{match.guest.playerName}}"
+  }
+}
