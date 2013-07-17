@@ -3,9 +3,7 @@ __pycache__
 *.pyc
 
 # log files
-logs
 *.log
-nohup.out
 
 # Process ID files
 *.pid

@@ -1,0 +1,26 @@
+/* Largely designed to mimic the original Isotropic leaderboard's style */
+body { font-family: sans-serif; color: #222; white-space: nowrap; background-color:#d3d3d3; }
+
+/*.lrlemind { color: #ccc; }
+b { font-weight: bold; color: #000; }
+.sm { font-size: 70.7%; }
+.date { font-size: 70.7%; color: #393; }
+*/
+
+.left   {text-align:left;}
+.center {text-align:center;}
+.right  {text-align:right;}
+.c2 { text-align: center; font-size: 70.7%; color: #339; }
+
+/*.stats th { font-weight: normal; padding: 3px 15px; background-color: #f8f8f8; text-align: left } */
+ 
+/* Leaderboard */
+table .leaderboard { border-collapse: collapse; }
+table.leaderboard td { padding: 3px 15px; }
+tr.level td { border-top: 1px solid #ccc; }
+tr.level td.level { font-weight: bold; color: #000; }
+table.leaderboard th { font-weight: bold; text-align: left; padding: 3px 15px }
+/*
+.up { color: #0c0; font-size: 84%; text-align: center; padding-left: 2ex; }
+.down { color: #c00; font-size: 84%; text-align: center; padding-left: 2ex; }
+*/

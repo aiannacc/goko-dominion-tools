@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{ title }}</title>
+    <meta http-equiv="Content-Type" content="text/html";charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <script src="/static/jquery-1.9.1.js"></script>
+    <script src="/static/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="/static/jquery-ui-1.10.3.custom.js"></script>
+  </head>
+  <body>
+
+    <a href='/logsearch'>Log Search</a>
+    <a href='/kingdomvisualize'>Kingom Visualizer</a>
+    <a href='/leaderboard/'>Leaderboard</a>
+    <br>
+
+    <h2>Unofficial Goko TrueSkill Leaderboard</h2>
+
+    <p>
+
+    <!--table class=stats>
+      <tr>
+        <th></th>
+        <th class=r>All</th>
+        <th class=r>Yesterday</th>
+      </tr>
+      <tr>
+        <th class=b>Games</th>
+        <td>{{game_count_all}}</td>
+        <td>{{game_count_yesterday}}</td>
+      </tr>
+    </table-->
+
+    <p><a href="http://forum.dominionstrategy.com/index.php?topic=8891.msg269556#msg269556">Implementation details and discussion</a><p>
+    <p class=date>Generated at {{date_generated}}</p>
+
+    <hr>
+
+    {% if player_ratings %}
+    <table class=leaderboard>
+
+      <tr>
+        <th></th>
+        <th>TrueSkill</th>
+        <th>Rank</th>
+        <!--th>Games</th-->
+        <th>Goko Username</th>
+      </tr>
+
+      {% set last_level = None %}
+      {% for pr in player_ratings %}
+        <tr class=level>
+          <td class=level>
+              {% if pr['level'] != last_level %}
+              Level {{pr['level']}}
+              {% end %}
+              {% set last_level = pr['level'] %}
+          </td>
+          <td>{{pr['mu']}} &plusmn; {{pr['sigma']}}</td>
+          <td class=c2>
+            {{pr['rank']}}
+            <!--span class=up>
+              <span class=sm>
+                <{{pr['updown']}}>
+                UP: &#x25bc;>
+                DOWN: &#x25b2;>
+              </span>
+              <{{pr['updown_n']}}>
+            </span-->
+          </td>
+          <!--td class=c>{{pr['games']}}</td-->
+          <td>{{pr['pname']}}</td>
+        </tr>
+      {% end %}
+
+    </table>
+    {% end %}
+
+  </body>
+</html>
