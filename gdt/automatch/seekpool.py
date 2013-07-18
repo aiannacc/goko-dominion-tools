@@ -7,7 +7,7 @@ import bidict
 # This module
 from ..util import sync
 from ..model import match
-from .matchmaker import greedy
+from gdt.automatch.matchmaker.blind import BlindMatchmaker
 
 # Implicitly acquired and released by the @sync.synchronized decorator
 # TODO: should this be part of the class? i.e. object-specific?
@@ -48,7 +48,7 @@ class SeekPool:
         self.match = ~self.matchid
 
         # Default matchmaker is the simple "greedy" matchmaker
-        self.matchmaker = greedy.GreedyMatchmaker()
+        self.matchmaker = BlindMatchmaker()
 
     # A player submits a seek request.
     @sync.synchronized(lock)

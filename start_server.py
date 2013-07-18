@@ -1,10 +1,13 @@
 #!/usr/bin/python
 
+import os
+import subprocess
+import re
+import sys
+
 import tornado.web
 import tornado.template
 import tornado.ioloop
-
-import sys
 
 import gdt
 from gdt.ratings.leaderboard_handler import LeaderboardHandler
@@ -20,11 +23,12 @@ application = tornado.web.Application([
     (r"/kingdomvisualize/", KingdomHandler),
     (r"/leaderboard", LeaderboardHandler),
     (r"/leaderboard/", LeaderboardHandler),
-    (r"/automatch/", AutomatchManager)
+    (r"/automatch/", AutomatchManager),
 ], static_path="web/static")
 
 if __name__ == "__main__":
     port = int(sys.argv[-1])
+    #TODO: Kill Python server currently listening on <port>
     print('Starting server on port %d' % port)
     application.listen(port)
     print('Starting automatch service')

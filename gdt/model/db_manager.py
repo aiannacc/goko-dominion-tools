@@ -72,12 +72,14 @@ def search_log_filenames(p):
         p['s%d' % i] = (p['supply'][i]
                         if 'supply' in p and len(p['supply']) > i
                         else None)
+    del p['supply']
 
     # Cards in the not-in-supply list --> ns1, ns2, netc
     for i in range(0, 11):
         p['ns%d' % i] = (p['nonsupply'][i]
                          if 'nonsupply' in p and len(p['nonsupply']) > i
                          else None)
+    del p['nonsupply']
 
     # Solo games require a different query
     if 'pcount' in p and p['pcount'] == 1:
@@ -85,11 +87,11 @@ def search_log_filenames(p):
     else:
         sql = log_search_sql(p)
 
-    pprint.pprint(p)
+    # Print search for debugging purposes
+    #pprint.pprint(p)
 
     (ps, params) = prepare(_con, sql, p)
-    out = [r[0] for r in ps(*params)]
-    return out
+    return [r[0] for r in ps(*params)]
 
 
 def log_search_sql_solo(p):
@@ -198,7 +200,8 @@ def log_search_sql(p):
 
 
 def fetch_game_results(log_filenames):
-    """ Fetch supply, VPs per player, etc. Return a GameResult object. """
+    """ Fetch supply, VPs per player, etc. Return a GameResult object. 
+        Return results in the same order as the original log files"""
 
     ps = _con.prepare("""SELECT * FROM game g WHERE logfile = ANY($1)""")
     games = {}
@@ -221,7 +224,7 @@ def fetch_game_results(log_filenames):
             setattr(p, k, r[k])
         games[r['logfile']].presults[p.pname] = p
 
-    return games.values()
+    return [games[lf] for lf in log_filenames]
 
 
 def fetch_card_image_url(card):
