@@ -23,7 +23,7 @@ RE_NTURNS = re.compile('(.*) - turns: (\d*)')
 RE_QUIT = re.compile('(.*) - quit')
 RE_RESIGN = re.compile('(.*) - resigned')
 RE_PLACE = re.compile('([0-9]).. place: (.*)')
-RE_GUEST = re.compile('^guest[0-9]*')
+RE_GUEST = re.compile('/i^guest[._]?[0-9]*')
 RE_GAMEOVER = re.compile('--* Game Over --*')
 
 # TODO: fix this

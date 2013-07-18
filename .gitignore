@@ -7,3 +7,6 @@ __pycache__
 
 # Process ID files
 *.pid
+
+# VIM swap files
+.*.swp

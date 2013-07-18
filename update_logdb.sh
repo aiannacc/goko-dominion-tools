@@ -72,6 +72,7 @@ do
     [ -f _all ] && rm _all
     [ -f _old ] && rm _old
     [ -f _new ] && rm _new
+    [ -f index.html ] && rm index.html
 
     # Parse new logs into database
     cd $codedir

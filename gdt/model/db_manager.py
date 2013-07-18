@@ -137,7 +137,7 @@ def log_search_sql_solo(p):
            AND ({enddate}::date      IS NULL OR g.time < {enddate})
            AND ({rating}::varchar    IS NULL OR {rating} = g.rating
                 OR {rating} = 'pro+' AND g.rating IN ('pro', 'unknown'))
-         ORDER BY g.time DESC
+         ORDER BY time DESC
          LIMIT {limit}
         OFFSET {offset}"""
 
