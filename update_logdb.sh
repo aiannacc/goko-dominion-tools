@@ -18,12 +18,18 @@ USAGE='dbupdate <logdir> <codebase> <dates...>'
 if [ `hostname` = "iron" ]
 then
     LOGDIR=/mnt/raid/media/dominion/logs/
-    CODEBASE=/home/ai/code/goko-dominion-tools/
 else
     LOGDIR="$1"
-    CODEBASE="$2"
     shift
 fi
+
+# Default to today's date
+if [ $# -eq 0 ]
+then
+   set -- `date +%Y%m%d`
+fi
+
+codedir="`pwd`"
 
 # Iterate over all given dates
 while [ $# -gt 0 ]
@@ -68,8 +74,8 @@ do
     [ -f _new ] && rm _new
 
     # Parse new logs into database
-    cd "$CODEBASE"/logparse
-    ./log2db.py "$LOGDIR"/$1
+    cd $codedir
+    python log2db.py "$LOGDIR"/$1
     
     shift
 done

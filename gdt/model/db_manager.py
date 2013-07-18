@@ -43,6 +43,21 @@ def search_game_results(search):
     return fetch_game_results(search_log_filenames(search))
 
 
+def delete_logs(logfiles):
+    print(len(logfiles))
+    _con.prepare('DELETE FROM game WHERE logfile=$1').load_rows(logfiles)
+    _con.prepare('DELETE FROM presult WHERE logfile=$1').load_rows(logfiles)
+    #_con.prepare('DELETE FROM gain WHERE logfile=$1').load_rows(logfiles)
+    #_con.prepare('DELETE FROM ret WHERE logfile=$1').load_rows(logfiles)
+
+
+def search_daily_log_filenames(day):
+    start = day
+    end = day + datetime.timedelta(days=1)
+    sql = """SELECT logfile FROM game g WHERE g.time between $1 and $2"""
+    return [r[0] for r in _con.prepare(sql)(start, end)]
+
+
 def search_log_filenames(p):
     """ Fetch log filenames for matching games.
         - <p> is a dict of search parameters. Missing/None values ignored.
@@ -54,15 +69,18 @@ def search_log_filenames(p):
 
     # Cards in the supply list --> s1, s2, etc
     for i in range(0, 11):
-        p['s%d' % i] = (p['supply'][i] if len(p['supply']) > i else None)
+        p['s%d' % i] = (p['supply'][i]
+                        if 'supply' in p and len(p['supply']) > i
+                        else None)
 
     # Cards in the not-in-supply list --> ns1, ns2, netc
     for i in range(0, 11):
-        p['ns%d' % i] = (p['nonsupply'][i] if len(p['nonsupply']) > i 
-                                           else None)
+        p['ns%d' % i] = (p['nonsupply'][i]
+                         if 'nonsupply' in p and len(p['nonsupply']) > i
+                         else None)
 
-    # Solo games require a different query 
-    if p['pcount'] == 1:
+    # Solo games require a different query
+    if 'pcount' in p and p['pcount'] == 1:
         sql = log_search_sql_solo(p)
     else:
         sql = log_search_sql(p)
@@ -165,7 +183,8 @@ def log_search_sql(p):
            AND ({minturns}::smallint IS NULL
                 OR {minturns} <= GREATEST(p1.turns, p2.turns))
            AND ({quit}::boolean     IS NULL OR {quit} = (p1.quit OR p2.quit))
-           AND ({resign}::boolean   IS NULL OR {resign} = (p1.resign OR p2.resign))
+           AND ({resign}::boolean   IS NULL
+                OR {resign} = (p1.resign OR p2.resign))
            AND ({rating}::varchar   IS NULL OR {rating} = g.rating
                 OR {rating} = 'pro+' AND g.rating IN ('pro', 'unknown'))
            AND ({startdate}::date IS NULL OR g.time > {startdate})
@@ -245,15 +264,18 @@ def search_all_2p_scores(limit, time, logfile):
 def fetch_all_ratings():
     mu_sig = {}
     # TODO: Fix the Boodaloo problem more elegantly
-    for (p,m,s) in _con.query("""SELECT pname, mu, sigma 
+    for (p, m, s) in _con.query("""SELECT pname, mu, sigma
                                    FROM ts_rating
                                   WHERE pname != 'Boodaloo'"""):
         mu_sig[p] = {'mu': m, 'sigma': s}
     return mu_sig
-        
+
+def fetch_last_rated_log_time():
+    return _con.query.first("""SELECT max(time) from ts_rating""")
+
 
 def get_rating(pname):
-    ps =  _con.prepare("""SELECT mu, sigma
+    ps = _con.prepare("""SELECT mu, sigma
                             FROM ts_rating
                            WHERE pname=$1
                            ORDER BY time DESC""")
@@ -315,60 +337,69 @@ def inserts(games):
 
         # Copy values from GameResult object.
         gd = {}
-        for k in ['time', 'logfile', 'supply', 'colony', 'shelters', 'pcount',
-                  'plist', 'bot', 'guest', 'rating', 'adventure']:
+        game_keys = ['time', 'logfile', 'supply', 'colony', 'shelters', 'pcount',
+                     'plist', 'bot', 'guest', 'rating', 'adventure']
+        for k in game_keys:
             gd[k] = getattr(g, k, None)
         gd['supply'] = ', '.join(g.supply)
         gd['plist'] = ', '.join(list(g.presults.keys()))
         gd['pcount'] = len(g.presults)
-        rows['game'].append(gd.getKeys() + gd.values())
+        rows['game'].append([gd[k] for k in game_keys])
 
         # Copy values from PlayerResult object.
         for pname in g.presults:
-            pd = {}
-            for k in ['pname', 'vps', 'turns', 'rank', 'quit', 'order',
-                      'resign', 'logfile', 'pcount', 'pname_lower']:
-                pd[k] = getattr(ret, k, None)
             p = g.presults[pname]
-            pd = dict(pres_keys, [getattr(p, k, None) for k in pres_keys])
+            pd = {}
+            pres_keys = ['pname', 'vps', 'turns', 'rank', 'quit',
+                         'resign', 'logfile', 'pcount', 'pname_lower']
+            for k in pres_keys:
+                pd[k] = getattr(p, k, None)
             pd['pcount'] = len(g.presults)
             pd['pname_lower'] = pname.lower()
             pd['logfile'] = g.logfile
-            rows['pres'].append(pd.getKeys() + pd.values())
+            rows['pres'].append([pd[k] for k in pres_keys])
 
-        # Copy values from GainRet object.
-        for gain in g.gains:
-            gaind = {}
-            for k in ['logfile', 'cname', 'cpile', 'pname', 'turn']:
-                gaind[k] = getattr(ret, k, None)
-            gaind['logfile'] = g.logfile
-            rows['gain'].append(gaind.getKeys() + gaind.values())
+        ## Copy values from GainRet object.
+        #for gain in g.gains:
+        #    gaind = {}
+        #    gain_keys = ['logfile', 'cname', 'cpile', 'pname', 'turn']
+        #    for k in gain_keys:
+        #        gaind[k] = getattr(gain, k, None)
+        #    gaind['logfile'] = g.logfile
+        #    rows['gain'].append([gaind[k] for k in gain_keys])
 
-        # Copy values from GainRet object.
-        for ret in g.rets:
-            retd = {}
-            for k in ['logfile', 'cname', 'cpile', 'pname', 'turn']:
-                retd[k] = getattr(ret, k, None)
-            retd['logfile'] = g.logfile
-            rows['ret'].append(retd.getKeys() + retd.values())
+        ## Copy values from GainRet object.
+        #for ret in g.rets:
+        #    retd = {}
+        #    ret_keys = ['logfile', 'cname', 'cpile', 'pname', 'turn']
+        #    for k in ret_keys:
+        #        retd[k] = getattr(ret, k, None)
+        #    retd['logfile'] = g.logfile
+        #    rows['ret'].append([retd[k] for k in ret_keys])
 
     # Insert game data
-    _con.prepare("""INSERT INTO game ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-                    VALUES ($12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)""")\
-        .load_rows(game_arr)
+    sql = """INSERT INTO game (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+          """ % tuple(game_keys)
+    _con.prepare(sql).load_rows(rows['game'])
 
     # Insert player data
-    _con.prepare("""INSERT INTO pres ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-                    VALUES ($11,$12,$13,$14,$15,$16,$17,$18,$19,$20)""")\
-        .load_rows(pres_arr)
+    sql = """INSERT INTO presult (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+          """ % tuple(pres_keys)
+    _con.prepare(sql).load_rows(rows['pres'])
 
-    # Insert card gained data
-    _con.prepare("""INSERT INTO gain ($1,$2,$3,$4,$5)
-                    VALUES ($6,$7,$8,$9,$10)""").load_rows(gain_arr)
+    ## Insert card gained data
+    #sql = """INSERT INTO gain (%s,%s,%s,%s,%s)
+    #                VALUES ($1,$2,$3,$4,$5)
+    #      """ % tuple(gain_keys)
+    #_con.prepare(sql).load_rows(rows['gain'])
 
-    # Insert card returned data
-    _con.prepare("""INSERT INTO ret ($1,$2,$3,$4,$5)
-                    VALUES ($6,$7,$8,$9,$10)""").load_rows(ret_arr)
+    ## Insert card returned data
+    #sql = """INSERT INTO gain (%s,%s,%s,%s,%s)
+    #                VALUES ($1,$2,$3,$4,$5)
+    #      """ % tuple(gain_keys)
+    #_con.prepare(sql).load_rows(rows['ret'])
 
 
 def insert_ratings(rating_history):

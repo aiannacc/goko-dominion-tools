@@ -4,11 +4,11 @@ import datetime
 import sys
 
 # Project modules
-import dbmgr
-from .gokoconstants import *
-from .domgame import GameResult
-from .domgame import PlayerResult
-from .domgame import GainRet
+from gdt.model import db_manager
+from gdt.model.constants import *
+from gdt.model.domgame import GameResult
+from gdt.model.domgame import PlayerResult
+from gdt.model.domgame import GainRet
 
 # Regular expressions used to parse goko logs.  Precompiled for speed.
 RE_RATING = re.compile('Rating system: (.*)')
@@ -26,7 +26,9 @@ RE_PLACE = re.compile('([0-9]).. place: (.*)')
 RE_GUEST = re.compile('^guest[0-9]*')
 RE_GAMEOVER = re.compile('--* Game Over --*')
 
-advopps = dbmgr.get_advbot_names()
+# TODO: fix this
+# advopps = db_manager.get_advbot_names()
+advopps = []
 
 
 class WrongPlacesException(Exception):

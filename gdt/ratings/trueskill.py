@@ -9,7 +9,7 @@ from ..model import db_manager
 dominion_env = trueskill.TrueSkill(draw_probability=0.0175, backend='scipy')
 
 
-def alt_rate(ra, rb, score):
+def rate(ra, rb, score):
     if score == 1:
         return trueskill.rate_1vs1(ra, rb, env=dominion_env)
     elif score == -1:

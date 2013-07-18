@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Base Python modules
 import time
 import json
@@ -14,9 +12,9 @@ import tornado.ioloop
 import tornado.httpserver
 
 # Other automatch modules
+from ..model import match
 from . import seekpool
-from . import match
-from . import sync
+from ..util import sync
 
 # Implicitly acquired and released by the @sync.synchronized decorator
 # TODO: should this be part of the class? i.e. object-specific?
@@ -31,6 +29,7 @@ debug = True
 # WebSocketHandler for communication between clients and the AutomatchManager
 #
 class AutomatchWSH(tornado.websocket.WebSocketHandler):
+
     def open(self):
         debug and print('Connection opened')
         pname = self.get_argument('pname')
@@ -178,36 +177,36 @@ class AutomatchManager():
         # Generate and offer new matches.
         self.pool.gen_and_offer_new_matches()
 
-if __name__ == '__main__':
-    # Run on requested port or on default
-    try:
-        port = int(sys.argv[-1])
-    except:
-        port = DEFAULT_PORT
-
-    # Close the existing server process, if any.
-    if os.path.exists('automatch.pid'):
-        f = open('automatch.pid', 'r')
-        pid = int(f.readline())
-        try:
-            print('Stopping old Automatch server.')
-            os.kill(pid, signal.SIGTERM)
-        except:
-            pass
-        os.remove('automatch.pid')
-
-    # Cache the new process id.
-    f = open('automatch.pid', 'w')
-    f.write("%d" % os.getpid())
-    f.close()
-
-    # Run the manager's matching algorithm every 5 seconds
-    tornado.ioloop.PeriodicCallback(
-        AutomatchManager.instance().do_matching, LOOP_MS).start()
-
-    # Start Automatch server and keep it running indefinitely
-    print('Starting Automatch server on port %d.' % port)
-    application = tornado.web.Application([(r'/ws', AutomatchWSH)])
-    http_server = tornado.httpserver.HTTPServer(application)
-    http_server.listen(port)
-    tornado.ioloop.IOLoop.instance().start()
+#if __name__ == '__main__':
+#    # Run on requested port or on default
+#    try:
+#        port = int(sys.argv[-1])
+#    except:
+#        port = DEFAULT_PORT
+#
+#    # Close the existing server process, if any.
+#    if os.path.exists('automatch.pid'):
+#        f = open('automatch.pid', 'r')
+#        pid = int(f.readline())
+#        try:
+#            print('Stopping old Automatch server.')
+#            os.kill(pid, signal.SIGTERM)
+#        except:
+#            pass
+#        os.remove('automatch.pid')
+#
+#    # Cache the new process id.
+#    f = open('automatch.pid', 'w')
+#    f.write("%d" % os.getpid())
+#    f.close()
+#
+#    # Run the manager's matching algorithm every 5 seconds
+#    tornado.ioloop.PeriodicCallback(
+#        AutomatchManager.instance().do_matching, LOOP_MS).start()
+#
+#    # Start Automatch server and keep it running indefinitely
+#    print('Starting Automatch server on port %d.' % port)
+#    application = tornado.web.Application([(r'/ws', AutomatchWSH)])
+#    http_server = tornado.httpserver.HTTPServer(application)
+#    http_server.listen(port)
+#    tornado.ioloop.IOLoop.instance().start()

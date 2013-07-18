@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Base
 import threading
 
@@ -7,9 +5,9 @@ import threading
 import bidict
 
 # This module
-from . import sync
-from . import match
-from . import greedymm
+from ..util import sync
+from ..model import match
+from .matchmaker import greedy
 
 # Implicitly acquired and released by the @sync.synchronized decorator
 # TODO: should this be part of the class? i.e. object-specific?
@@ -50,7 +48,7 @@ class SeekPool:
         self.match = ~self.matchid
 
         # Default matchmaker is the simple "greedy" matchmaker
-        self.matchmaker = greedymm.GreedyMatchmaker()
+        self.matchmaker = greedy.GreedyMatchmaker()
 
     # A player submits a seek request.
     @sync.synchronized(lock)

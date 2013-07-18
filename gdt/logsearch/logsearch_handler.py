@@ -65,7 +65,11 @@ class SearchHandler(tornado.web.RequestHandler):
 
         #print(arg)
         #print(arg_str)
-        # TODO: log search request
+
+        # TODO: log the logsearch request
+
+        # Make end date inclusive
+        arg['enddate'] = arg['enddate'] + datetime.timedelta(days=1)
 
         # Parse the kingdom search field
         (sup, shel, col, err) = self.parse_supply(arg_str['supply'])

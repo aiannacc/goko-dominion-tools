@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
+import pytz
 
 import tornado.web
 import tornado.template
@@ -34,11 +35,15 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             rank = rank - 1
         prs = reversed(prs)
 
+        last_log_time = db_manager.fetch_last_rated_log_time()
+        last_log_time = pytz.timezone('US/Pacific').localize(last_log_time)
+        last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
+
         loader = tornado.template.Loader(".")
         self.write(loader.load("web/leaderboard.html").generate(
             title='Unofficial Goko TrueSkill Leaderboard',
             game_count_all=None,
             game_count_yesterday=None,
-            date_generated=datetime.datetime.now(),
+            date_updated=last_log_time_str,
             player_ratings=prs
         ))

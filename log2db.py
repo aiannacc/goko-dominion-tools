@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 # Base modules
-from datetime import datetime
 import postgresql.exceptions
 import sys
 import re
@@ -9,27 +8,30 @@ import os
 import traceback
 import gzip
 import time
+import datetime
 
 # Project modules
-sys.path.append('../db')
-from ..model.dominiongame import GameResult
-from ..model import db_manager
-import .gokoparse
+import gdt
+from gdt.model import db_manager
+from gdt.logparse import gokoparse
 
 RE_LOGNAME = re.compile(".*(log\.(.*)\.(.*)\.txt)")
 
+# TODO: Kill this class entirely, along with update_logdb.sh
+
 # For command-line
 # Usage: ./log2db.py <logdir>
-# Note: about .06s/log: .03s for db, .015 for parsing, .015 for file access
 if __name__ == "__main__":
     logdir = sys.argv[1]
     print(logdir)
     m = re.match('.*/?(201.....)/?$', logdir)
     day_str = m.group(1)
     print(day_str)
-    date = datetime.strptime(day_str, '%Y%m%d')
+    date = datetime.datetime.strptime(day_str, '%Y%m%d')
 
-    dblogs = set(dbmgr.list_logs(date))
+    # Figure out which logs are already in the database for this day
+    dblogs = set(db_manager.search_daily_log_filenames(date))
+
     filelogs = set(os.listdir(logdir))
     newlogs = filelogs - dblogs
     print("%d old logs and %d new logs" % (len(dblogs), len(newlogs)))
@@ -37,13 +39,15 @@ if __name__ == "__main__":
     start_time = time.time()
     n = 0
     games = []
+    print(len(newlogs))
     for logfile in newlogs:
+        games = []
         logfile_full = sys.argv[1] + '/' + logfile
         try:
             m = RE_LOGNAME.match(logfile)
             logfile = m.group(1)
             loghash = m.group(2)
-            logtime = datetime.fromtimestamp(int(m.group(3))/1000)
+            logtime = datetime.datetime.fromtimestamp(int(m.group(3))/1000)
 
             try:
                 logtext = open(logfile_full, encoding='utf-8').read()
@@ -57,27 +61,29 @@ if __name__ == "__main__":
             game.time = logtime
 
             games.append(game)
-            if len(games) % 10 == 0:
-                dbmgr.inserts(games)
+            if len(games) % 100 == 0:
+                db_manager.inserts(games)
                 games = []
-                elapsed_time = time.time() - start_time
-                n += 10
-                print(n, elapsed_time, elapsed_time/n)
         except gokoparse.WrongPlacesException:
             print("WrongPlacesException in %s.  Fuck you, Goko." % logfile)
+            games = []
         except gokoparse.TurnCountException:
             print("TurnCountException in %s.  Fuck you, Goko." % logfile)
+            games = []
         except postgresql.exceptions.UniqueError:
             print("UniqueError in %s" % logfile)
+            games = []
         except:
             print('Exception handling %s/%s' % (logdir, logfile))
+            games = []
             raise
     for g in games:
         g_arr = [g]
+        games = []
         try:
-            dbmgr.inserts(g_arr)
+            db_manager.inserts(g_arr)
         except postgresql.exceptions.UniqueError:
-            print("UniqueError in %s" % logfile)
+            print("(post) UniqueError in %s" % logfile)
         except:
-            print('Exception handling %s/%s' % (logdir, logfile))
+            print('(post) Exception handling %s/%s' % (logdir, logfile))
             raise

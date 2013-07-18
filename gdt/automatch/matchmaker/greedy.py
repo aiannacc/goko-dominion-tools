@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-import match
+from gdt.model.match import Match
+from gdt.model.match import Matchmaker
 
 
-class GreedyMatchmaker(match.Matchmaker):
+class GreedyMatchmaker(Matchmaker):
     def generate_matches(self, seeks):
         return []
