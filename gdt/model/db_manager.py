@@ -85,6 +85,8 @@ def search_log_filenames(p):
     else:
         sql = log_search_sql(p)
 
+    pprint.pprint(p)
+
     (ps, params) = prepare(_con, sql, p)
     out = [r[0] for r in ps(*params)]
     return out
@@ -92,7 +94,7 @@ def search_log_filenames(p):
 
 def log_search_sql_solo(p):
     # Parameterized search statement.
-    return """SELECT DISTINCT logfile
+    return """SELECT DISTINCT logfile, time
                FROM game g
                JOIN presult p1 USING(logfile)
          WHERE ({p1name}::varchar IS NULL
@@ -133,13 +135,14 @@ def log_search_sql_solo(p):
            AND ({enddate}::date      IS NULL OR g.time < {enddate})
            AND ({rating}::varchar    IS NULL OR {rating} = g.rating
                 OR {rating} = 'pro+' AND g.rating IN ('pro', 'unknown'))
+         ORDER BY g.time DESC
          LIMIT {limit}
         OFFSET {offset}"""
 
 
 def log_search_sql(p):
     # Parameterized search statement.
-    return """SELECT DISTINCT logfile
+    return """SELECT DISTINCT logfile, time
                FROM game g
                JOIN presult p1 USING(logfile)
                JOIN presult p2 USING(logfile)
@@ -189,6 +192,7 @@ def log_search_sql(p):
                 OR {rating} = 'pro+' AND g.rating IN ('pro', 'unknown'))
            AND ({startdate}::date IS NULL OR g.time > {startdate})
            AND ({enddate}::date IS NULL OR g.time < {enddate})
+         ORDER BY time DESC
          LIMIT {limit}
         OFFSET {offset}"""
 
