@@ -8,13 +8,11 @@ Features:
 - Log Parsing/Database
 - Log Search
 - Kingdom Visualizer
-- Leaderboard scraping
+- Trueskill Leaderboard
 
 Work in Progress:
 
 - Automatch browser extension
-- alternative rating systems
-- Goko ratings analysis
 
 Contributions are welcome.
 
@@ -24,8 +22,12 @@ You'll need Python v3.3.2+ and the following PyPi packages:
 
 - beautifulsoup4 (4.2.1)
 - bidict (0.1.1)
+- numpy (1.7.1)
 - py-postgresql (1.1.0)
+- pytz (2013b)
+- scipy (0.12.0)
 - tornado (3.1)
+- trueskill (0.4.1)
 
 You can either connect to a remote database of parsed games or create your own. To create your own, you'll also need PostgreSQL. The log download and parsing script requires a \*NIX environment with bash, perl, zcat, split, and wget.
 
@@ -33,28 +35,29 @@ You can either connect to a remote database of parsed games or create your own. 
 
 #### Remote
 
-The default configuration is to connect to the PostgreSQL server at gokologs.drunkensailor.org, which has all the games played on Goko and updates every 15 minutes.
-
-This is the same machine that hosts the log search and kingdom visualizer. If you want to run something that's really IO-intensive, like dumping the whole DB to your own machine, please let me know first.
+The default configuration is to connect to the PostgreSQL server at gokologs.drunkensailor.org, which has all the games played on Goko and updates every 15 minutes. Configuration information is in `gdt/model/db_manager`.
 
 #### Local
 
 To create your own database, install PostgreSQL and create a database with UTF-8 encoding. Then create the database schema:
 
-    $ psql -d goko < db/schema.sql
+    $ psql -d goko < misc/db/schema.sql
 
-To download and parse logs from the Goko log archive: 
+Import the non-game info into your database (bot names, etc):
 
-    $ bash logparse/dbupdate.sh <logdir> <codebase> <dates>
+    $ psql -d goko < misc/db_initdata/*
 
-where `<logdir>` is the local directory where you want to store unparsed logs, `<codebase>` is this project's root, and `<dates>` are formatted like YYYYMMDD.
+Download and parse logs from the Goko log archive: 
 
-Games before May 13, 2013 don't include rating system information, but we can deduce which games were played in 'adventure' mode using the names of the players:
+    $ bash update_logdb.sh <logdir> <codebase> <dates>
 
-    $ psql -d goko < db/list_adventure_bots.sql
+where `<logdir>` is the local directory where you want to store unparsed logs, `<codebase>` is this project's root, and `<dates>` are formatted like YYYYMMDD. You'll have to run this for each day. The import process is IO-bound on a modern machine. An SSD drive helps a lot. As of July 2013, the full database is about 100G.
+
 
 ### Server setup
 
-You can run the log search and kingdom visualizer server like:
+Start the server:
 
-    $ python logsearch/requesthandler.py <port>
+    $ python ./start_server.py <port>
+
+Go to http://localhost:<port> to use the logsearch, kingdom visualizer, and leaderboard. The automatch server runs on the same port but has no UI.
