@@ -33,7 +33,7 @@ class SearchHandler(tornado.web.RequestHandler):
             'maxturns': '',
             'rating': 'pro+',
             'quit': 'false',
-            'resign': 'false',
+            'resign': '',
             'startdate': '08/05/2012',
             'enddate': datetime.datetime.now().strftime('%m/%d/%Y'),
             'limit': '20',
@@ -102,6 +102,12 @@ class SearchHandler(tornado.web.RequestHandler):
             arg_str['limit'] = 1000
             self.show_error("""Really? 1000 results at a time isn't
                             enough?""", arg_str)
+            return
+
+        # Don't do an overly-imprecise non-indexed search
+        if (not arg['p1name'] and not arg['p2name'] and not arg['supply']):
+            self.show_error("""Please enter a player name or a kingdom""", 
+                            arg_str)
             return
 
         # Don't do an overly-precise non-indexed search
