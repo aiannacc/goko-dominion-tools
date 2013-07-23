@@ -5,137 +5,71 @@
     <meta charset="utf-8" />
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <script src="/static/jquery-1.9.1.js"></script>
-    <script>
-      $(document).ready(function () 
-      {
-        var ws
-
-        $("#connect").click(function(evt) { 
-          evt.preventDefault()
-          console.log('Connecting')
-          ws = new WebSocket("ws://iron:8080/ws");
-
-          ws.onopen = function(evt) {
-            console.log(evt);
-            $("#connect").attr('disabled',true);
-            $("#ping").attr('disabled',false);
-            $("#submit_request").attr('disabled',false);
-          };
-
-          ws.onclose = function(evt) {
-            console.log(evt);
-            $("#connect").attr('disabled',false);
-            $("#ping").attr('disabled',true);
-            $("#submit_request").attr('disabled',true);
-            $("#cancel_request").attr('disabled',true);
-          };
-
-          ws.onmessage = function(evt) {
-            var message = JSON.parse(evt.data);
-            console.log(message)
-            switch(message.msgtype)
-            {
-              case 'offer_match':
-                $('#match_offer').val(JSON.stringify(message.match));
-                $('#accept_match').attr('disabled',false);
-                $('#decline_match').attr('disabled',false);
-                break;
-              case 'notify_match_accepted':
-                $('#match_offer').val('Begin match');
-                $('#accept_match').attr('disabled',true);
-                $('#decline_match').attr('disabled',true);
-                break;
-              case 'notify_match_declined':
-                $('#match_offer').val('Match declined by ' + message.decliner_pname);
-                $('#accept_match').attr('disabled',true);
-                $('#decline_match').attr('disabled',true);
-                break;
-              case 'cancel_offer':
-                $('#match_offer').val('');
-                $('#accept_match').attr('disabled',true);
-                $('#decline_match').attr('disabled',true);
-                break;
-            }
-          };
-        });
-
-        $("#ping").click(function(evt) { 
-          console.log('Submitting Ping');
-          var message = {msgtype: 'ping'};
-          ws.send(JSON.stringify(message));
-        });
-
-        $("#submit_request").click(function(evt) { 
-          console.log('Requesting Match');
-          var pname = $("#pname").val();
-          var rating = parseInt($("#rating").val());
-          var rdiff = parseInt($("#rdiff").val());
-
-          var num_players = [2,4,6];
-          var sets_owned  = ['B','DA'];
-          var sets_wanted = ['B','DA'];
-
-          var request = {
-            pname:pname, 
-            rating:rating, 
-            rdiff:rdiff, 
-            num_players:num_players,
-            sets_owned:sets_owned,
-            sets_wanted:sets_wanted
-          };
-          var message = {msgtype: 'submit_request', request: request};
-          ws.send(JSON.stringify(message));
-
-          console.log(message);
-
-          $("#submit_request").attr('disabled',true);
-          $("#cancel_request").attr('disabled',false);
-        });
-
-        $("#cancel_request").click(function(evt) { 
-          console.log('Canceling match request');
-          var message = {msgtype: 'cancel_request'};
-          ws.send(JSON.stringify(message));
-
-          $("#submit_request").attr('disabled',false);
-          $("#cancel_request").attr('disabled',true);
-        });
-
-        $("#accept_match").click(function(evt) { 
-          console.log('Accepting match')
-        });
-
-        $("#decline_match").click(function(evt) { 
-          console.log('Canceling match')
-        });
-      });
-    </script>
+    <script src="/static/automatch_client.js"></script>
+    <script src="/static/automatch_testclient.js"></script>
+    <style>
+      td input {width:100%}
+    </style>
   </head>
 
   <body>
-    <div>
-      <input type="submit" id="connect" value="Connect" />
-      <input type="submit" id="ping" value="Ping" disabled />
+      <h3>Automatch Test Client</h3>
+
+      <!-- Identify player -->
       <table>
         <tr>
           <td> <label>Player Name:</label> </td>
-          <td> <input type="text" id="pname" value="AI" /> </td>
-          <td> <label>Num Players:</label> </td>
-          <td> <input type="number" id="num_players" value="1000" /><br /> </td>
+          <td> <input type="text" id="pname" value="AI" size="10"/> </td>
+          <td> <label>Pro Rating:</label> </td>
+          <td> <input type="number" id="pro_rating" value="4000" size="4"/> </td>
         </tr>
+
         <tr>
-          <td> <label>Rating:</label> </td>
-          <td> <input type="number" id="rating" value="4000" /><br /> </td>
-          <td> <label>Max RDiff</label> </td>
-          <td> <input type="number" id="rdiff" value="1000" /><br /> </td>
+          <td> <label>Owns Cards:</label> </td>
+          <td> <input type="checkbox" id="all_cards" /> </td>
+          <td> <label>Casual Rating:</label> </td>
+          <td> <input type="number" id="casual_rating" value="4000" size="4"/> </td>
         </tr>
       </table>
-      <input type="submit" id="submit_request" value="Submit Request" disabled />
-      <input type="submit" id="cancel_request" value="Cancel Request" disabled /><br/>
-      <textarea id="match_offer" cols="50" rows="3"></textarea><br/>
-      <input type="submit" id="accept_match" value="Accept" disabled />
-      <input type="submit" id="decline_match" value="Decline" disabled /><br/>
-    </div>
-  </body>
 
+      <table>
+        <tr> <!-- Connect/Disconnect -->
+          <td colspan=2> <input type="submit" id="connect" value="Connect" /> </td>
+          <td colspan=2> <input type="submit" id="ping" value="Ping" /> </td>
+          <td colspan=2> <input type="submit" id="disconnect" value="Disconnect" /> </td>
+        </tr>
+
+        <tr> <!-- Seek Request -->
+          <td> <label>Num Players:</label> </td>
+          <td> <input type="number" id="num_players" value="2" size="1"/> </td>
+        </tr>
+
+        <tr>
+          <td> <label>Max Diff</label> </td>
+          <td> <input type="number" id="rdiff" value="1000" size="4"/>  </td>
+        </tr>
+      </table>
+
+      <table>
+        <tr>
+          <td> <input type="submit" id="submit_seek" value="Submit Request" /> </td>
+          <td> <input type="submit" id="cancel_seek" value="Cancel Request" /> </td>
+        </tr>
+
+        <tr> <!-- Respond to match offer -->
+          <td> <input type="submit" id="accept_offer" value="Accept" /> </td>
+          <td> <input type="submit" id="decline_offer" value="Decline" /> </td>
+          <td> <input type="submit" id="unaccept_offer" value="Unaccept" /> </td>
+        </tr>
+
+        <tr> <!-- Respond to game announcement -->
+          <td> <input type="submit" id="game_started" value="Game Started" /> </td>
+          <td> <input type="submit" id="game_failed" value="Game Failed" /> </td>
+          <td> <input type="submit" id="cancel_game" value="Cancel Game" /> </td>
+        <tr>
+      </table>
+
+      <!-- Show info --> 
+      <textarea id="info" cols="50" rows="3"></textarea><br/>
+  </body>
 </html>

@@ -1,212 +1,205 @@
-# Base Python modules
-import time
-import json
 import threading
-import os
-import io
+import time
+import logging
 
-# Third party modules
-import bidict
-import tornado.websocket
 import tornado.ioloop
-import tornado.httpserver
 
-# Other automatch modules
-from ..model import match
-from . import seekpool
-from ..util import sync
+from gdt.automatch.matchmaker.blind import BlindMatchmaker
+from gdt.util.sync import synchronized
 
-# Implicitly acquired and released by the @sync.synchronized decorator
-# TODO: should this be part of the class? i.e. object-specific?
+TIMEOUT = 2*1000
+PERIOD = 5*1000
+
+# For synchronization. Can be acquired multiple times by the same thread, but a
+# second thread has to wait.
 lock = threading.RLock()
 
-DEFAULT_PORT = 8080
-LOOP_MS = 5000
 
-debug = True
-
-
-# WebSocketHandler for communication between clients and the AutomatchManager
+# This class controls the execution flow of the automatch server. It
+# is responsible for integrating client communication with the matching cycle.
+# All methods are synchronized, but messages from players can still get lost or
+# cross with messages from the server, or can get lost or arrive out of order.
+# This class deals with all of the edge cases and race conditions that can
+# occur.
 #
-class AutomatchWSH(tornado.websocket.WebSocketHandler):
-
-    def open(self):
-        debug and print('Connection opened')
-        pname = self.get_argument('pname')
-        AutomatchManager.instance().add_client(self, pname)
-
-    def on_close(self):
-        debug and print('Connection closed')
-        AutomatchManager.instance().rem_client(self)
-
-    # Call the AM method named _xxx, where xxx is the message's 'msgtype'
-    def on_message(self, message_str):
-        debug and print('Message received')
-        message = json.loads(message_str)
-        method = getattr(AutomatchManager, message['msgtype'])
-        method(self, message)
-
-
-# Singleton that handles communication with automatch clients, scheduling of
-# match generation, and timeouts.
-#
-# This class should encapsulate all of the communication with clients, but none
-# of the seek/match logic. This class is thread-safe, but calling methods out
-# of order can still throw errors. It is the client's responsibility to use
-# callbacks and blocking to avoid this.
+# TODO: should this be a singleton and not the AutomatchCommunicator?
+# TODO: implement a real matchmaker
+# TODO: allow match offer timeout to differ from the matchmaking cyle's period.
 #
 class AutomatchManager():
-    _instance = None
 
-    # Retreive or create the singleton instance
-    @staticmethod
-    def instance():
-        if AutomatchManager._instance is None:
-            AutomatchManager._instance = AutomatchManager(seekpool.SeekPool())
-        return AutomatchManager._instance
+    def __init__(self, automatch_communicator):
 
-    # TODO: Make this a real singleton <?>
-    def __init__(self, pool):
+        self.seeks = {}      # Unmatched seeks, by seekid
+        self.offers = {}     # Outstanding offers, by matchid
+        self.games = {}      # Announced but unstarted games, by matchid
+        self.last_ping = {}  # Most recent ping time, by player name
 
-        # Helper that handles the seek/match logic
-        self.pool = pool
+        # Start matchmaking cycle
+        self.matchmaker = BlindMatchmaker()
+        tornado.ioloop.PeriodicCallback(self.do_matchmaking, PERIOD).start()
 
-        # Bijection mapping between handlers and player names
-        self.wsh = bidict.bidict({})
-        self.pname = ~self.wsh
+        # For communicating with players
+        self.comm = automatch_communicator
 
-        # Mapping from player names to ping times
-        self.last_ping = {}
-        self.ping_timeout = 30
+    ############################
+    # Private Helper Functions #
+    ############################
 
-    ###########################################################################
-    # Client-initiated communication
-    # Methods are called by client's websockethandler
-    ###########################################################################
-    #
-    # Client connects. Map WSH to player name.
-    @sync.synchronized(lock)
-    def add_client(self, wsh, pname):
-        self.pname[wsh] = pname
+    def _rem_seek(self, seekid, reason):
+        """ Remove seek request. """
+        logging.info('Removing seek %s' % seekid)
+        self.seeks.pop(seekid, None)
+        # TODO: Maybe tell player his seek has been removed <?>
+
+    def _rem_offer(self, matchid, reason):
+        """ Remove match offer. Notify involved players. """
+        logging.info('Removing offer %s' % matchid)
+        o = self.offers.pop(matchid, None)
+        if o:
+            self.comm.rescind_offer(o, reason)
+
+    def _rem_game(self, matchid, reason):
+        """ Remove game. Notify involved players. """
+        logging.info('Removing game %s' % matchid)
+        g = self.games.pop(matchid, None)
+        if g:
+            self.comm.unannounce_game(g, reason)
+
+    def _rem_player(self, pname, reason):
+        """ Remove a player entirely: remove his seeks, cancel match offers and
+        unannounce games that involve him, remove his ping times. """
+        logging.info('Removing all for player %s' % pname)
+        self.last_ping.pop(pname, None)
+
+        seek_is_from_pname = lambda s: s.player.pname == pname
+        match_has_pname = lambda o: pname in o.get_pnames()
+
+        # Remove player's outstanding seeks.
+        for s in list(filter(seek_is_from_pname, self.seeks.values())):
+            self._rem_seek(s.seekid, reason)
+
+        # Remove player's outstanding match offers
+        for o in list(filter(match_has_pname, self.offers.values())):
+            self._rem_offer(o.matchid, reason)
+
+        # Remove player's announced games
+        for g in list(filter(match_has_pname, self.games.values())):
+            self._rem_game(g.matchid, reason)
+
+    ################################################
+    # Methods invoked by the AutomatchCommunicator #
+    ################################################
+
+    @synchronized(lock)
+    def ping(self, pname):
         self.last_ping[pname] = time.time()
+        self.comm.confirm_receipt(pname)
 
-    # Client disconnects or times out. Clean up.
-    @sync.synchronized(lock)
-    def rem_client(self, wsh):
-        if wsh in self.wsh.values():
-            pname = self.pname[wsh]
-            self.pool.rem_player(pname)
-            del self.wsh[pname]
-            del self.last_ping[pname]
+    @synchronized(lock)
+    def disconnected(self, pname):
+        self._rem_player(pname, 'Player %s disconnected' % pname)
 
-    # Client makes a seek request.
-    @sync.synchronized(lock)
-    def submit_seek(wsh, message):
-        #TODO parse message.seek into a Seek object, including Requirements
-        return NotImplemented
-        seek = message['seek']
-        self.pool.submit_seek(pname[wsh], seek)
+    @synchronized(lock)
+    def submit_seek(self, pname, seek):
+        self.seeks[seek.seekid] = seek
+        self.comm.confirm_seek(seek)
 
-    # Client cancels a seek request.
-    @sync.synchronized(lock)
-    def cancel_seek(wsh):
-        self.pool.cancel_seek(pname[wsh])
+    @synchronized(lock)
+    def cancel_seek(self, pname, seekid):
+        self._rem_seek(seekid, 'Seek canceled by player %s' % pname)
+        self.comm.confirm_receipt(pname)
 
-    @sync.synchronized(lock)
-    def accept_match(wsh, message):
-        self.pool.accept(pname[wsh], message['matchid'])
+    @synchronized(lock)
+    def accept_offer(self, pname, matchid):
+        """ Add player name to the set of players that have accepted the match
+        offer. If all involved players have accepted, announce game. """
+        logging.info('%s accepts offer %s' % (pname, matchid))
+        o = self.offers.get(matchid, None)
+        if o:
+            o.acceptors.add(pname)
+            if len(o.acceptors) == len(o.get_pnames()):
+                logging.info('All players accept offer %s' % matchid)
+                self.games[matchid] = o
+                self.offers.pop(matchid, None)
+                print(o.to_dict())
+                self.comm.announce_game(o)
+            else:
+                self.comm.confirm_receipt(pname)
 
-    @sync.synchronized(lock)
-    def cancel_accept(wsh, message):
-        self.pool.accept(pname[wsh], message['matchid'])
+    @synchronized(lock)
+    def decline_offer(self, pname, matchid):
+        """ Player <pname> has declined match offer <matchid>. Rescind it. """
+        msg = '%s declined the match.' % (pname)
+        self._rem_offer(matchid, msg)
 
-    @sync.synchronized(lock)
-    def decline_match(wsh, message):
-        self.pool.decline(pname[wsh], message['matchid'])
+    @synchronized(lock)
+    def unaccept_offer(self, pname, matchid):
+        """ Player <pname> has canceled his acceptance of match offer
+        <matchid>. Rescind the offer and/or cancel the game. """
+        msg = '%s declined the match' % (pname)
+        self._rem_offer(matchid, msg)
+        msg = '%s canceled the game' % (pname)
+        self._rem_game(matchid, msg)
 
-    @sync.synchronized(lock)
-    def ping(wsh, message):
-        self.last_ping[pname[wsh]] = datetime.datetime.now()
+    @synchronized(lock)
+    def game_started(self, pname, matchid):
+        """ Player tells server that the game has started. """
+        g = self.games.pop(matchid, None)
+        if g:
+            msg = 'Game %s started.' % matchid
+            self._rem_game(matchid, msg)
 
-    @sync.synchronized(lock)
-    def send_match_offer(self, match):
-        msg = MatchEncoder.encode({'msgtype': 'offer_match',
-                                   'match': match})
-        self.write_to_all(match.get_pnames(), msg)
+    @synchronized(lock)
+    def cancel_game(self, pname, matchid):
+        """ Player asks server to cancel the game. """
+        g = self.games.get(matchid, None)
+        if g:
+            msg = 'Game %s canceled by %s' % (matchid, pname)
+            self._rem_game(matchid, msg)
 
-    @sync.synchronized(lock)
-    def rescind_match_offer(self, match, reason):
-        msg = MatchEncoder.encode({'msgtype': 'rescind_match_offer',
-                                   'matchid': match.matchid,
-                                   'reason': reason})
-        self.write_to_all(match.get_pnames(), msg)
+    @synchronized(lock)
+    def game_failed(self, pname, matchid):
+        """ Player tells server that game failed to start. """
+        g = self.games.get(matchid, None)
+        if g:
+            msg = 'Game %s failed.' % (matchid)
+            self._rem_game(matchid, msg)
 
-    ###########################################################################
-    # Communication from server to clients
-    ###########################################################################
-    #
-    # Send the same message to each named player's client
-    @sync.synchronized(lock)
-    def write_to_all(self, pnames, msg):
-        for pname in pnames:
-            self.wsh[pname].write_message(msg)
+    ########################################
+    # Periodic matchmaking and maintenance #
+    ########################################
 
-    @sync.synchronized(lock)
-    def announce_match(self, match):
-        msg = MatchEncoder.encode({'msgtype': 'announce_match',
-                                   'match': match})
-        self.write_to_all(match.get_pnames(), msg)
-
-    @sync.synchronized(lock)
-    def cancel_match(self, match, reason):
-        self.lock.acquire()
-        msg = MatchEncoder.encode({'msgtype': 'unannounce_match',
-                                   'match': match.matchid,
-                                   'reason': reason})
-        for wsh in [self.wsh[p] for p in match.get_pnames()]:
-            wsh.write_message(msg)
-
-    @sync.synchronized(lock)
-    def do_matching(self):
-        # Remove players who have timed out
+    @synchronized(lock)
+    def do_matchmaking(self):
+        """ Remove timed-out players and match offers. Generate new offers. """
+        # Remove seeks, offers, etc for lagged-out players
         now = time.time()
         for pname in self.last_ping:
-            if now - self.last_ping[pname] > self.ping_timeout:
-                self._rem(pname)
+            if now - self.last_ping[pname] > TIMEOUT:
+                msg = 'Lost contact with %s' % pname
+                self._rem_player(pname, msg)
 
-        # Generate and offer new matches.
-        self.pool.gen_and_offer_new_matches()
+        # Remove outstanding (and now expired) match offers
+        #for match in self.offers.values():
+        #    msg = 'Match offer %s expired' % match.matchid
+        #    self._rem_offer(match, msg)
 
-#if __name__ == '__main__':
-#    # Run on requested port or on default
-#    try:
-#        port = int(sys.argv[-1])
-#    except:
-#        port = DEFAULT_PORT
-#
-#    # Close the existing server process, if any.
-#    if os.path.exists('automatch.pid'):
-#        f = open('automatch.pid', 'r')
-#        pid = int(f.readline())
-#        try:
-#            print('Stopping old Automatch server.')
-#            os.kill(pid, signal.SIGTERM)
-#        except:
-#            pass
-#        os.remove('automatch.pid')
-#
-#    # Cache the new process id.
-#    f = open('automatch.pid', 'w')
-#    f.write("%d" % os.getpid())
-#    f.close()
-#
-#    # Run the manager's matching algorithm every 5 seconds
-#    tornado.ioloop.PeriodicCallback(
-#        AutomatchManager.instance().do_matching, LOOP_MS).start()
-#
-#    # Start Automatch server and keep it running indefinitely
-#    print('Starting Automatch server on port %d.' % port)
-#    application = tornado.web.Application([(r'/ws', AutomatchWSH)])
-#    http_server = tornado.httpserver.HTTPServer(application)
-#    http_server.listen(port)
-#    tornado.ioloop.IOLoop.instance().start()
+        # Generate new match offers
+        for o in self.matchmaker.generate_matches(self.seeks.values()):
+            self.offers[o.matchid] = o
+            for s in o.seeks:
+                msg = 'Seek %s matched Match %s' % (s.seekid, o.matchid)
+                self.seeks.pop(s.seekid, None)
+            self.comm.offer_match(o)
+
+    ###################################################
+    # Communication with the server UI. For testting. #
+    ###################################################
+
+    def get_data(self):
+        data = {}
+        data['seeks'] = self.seeks
+        data['offers'] = self.offers
+        data['games'] = self.games
+        return data
