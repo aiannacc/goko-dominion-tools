@@ -4,7 +4,7 @@ from gdt.automatch.model import Match
 from gdt.automatch.model import Seek
 from gdt.automatch.model import Player
 from gdt.automatch.model import Requirement
-from gdt.automatch.model import Matchmaker
+from gdt.automatch.matchmaker.matchmaker import Matchmaker
 
 
 # Matches pairs of players without regard to their seek requirements

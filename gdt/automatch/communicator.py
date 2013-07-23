@@ -8,6 +8,7 @@ import tornado.web
 import tornado.websocket
 
 from gdt.automatch.model import Seek
+from gdt.automatch.model import Requirement
 from gdt.automatch.model import AutomatchEncoder
 from gdt.automatch.manager import AutomatchManager
 from gdt.util.sync import synchronized

@@ -1,24 +1,41 @@
 import uuid
 import json
+from gdt.automatch.requirement import Requirement
 
-# NOTE: None of these objects are meant to be immutable. They will be modified
-# on the client side, and equivalent objects may be received from the client
-# via JSON. Use their ids to identify them
+# NOTE: These objects are not guaranteed to be immutable. Use their unique ids
+# to identify them in hashes or client-server communication.
 
-# A Match is a collection of possibly-compatible seeks with a suggested host
-# and room. Its id is random.
+
+# A Match is a collection of possibly-compatible seeks plus the information
+# necessary to start a game on goko: rating system, host, and room. The
+# roomname may be provided later. The id is random.
+#
+# A Match can represent either a game offer or an actual game.
+#
 class Match:
-    def __init__(self, seeks, hostname):
+    def __init__(self, seeks, ratingsys, hostname, roomname=None):
         self.seeks = seeks
+        self.ratingsys = ratingsys
         self.hostname = hostname
-        self.roomname = None
+        self.roomname = roomname
         self.acceptors = set()
         self.matchid = uuid.uuid4().hex
+
+    # Verify that match satisfies requirements for all seeks
+    def is_match_ok():
+        if not self.ratingsys or not self.hostname:
+            return false
+        for s in self.seeks:
+            for r in s.requirements:
+                if not r.is_match_ok(m):
+                    return false
+        return true
 
     def to_dict(self):
         return {'seeks': [s.to_dict() for s in self.seeks],
                 'hostname': self.hostname,
                 'roomname': self.roomname,
+                'ratingsys': self.ratingsys,
                 'acceptors': list(self.acceptors),
                 'matchid': self.matchid}
 
@@ -68,8 +85,9 @@ class Player:
         return d
 
 
-# A rating object consists of Goko pro and casual ratings, and possibly
-# TrueSkill or other ratings derived elsewhere.
+# A player's Rating consists of his "official" Goko pro and casual ratings,
+# and possibly an unofficial iso-style TrueSkill or other rating system
+# provided by the CouncilRoom or drunkensailor server.
 class Rating:
     def __init__(self, goko_casual_rating, goko_pro_rating):
         self.goko_casual_rating = goko_casual_rating
@@ -86,29 +104,8 @@ class Rating:
         return d
 
 
-# A Requirement is a rule that determines whether a proposed match is
-# acceptable to the seeker. This is an abstract class.
-class Requirement():
-    def is_match_ok(match):
-        return NotImplemented
-
-    @staticmethod
-    def from_dict(self):
-        return NotImplemented
-
-    def to_dict(self):
-        return NotImplemented
-
-
-# A matchmaker generates Match objects from Seek objects. This is an abstract
-# class.
-class Matchmaker():
-    def generate_matches(self, seeks):
-        return NotImplemented
-
-
 # TODO: Implement JSONDecoder too
-# TODO: get rid of to_dict()
+# TODO: get rid of to_dict()?
 class AutomatchEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Match):

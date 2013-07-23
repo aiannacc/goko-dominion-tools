@@ -5,6 +5,7 @@ import logging
 import tornado.ioloop
 
 from gdt.automatch.matchmaker.blind import BlindMatchmaker
+from gdt.automatch.matchmaker.matchmaker import Matchmaker
 from gdt.util.sync import synchronized
 
 TIMEOUT = 2*1000
