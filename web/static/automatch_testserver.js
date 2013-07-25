@@ -13,29 +13,44 @@ match_to_vs = function(match) {
 
 update_ui = function(evt) {
   var data = JSON.parse(evt.data);
+  console.log(data);
+  if (data.msgtype == 'server_state') {
+    data = data.server_data
+  } else {
+    return
+  }
+
+  console.log(data);
+  console.log(data.offers);
+  console.log(data.offers.length);
 
   var client_str = ''
-  for (c in data.clients) {
+  for (var c in data.clients) {
     client_str += data.clients[c] + '\n';
   }
   $("#clients").val(client_str)
 
   var seek_str = ''
-  for (s in data.seeks) {
+  for (var s in data.seeks) {
     seek_str += data.seeks[s].player.pname + '\n';
   }
   $("#seeks").val(seek_str)
 
+  console.log(data.offers);
+  console.log(data.offers.length);
   var offer_str = ''
-
-  for (o in data.offers) {
-    offer_str += match_to_vs(data.offers[o])
+  for (var i=0; i < data.offers.length; i++) {
+    var o = data.offers[i];
+    console.log('----');
+    console.log(o);
+    offer_str += match_to_vs(o);
+    offer_str += ' [Host: ' + o.hostname + ']\n'
   }
   $("#offers").val(offer_str)
 
   var game_str = ''
-  for (i in data.games) { 
-    g = data.games[i];
+  for (var i in data.games) { 
+    var g = data.games[i];
     game_str += match_to_vs(g) + '\n';
     game_str += '- Host: ' + g.hostname + '\n';
     game_str += '- RoomID: ' + g.roomid + '\n';

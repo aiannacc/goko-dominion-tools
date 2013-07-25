@@ -13,34 +13,43 @@ from gdt.automatch.requirement import Requirement
 # A Match can represent either a game offer or an actual game.
 #
 class Match:
-    def __init__(self, seeks, ratingsys, hostname, roomname=None):
+    def __init__(self, seeks, rating_system, hostname, roomname=None):
         self.seeks = seeks
-        self.ratingsys = ratingsys
+        self.rating_system = rating_system
         self.hostname = hostname
         self.roomname = roomname
         self.acceptors = set()
         self.matchid = uuid.uuid4().hex
 
     # Verify that match satisfies requirements for all seeks
-    def is_match_ok():
-        if not self.ratingsys or not self.hostname:
-            return false
+    def is_match_ok(self):
+        if not self.rating_system or not self.hostname:
+            return False
         for s in self.seeks:
             for r in s.requirements:
-                if not r.is_match_ok(m):
-                    return false
-        return true
+                if not r.is_match_ok(s.player, self):
+                    return False
+        return True
 
     def to_dict(self):
         return {'seeks': [s.to_dict() for s in self.seeks],
                 'hostname': self.hostname,
                 'roomname': self.roomname,
-                'ratingsys': self.ratingsys,
+                'rating_system': self.rating_system,
                 'acceptors': list(self.acceptors),
                 'matchid': self.matchid}
 
     def get_pnames(self):
         return [s.player.pname for s in self.seeks]
+
+    def get_host(self):
+        is_host = lambda s: s.player.pname == self.hostname
+        hosts = list(filter(is_host, self.seeks))
+        assert(len(hosts) <= 1)
+        if len(hosts) == 1:
+            return hosts[0].player
+        else:
+            return None
 
 
 # A Seek is a Player and his SeekRequirements. ID is random.

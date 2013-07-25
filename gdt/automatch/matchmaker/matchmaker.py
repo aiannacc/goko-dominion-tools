@@ -3,8 +3,6 @@
 # class.
 class Matchmaker():
 
-    def get_description(self):
-        return NotImplemented
-
+    # Returns Match objects generated from the given Seek objects
     def generate_matches(self, seeks):
         return NotImplemented

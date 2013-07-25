@@ -76,6 +76,7 @@ AM.connect = function() {
             console.log('Received message (' + msg.msgtype + ')');
             console.log(msg.message);
         }
+        console.log(msg)
 
         // Update timeout deadline
         AM.last_message = Date.now();
@@ -89,6 +90,8 @@ AM.connect = function() {
         msg_obj = {msgtype: msgtype, message: msg};
         msg_str = JSON.stringify(msg_obj);
         AM.ws.send(msg_str);
+        console.log(msgtype)
+        console.log(msg)
     };
 };
 
@@ -107,7 +110,6 @@ AM.confirm_seek = function(msg) {
 AM.offer_match = function(msg) {
     AM.state.seek = null;
     AM.state.offer = msg.offer;
-
     AM.show_offer_popup();
 };
 
@@ -123,23 +125,21 @@ AM.announce_game = function(msg) {
     AM.state.game = msg.game;
 
     // Determine whether we're hosting
-    var is_host = AM.state.game.hostname === AM.player.pname;
+    var is_host = (AM.state.game.hostname === AM.player.pname);
 
     // Show game announcement (non-blocking)
     $('#offerpop').hide();
     AM.show_game_announcement(is_host);
 
-    // Host or join game when Goko fires the room change event.
-    var room_changed = FS.MeetingRoomEvents.MEETING_ROOM.CORE_CHANGE_ROOMS;
-    if (is_host) {
-        mtgRoom.bind(room_changed, AM.create_automatch_game);
-    } else {
-        mtgRoom.bind(room_changed, AM.join_automatch_game);
-    }
-
-    // Ask Goko to take us to Outpost and then fire the room change event.
+    // Go to Outpost and create or join game
     // TODO: Have automatch suggest a room instead.
-    mtgRoom.helpers.ZoneClassicHelper.changeRoom(AM.getRoomId('Outpost'));
+    AM.changeRoomAnd('Great Hall II', function() {   // TODO: change this back
+        if (is_host) {
+            AM.create_automatch_game();
+        } else { 
+            AM.join_automatch_game();
+        }
+    });
 };
 
 AM.getRoomId = function(room_name) {
@@ -189,55 +189,26 @@ AM.show_game_announcement = function(host) {
     $("#announcepop").show();
 };
 
-//// Seems to work fine. --AI, July 23, 2013
-//AM.test_snap_create = function() {
-//    var secretChamberId = mtgRoom.roomList.models.filter(function(m) { 
-//        return m.get('name') === 'Secret Chamber' })[0].get('roomId');
-//    var councilRoomId = mtgRoom.roomList.models.filter(function(m) { 
-//        return m.get('name') === 'Council Room' })[0].get('roomId');
-//
-//    var testKingdom = ["gardens", "cellar", "smithy", "village", "councilRoom",
-//                      "bureaucrat", "chapel", "workshop", "festival", "market"];
-//    var testSettings = {name: 'Test',
-//                        seatsState: [true,true,false,false,false,false],
-//                        gameData: {uid: ""},
-//                        kingdomCards: testKingdom,
-//                        platinumColony: false,
-//                        useShelters: false,
-//                        ratingType: "pro"};
-//    var testOpts = {settings: JSON.stringify(testSettings),
-//                    isLock: false,
-//                    isRequestJoin: true,
-//                    isRequestSit: false,
-//                    tableIndex: null};
-//
-//    var create_table = function() {
-//        console.log('entering create_table');
-//        mtgRoom.helpers.ZoneClassicHelper.createTable(testOpts);
-//        console.log('exiting create_table');
-//    }
-//
-//    var room_changed = FS.MeetingRoomEvents.MEETING_ROOM.CORE_CHANGE_ROOMS;
-//    mtgRoom.bind(room_changed, create_table);
-//
-//    mtgRoom.helpers.ZoneClassicHelper.changeRoom(councilRoomId);
-//}
-
 AM.create_automatch_game = function() {
     var testKingdom, testSettings, testOpts, i;
 
+    // For naming the table
+    var opp_str = AM.state.game.seeks.map(function(s) {
+        return s.player.pname;
+    }).join(', ');
+
+    // For Goko's unfathomably stupid seatState option property
     var ss = [false, false, false, false, false, false];
     for (i = 0; i < AM.state.game.seeks.length; i++) {
         ss[i] = true;
     }
 
-    // NOTE: No need to explicitly generate a random kingdom. Goko will ignore
-    //       this parameter when it actually starts a Pro game.
+    // NOTE: Goko will ignore the kingdom, platinum, and shelters properties.
     // TODO: Do I need to enter any of these settings at all?
     // TODO: Is there a helper method for creating a table?
     testKingdom = ["gardens", "cellar", "smithy", "village", "councilRoom",
                    "bureaucrat", "chapel", "workshop", "festival", "market"];
-    testSettings = {name: AM.state.game.matchid,
+    testSettings = {name: "for " + opp_str,  
                     seatsState: ss, 
                     gameData: {uid: ""},
                     kingdomCards: testKingdom,
@@ -250,34 +221,33 @@ AM.create_automatch_game = function() {
                 isRequestSit: false,
                 tableIndex: null};
 
-    // Temporarily set the "request to join" popup to auto-accept the
-    // matched player and reject all others
-    // TODO: Why isn't this working?
-    //var crp = mtgRoom.views.ClassicRoomsPermit;
-    //crp.old_showByRequest = crp.showByRequest;
-    //crp.showByRequest = function (req) {
+    // Auto-accept the matched player and reject all others.
+    // Restore the original method afterwards.
+    AM.sbr_temp = mtgRoom.views.ClassicRoomsPermit.showByRequest;
+    mtgRoom.views.ClassicRoomsPermit.showByRequest = function(req) {
+        console.log('Received join request.');
+        var joiner = mtgRoom.playerList
+                            .findByAddress(req.data.playerAddress).get('playerName');
+        var opps = AM.state.game.seeks.map(function(s) { return s.player.pname; });
 
-    //    // Show the join dialog. TODO: is this necessary?
-    //    crp.old_showByRequest(req);
+        var opts = {tag: req, playerAddress: req.data.playerAddress };
+        if (opps.indexOf(joiner) >= 0) {
 
-    //    // Names of our automatch opponents
-    //    var opps = AM.state.game.seeks.map(function(s) { return s.player.pname; });
+            // Allow opponent to join
+            console.log('From opp. Allowing.');
+            this.helper.allowPlayerToJoin(opts); 
 
-    //    // Name of player asking to join
-    //    var joiner = mtgRoom.playerList
-    //                        .findByAddress(req.data.playerAddress)
-    //                        .get('name');
+            // Restore the original method
+            mtgRoom.views.ClassicRoomsPermit.showByRequest = AM.sbr_temp;
+            delete AM.sbr_temp;
 
-    //    if (opps.indexOf(joiner) >= 0) {
-    //        crp.onClickAsk();    // Accept opponent
-
-    //        // Restore the original method. TODO: wait for all N-1 opps
-    //        crp.showByRequest = crp.old_showByRequest;
-    //        delete crp.old_showByRequest;
-    //    } else {
-    //        crp.onClickCancel(); // Reject others
-    //    }
-    //};
+        } else {
+            // Reject anyone else
+            console.log('From someone else. Rejecting.')
+            this.helper.denyPlayerToJoin(opts);
+        }
+    };
+    console.log('Ready to allow opps to join.')
 
     mtgRoom.helpers.ZoneClassicHelper.createTable(testOpts);
     // TODO: unbind from CORE_CHANGE_ROOMS
@@ -302,7 +272,6 @@ AM.join_automatch_game = function() {
             console.log('Automatch table not found. Waiting 500 ms.');
         } else {
             clearInterval(intvl); 
-            $('#announcepop').hide();
             console.log('Found automatch table. Joining.');
 
             // Get the table's index
@@ -318,10 +287,8 @@ AM.join_automatch_game = function() {
                 opts.ready = true;
                 conn.setReady(opts); 
                 console.log('Automatch complete. Ready to start game.');
+                $('#announcepop').hide();
             }); 
-
-            //conn.joinTable(opts, function(r) { 
-            //    conn.sitSeat(opts, function(resp) {
         }
     },5000);
 }
@@ -329,7 +296,8 @@ AM.join_automatch_game = function() {
 AM.player.retrieve_sets_owned = function() {
     if (conn.connInfo.kind === "guest") {
         AM.player.got_sets_owned = true;
-        return ['Base'];
+        AM.player.sets_owned = ['Base'];
+        return;
     }
 
     var cards_sets = {
@@ -450,12 +418,13 @@ AM.show_seek_popup = function() {
              <table>\
                <tr>\
                  <td> Players: </td>\
-                 <td><select style="width:100%"> \
-                       <option value="2">2</option>\
-                       <option value="3">3</option>\
-                       <option value="4">4</option>\
-                       <option value="5">5</option>\
-                       <option value="6">6</option>\
+                 <td>
+                   <select id="numplayers"> \
+                     <option selected value="2">2</option>\
+                     <option value="3">3</option>\
+                     <option value="4">4</option>\
+                     <option value="5">5</option>\
+                     <option value="6">6</option>\
                    </select>\
                  </td>\
                </tr>\
@@ -480,9 +449,18 @@ AM.show_seek_popup = function() {
         $("#seekpop").html(h);
 
         $('#seekreq').click(function (evt) {
+            // RelativeRating Requirement
+            var rr = {class: 'RelativeRating', props: {}};
+            rr.props.pts_lower = parseInt($("rrange").val());
+            rr.props.pts_higher = parseInt($("rrange").val());
+            rr.props.ratingsys = 'pro';     // TODO: allow casual, aits choice
+
+            // TODO: num sets Requirement
+            // TODO: num players Requirement
+
             AM.state.seek = {
                 player: AM.player,
-                requirements: []         //TODO: populate from seekpop form
+                requirements: [rr]         //TODO: 
             }
             AM.send_message('submit_seek', {seek: AM.state.seek});
             $('#seekpop').hide();
@@ -506,16 +484,21 @@ AM.show_offer_popup = function() {
         $("#viewport").append(AM.create_lightbox('offerpop'));
 
         h = '<h3 style="text-align:center">Match Found</h3>\
-             <div id="offerinfo">OFFER INFO</div>\
+             <div id="offerinfo">OFFER INFO</div><BR>\
              <div id="offerwaitinfo">OFFER WAIT INFO</div>\
              <input type="button" class="automatch" id="offeracc" value="Accept" />\
              <input type="button" class="automatch" id="offeracccan" value="Cancel" />\
              <input type="button" class="automatch" id="offerdec" value="Decline" />\
             ';
         $('#offerpop').html(h);
+        $('#offeracccan').prop('disabled',true);
 
         $('#offeracc').click(function (evt) {
             AM.send_message('accept_offer', {matchid: AM.state.offer.matchid});
+            $('#offerwaitinfo').html('Accepted offer. Waiting for opponent to accept');
+            $('#offeracc').prop('disabled',true);
+            $('#offerrej').prop('disabled',true);
+            $('#offeracccan').prop('disabled',false);
             AM.state.offer.accepted = true;
         });
 
@@ -558,3 +541,59 @@ document.addEventListener('DOMContentLoaded', function () {
         "<li><button onclick='AM.automatch_button();' class='fs-mtrm-text-border fs-mtrm-dominion-btn'>Automatch</button></li>"
     );
 });
+
+/////////////////////
+// Misc useful stuff
+
+AM.rooms = function() {
+    var out = {}
+    mtgRoom.roomList.models.map(function(m) {
+        out[m.get('name')] = m.get('roomId');
+    });
+    return out;
+};
+
+AM.getAllTables = function() {
+  return mtgRoom.helpers.ZoneClassicHelper
+                .currentRoom.attributes.tableList.models;
+}
+
+AM.getRealTables = function() {
+    return AM.getAllTables().filter(
+        function(m) { return m.get('owner') != null; }
+    );
+};
+
+AM.printRealTableCount = function() {
+  console.log(AM.getRealTables().length);
+};
+
+AM.changeRoom = function(roomName) {
+  AM.changeRoomAnd(roomName, function() {} );
+};
+
+AM.changeRoomAnd = function(roomName, callback) {
+    console.log('Entered enterRoomAnd()');
+    var roomId = AM.rooms()[roomName];
+    console.log('RoomId is ' + roomId);
+    console.log('Asking mtgRoom to tryToEnterRoom()');
+
+    mtgRoom.helpers.ZoneClassicHelper.changeRoom(roomId);
+
+    console.log('mtgRoom.tryToEnterRoom() returned. Starting interval');
+    var intvl = setInterval(function() {
+        console.log('running');
+        var rn = AM.getAllTables()[0].get('room').get('name');
+        // TODO: wait for tables to get populated.
+        if (rn === roomName) {
+            console.log('Entered ' + roomName);
+            clearInterval(intvl);
+            callback();
+        } else {
+            console.log('Waiting to enter ' + roomName);
+        }
+    }, 100);
+    console.log('Interval started');
+}; 
+
+AM.printIt = function(x) { console.log(x); };

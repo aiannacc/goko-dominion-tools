@@ -43,7 +43,7 @@ class AutomatchWSH(tornado.websocket.WebSocketHandler):
     def on_message(self, message_str):
         """ Forward a message from an automatch client to the
         AutomatchCommunicator. """
-        #logging.info('Message received: wsh = %s' % self.__repr__())
+        #logging.debug('Message received: wsh = %s' % self.__repr__())
         msg = json.loads(message_str)
         AutomatchCommunicator.instance().receive_message(self, msg)
         AutomatchCommunicator.instance().update_server_view()
@@ -92,8 +92,8 @@ class AutomatchCommunicator():
         # Find <pname>'s websocket handler and send the message
         wsh = self.wsh.get(pname, None)
         if wsh:
-            logging.info('Sending message to %s:' % pname)
-            logging.info(msg)
+            logging.debug('Sending message to %s:' % pname)
+            logging.debug(msg)
             wsh.write_message(AutomatchEncoder().encode(msg))
         else:
             logging.warn("""Couldn't find websocket for %s to send message: \n
@@ -116,7 +116,8 @@ class AutomatchCommunicator():
         if view:
             data = self.manager.get_data()
             data['clients'] = list(self.pname.values())
-            msg = AutomatchEncoder().encode(data)
+            msg = {'server_data': data, 'msgtype': 'server_state'}
+            msg = AutomatchEncoder().encode(msg)
             view.write_message(msg)
 
     # Message arrives from client. Handle with the approriate function.
@@ -135,8 +136,8 @@ class AutomatchCommunicator():
                    'game_failed': self._game_failed,
                    'cancel_game': self._cancel_game}
         pname = self.pname.get(wsh, None)
-        logging.info('Received message from %s: ' % pname)
-        logging.info(msg)
+        logging.debug('Received message from %s: ' % pname)
+        logging.debug(msg)
         methods[msg['msgtype']](pname, msg['message'])
 
     ############################

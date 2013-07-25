@@ -4,9 +4,10 @@ import logging
 
 import tornado.ioloop
 
-from gdt.automatch.matchmaker.blind import BlindMatchmaker
-from gdt.automatch.matchmaker.matchmaker import Matchmaker
+from gdt.automatch.matchmaker.isotropic import IsotropicMatchmaker
 from gdt.util.sync import synchronized
+
+from pprint import pprint
 
 TIMEOUT = 2*1000
 PERIOD = 5*1000
@@ -37,7 +38,7 @@ class AutomatchManager():
         self.last_ping = {}  # Most recent ping time, by player name
 
         # Start matchmaking cycle
-        self.matchmaker = BlindMatchmaker()
+        self.matchmaker = IsotropicMatchmaker()
         tornado.ioloop.PeriodicCallback(self.do_matchmaking, PERIOD).start()
 
         # For communicating with players
@@ -177,7 +178,9 @@ class AutomatchManager():
         # Remove seeks, offers, etc for lagged-out players
         now = time.time()
         for pname in self.last_ping:
-            if now - self.last_ping[pname] > TIMEOUT:
+            elapsed = now - self.last_ping[pname]
+            logging.debug('Time since last ping: %f' % elapsed)
+            if elapsed > TIMEOUT:
                 msg = 'Lost contact with %s' % pname
                 self._rem_player(pname, msg)
 
@@ -187,12 +190,12 @@ class AutomatchManager():
         #    self._rem_offer(match, msg)
 
         # Generate new match offers
-        for o in self.matchmaker.generate_matches(self.seeks.values()):
-            self.offers[o.matchid] = o
-            for s in o.seeks:
-                msg = 'Seek %s matched Match %s' % (s.seekid, o.matchid)
+        for m in self.matchmaker.generate_matches(self.seeks.values()):
+            self.offers[m.matchid] = m
+            for s in m.seeks:
+                msg = 'Seek %s matched Match %s' % (s.seekid, m.matchid)
                 self.seeks.pop(s.seekid, None)
-            self.comm.offer_match(o)
+            self.comm.offer_match(m)
 
     ###################################################
     # Communication with the server UI. For testting. #
@@ -200,7 +203,8 @@ class AutomatchManager():
 
     def get_data(self):
         data = {}
-        data['seeks'] = self.seeks
-        data['offers'] = self.offers
-        data['games'] = self.games
+        data['seeks'] = list(self.seeks.values())
+        data['offers'] = list(self.offers.values())
+        data['games'] = list(self.games.values())
+        pprint(data)
         return data

@@ -9,8 +9,8 @@ $(document).ready(function() {
     console.log('Loaded automatch_client.js'); 
     load_automatch_testclient();
     $("#pname").val(Math.random().toString(36).substring(7));
-    $("#pro_rating").val(Math.random().toString(10).substring(3,7));
-    $("#casual_rating").val(Math.random().toString(10).substring(3,7));
+    $("#pro_rating").val(Math.floor(3000+3000*Math.random()));
+    $("#casual_rating").val(Math.floor(3000+3000*Math.random()));
     AM.update_ui();
   });
 });
@@ -32,8 +32,8 @@ var load_automatch_testclient = function() {
   }
 
   AM.handle_message = function(msgtype, message) {
-    //console.log(AM.player.pname + " received message (" + msgtype + ")");
-    //console.log(message);
+    console.log(AM.player.pname + " received message (" + msgtype + ")");
+    console.log(message);
 
     // Invoke the named function
     AM[msgtype](message);  
@@ -83,6 +83,7 @@ var load_automatch_testclient = function() {
 
   AM.disable_ui = function() {
     $("input").attr('disabled', true);
+    $("#disconn").attr('disabled', false);
   }
 
   AM.update_ui = function() {
@@ -91,11 +92,13 @@ var load_automatch_testclient = function() {
 
     $("#connect").attr('disabled', AM.ws);
     $("#ping").attr('disabled', !AM.ws);
-    $("#disconnect").attr('disabled', !AM.ws);
     $("#pname").attr('disabled', AM.ws);
-    $("#rating").attr('disabled', AM.ws);
+    $("#pro_rating").attr('disabled', AM.ws);
+    $("#casual_rating").attr('disabled', AM.ws);
 
-    $("#num_players").attr('disabled',
+    $("#min_players").attr('disabled',
+        s.game || s.offer || s.seek || !AM.ws);
+    $("#max_players").attr('disabled',
         s.game || s.offer || s.seek || !AM.ws);
     $("#rdiff").attr('disabled',
         s.game || s.offer || s.seek || !AM.ws);
@@ -125,12 +128,9 @@ var load_automatch_testclient = function() {
       AM.disable_ui();
     });
 
-    $("#disconnect").click(function(evt) {
+    $("#disconn").click(function(evt) {
       AM.disable_ui();
       location.reload(true);
-      //AM.ws.close();
-      //AM.state.clear();
-      //AM.update_ui();
     });
 
     $("#ping").click(function(evt) {
@@ -138,14 +138,41 @@ var load_automatch_testclient = function() {
     });
 
     $("#submit_seek").click(function(evt) {
-      // Finish filling out the player info
-      AM.player.rating.goko_pro_rating = parseInt($("#rating").val());
-      AM.player.rating.goko_casual_rating = parseInt($("#rating").val()) + 100;
-      AM.player.sets_owned = ['B', 'DA'];  // TODO: get from UI
+      // Player ratings
+      AM.player.rating.goko_pro_rating = parseInt($("#pro_rating").val());
+      AM.player.rating.goko_casual_rating = parseInt($("#casual_rating").val());
 
-      // Fill out the seek request
+      // Sets owned
+      var card_sets = ['Base', 'Intrigue 1', 'Intrigue 2', 'Seaside 1',
+          'Seaside 2', 'Alchemy', 'Cornucopia', 'Prosperity 1', 'Prosperity 2',
+          'Guilds', 'Hinterlands 1', 'Hinterlands 2', 'Dark Ages 1',
+          'Dark Ages 2', 'Dark Ages 3'];
+      console.log(parseInt($('#owned_sets').val()));
+      AM.player.sets_owned = card_sets.slice(0,parseInt($('#owned_sets').val()));
+
+      // Requirement: game's number of players
+      var np = {class: 'NumPlayers', props: {}};
+      np.props.min_players = parseInt($('#min_players').val());
+      np.props.max_players = parseInt($('#max_players').val());
+
+      // Requirement: game's number of card sets
+      var ns = {class: 'NumSets', props: {}};
+      ns.props.min_sets = parseInt($('#min_sets').val());
+      ns.props.max_sets = parseInt($('#max_sets').val());
+
+      // Requirement: opponents' relative ratings
+      var rr = {class: 'RelativeRating', props: {}};
+      rr.props.pts_lower = parseInt($('#rdiff').val());
+      rr.props.pts_higher = parseInt($('#rdiff').val());
+      rr.props.rating_system = $('#rating_system').val();
+
+      // Requirement: game's rating system
+      var rs = {class: 'RatingSystem', props: {}};
+      rs.props.rating_system = $('#rating_system').val();
+
       AM.state.seek = {player: AM.player,
-                       requirements: []}   // TODO: implement serialization
+                       requirements: [np, ns, rr, rs]};
+      console.log(AM.state.seek);
 
       // Fill out the seek request info
       AM.send_message('submit_seek', {seek: AM.state.seek});
@@ -193,3 +220,4 @@ var load_automatch_testclient = function() {
     });
   }());
 }
+

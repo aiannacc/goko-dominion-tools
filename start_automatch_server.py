@@ -18,8 +18,8 @@ class Application(tornado.web.Application):
             (r"/automatch", AutomatchWSH),
         ]
         tornado.web.Application.__init__(
-            self, handlers, 
-            static_path='web/static', 
+            self, handlers,
+            static_path='web/static',
             ssl_options={
                 "certfile": "cert.cer",
                 "keyfile":  "key.key",
@@ -27,12 +27,15 @@ class Application(tornado.web.Application):
         )
 
 if __name__ == '__main__':
-    # Use detailed logging while developing
-    logging.basicConfig(level=logging.INFO)
 
-    # Usage: python start_automatch_server <port>
-    port = int(sys.argv[-1])
-    print('Starting server on port %d' % port)
+    logging.basicConfig(level=logging.DEBUG)
+
+    try:
+        port = int(sys.argv[-1])
+        print('Starting server on port %d' % port)
+    except:
+        print('Usage: python start_automatch_server.py <port>')
+        sys.exit(1)
 
     # Start server and keep process running
     tornado.httpserver.HTTPServer(Application()).listen(port)
