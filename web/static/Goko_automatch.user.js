@@ -25,8 +25,8 @@ var AM = {ws: null,
 unsafeWindow.AM = AM;
 
 // Choose Automatch server
-//AM.server = 'gokologs.drunkensailor.org';   // For production
-AM.server = 'iron:8080';                      // For testing
+AM.server = 'gokologs.drunkensailor.org';   // For production
+//AM.server = 'iron:8080';                      // For testing
 
 // Import some Goko helper functions
 $.getScript('http://' + AM.server + '/static/goko_helpers.js');
