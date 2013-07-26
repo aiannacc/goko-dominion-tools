@@ -25,7 +25,7 @@ var AM = {ws: null,
 unsafeWindow.AM = AM;
 
 // Choose Automatch server
-AM.server = 'gokologs.drunkensailor.org';   // For production
+AM.server = 'gokologs.drunkensailor.org';     // For production
 //AM.server = 'iron:8080';                      // For testing
 
 // Import some Goko helper functions
@@ -89,7 +89,6 @@ AM.fetch_rating = function(rsys, callback) {
     // TODO: look up guest ratings correctly
     if (conn.connInfo.kind === "guest") {
         AM.player.rating[rsys_props[rsys]] = 1000;
-        console.log('Got ' + rsys + ' rating');
         callback();
         return;
     }
@@ -98,9 +97,7 @@ AM.fetch_rating = function(rsys, callback) {
         playerId: AM.player.pid,
         ratingSystemId: rsys_ids[rsys]
     }, function(resp) {
-        console.log(resp.data);
         AM.player.rating[rsys_props[rsys]] = resp.data.rating;
-        console.log('Got ' + rsys + ' rating');
         callback();
     });
 }
@@ -111,7 +108,6 @@ AM.fetch_sets_owned = function(callback) {
     // Guests only have Base. No need to check.
     if (conn.connInfo.kind === "guest") {
         AM.player.sets_owned = ['Base'];
-        console.log('Got sets owned.');
         callback();
         return;
     }
@@ -158,7 +154,6 @@ AM.fetch_sets_owned = function(callback) {
                     }
                 });
                 AM.player.sets_owned = sets_owned;
-                console.log('Got sets owned.');
                 callback();
             });
         });
@@ -167,7 +162,6 @@ AM.fetch_sets_owned = function(callback) {
 
 // Enable the submit seek button if the player info is complete.
 AM.check_player_info = function() {
-    console.log('checking player info');
     if (AM.player.rating.goko_pro_rating
         && AM.player.rating.goko_casual_rating
         && AM.player.sets_owned) {
@@ -195,19 +189,20 @@ AM.connect = function() {
                         offer: null,
                         game: null,
                         playing: null};
-            if (typeof AM.show_seekpop !== undefined) {
+            if (typeof AM.show_seekpop !== 'undefined') {
                 AM.show_seekpop(false);
             }
-            if (typeof AM.show_offerpop !== undefined) {
+            if (typeof AM.show_offerpop !== 'undefined') {
                 AM.show_offerpop(false);
             }
-            if (typeof AM.show_gamepop !== undefined) {
+            if (typeof AM.show_gamepop !== 'undefined') {
                 AM.show_gamepop(false);
             }
         };
 
         // If connection is lost, wait 3 second and reconnect
         // TODO: does the WS detect timeouts?
+        // TODO: notify player of disconnect
         AM.ws.onclose = function() {
             console.log('Lost contact with Automatch server. Reconnecting');
             AM.ws = null;
@@ -217,7 +212,8 @@ AM.connect = function() {
         // Messages from server invoke the function named "AM.<msgtype>"
         AM.ws.onmessage = function(evt) {
             var msg = JSON.parse(evt.data);
-            console.log(msg);
+            console.log('Received ' + msg.msgtype + ' message from automatch server:');
+            console.log(msg.message);
             AM[msg.msgtype](msg.message);
         };
     }
@@ -233,7 +229,7 @@ AM.send_message = function (msgtype, msg, callback) {
     AM.ws.callbacks[msgid] = callback;
     AM.ws.send(msg_str);
 
-    console.log('Sent message to server:' + msg_obj);
+    console.log('Sent ' + msgtype + ' message to server:');
     console.log(msg_obj);
 };
 
@@ -245,8 +241,8 @@ AM.send_message = function (msgtype, msg, callback) {
 AM.confirm_receipt = function(msg) {
     console.log('Receipt of message confirmed: ' + msg.msgid);
     var callback = AM.ws.callbacks[msg.msgid];
-    if (callback) {
-        console.log('Executing callback for: ' + msg.msgid);
+    if (typeof callback !== 'undefined' && callback !== null) {
+        console.log(callback);
         callback();
     }
 };
@@ -281,13 +277,34 @@ AM.announce_game = function(msg) {
             
             // If host, go to the game room and create a game.
             var opps = AM.get_oppnames(AM.state.game, AM.player.pname);
-            AM.create_game(opps, AM.state.game.rating_system);
+
+            // After all opponents join:
+            // TODO: Why am I not getting any join events?
+            var after_join = function() {
+                var g = AM.get_game_owned_by(AM.player.pname);
+                if (typeof g !== 'undefined'
+                        && g.get('joined').length === AM.state.game.seeks.length) {
+                    console.log('All opponents have joined. Automatch complete.');
+
+                    // Hide the game announcement dialog
+                    AM.show_gamepop(false);
+
+                    // Restore default join request behavior
+                    AM.set_autoaccept(false);
+
+                    // Stop listening for joins
+                    mtgRoom.unbind(JOIN, after_join);
+                }
+            };
+            var JOIN = FS.MeetingRoomEvents.MEETING_ROOM.PLAYER_JOINED_TABLE;
+            mtgRoom.bind(JOIN, after_join);
 
             // Accept guest's join request automatically.
             AM.set_autoaccept(true, opps);
 
-            // TODO: listen for player joins
-            // TODO: make popup disappear when all have joined
+            // Finally ready to create the game
+            AM.create_game(opps, AM.state.game.rating_system);
+
             // TODO: optionally start game automatically
 
             // When the game starts...
@@ -299,12 +316,6 @@ AM.announce_game = function(msg) {
 
                 // ... notify the server
                 AM.send_message('game_started', AM.state.playing.matchid);
-
-                // ... restore default join request behavior
-                AM.set_autoaccept(false);
-                    
-                // ... and remove listeners
-                // TODO: Stop listening for player joins
             }
         } else {
 
@@ -315,7 +326,9 @@ AM.announce_game = function(msg) {
                     clearInterval(intvl);
 
                     // Join automatically when it appears.
+                    console.log('Joining automatch game. Automatch complete.');
                     AM.join_game(g);
+                    AM.show_gamepop(false);
 
                     // When the game starts...
                     AM.on_game_start = function() {
@@ -347,7 +360,7 @@ AM.init_popups = function(callback) {
 
     // Wait until Goko creates the "viewport" element.
     if ($('#viewport').length == 0) {
-        console.log('Automatch is waiting for Goko to build its UI');
+        console.log("Can't build Automatch UI yet... waiting 500 ms");
         setTimeout(AM.init_UI, 500);
         return;
     }
@@ -371,12 +384,14 @@ AM.init_popups = function(callback) {
 AM.add_automatch_button = function() {
 
     // Wait until Goko creates its lobby button toolbar and Automatch dialogs
-    // have all been created
-    // TODO: ... and we're connected to the automatch server.
+    // have all been created and we're connected to the automatch server.
     if (($('.room-section-header-buttons').length == 0)
             || $('#seekpop').length == 0
             || $('#offerpop').length == 0
-            || $('#gamepop').length == 0) {
+            || $('#gamepop').length == 0 
+            || typeof AM.ws === 'undefined'
+            || AM.ws === null
+            || AM.ws.readyState != 1) {
         console.log("Can't add Automatch button yet... waiting 500 ms");
         setTimeout(AM.add_automatch_button, 500);
         return;
@@ -399,11 +414,9 @@ AM.add_automatch_button = function() {
     // Also delete the "Play Now" button. Seriously, Goko?
     $('.room-section-btn-find-table').remove();
 
-    console.log('Automatch UI complete');
-
     if (typeof callback !== 'undefined') {
       callback();
     }
 }
 
-console.log('End of Automatch script');
+console.log('Automatch script loaded.');

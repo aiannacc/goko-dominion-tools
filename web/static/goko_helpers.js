@@ -28,7 +28,7 @@ AM.get_game_owned_by = function(hostname) {
 }
 
 // Asynchronously join a game
-AM.join_game = function(tableModel, callback) { 
+AM.join_game = function(tableModel) { 
     // Get the table index and first open seat
     opts = {table: tableModel.get('number'),
             seat: tableModel.get('seats').filter(function(s) {
@@ -38,7 +38,7 @@ AM.join_game = function(tableModel, callback) {
 
     // Join, sit, and tell Goko that we're ready (async)
     conn.joinAndSit(opts, function () {
-        conn.setReady(opts, callback);
+        conn.setReady(opts);
     });
 }
 

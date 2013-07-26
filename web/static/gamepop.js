@@ -10,8 +10,8 @@ $('#gamepop .wtfgoko').css('top', 'auto');
 $('#gamepop').css("position", "absolute");
 $('#gamepop').css("top", "50%");
 $('#gamepop').css("left", "50%");
-$('#gamepop').css("height", "300px");
-$('#gamepop').css("margin-top", "-150px");
+$('#gamepop').css("height", "350px");
+$('#gamepop').css("margin-top", "-175px");
 $('#gamepop').css("width", "40%");
 $('#gamepop').css("margin-left", "-20%");
 $('#gamepop').css("background", "white");
@@ -42,10 +42,13 @@ AM._update_gamepop = function() {
         AM.get_oppnames(AM.state.game, AM.state.game.hostname).map(function(p) {
             $('#gameguests').append('<li>' + p + '</li>');
         });
+
+        $('#abortgame').prop('disabled', false)
     };
 }
 
 $('#abortgame').click(function (evt) {
+    $('#abortgame').prop('disabled', true)
     AM.send_message('cancel_game', {matchid: AM.state.game.matchid});
-    $('#announcepop').hide();
+    $('#gamepop').css('visibility', 'hidden')
 });
