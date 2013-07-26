@@ -46,22 +46,32 @@ class SearchHandler(tornado.web.RequestHandler):
     def get(self):
 
         # Parse arguments into search dict
-        arg = {}
-        arg_str = {}
-        for p in self.search_params:
-            arg_str[p] = self.get_argument(p, default=self.search_params[p])
-            if arg_str[p] in ('any', ''):
-                arg[p] = None
-            elif arg_str[p] in ('true','on'):
-                arg[p] = True
-            elif arg_str[p] in ('false','off'):
-                arg[p] = False
-            elif re.match('\d\d\/\d\d\/\d\d\d\d', arg_str[p]):
-                arg[p] = datetime.datetime.strptime(arg_str[p], '%m/%d/%Y')
-            elif re.match('\d+', arg_str[p]):
-                arg[p] = int(arg_str[p])
-            else:
-                arg[p] = arg_str[p]
+        try:
+            arg = {}
+            arg_str = {}
+            for p in self.search_params:
+                arg_str[p] = self.get_argument(p,
+                                               default=self.search_params[p])
+                if arg_str[p] in ('any', ''):
+                    arg[p] = None
+                elif p in ['p1name', 'p2name', 'supply', 'nonsupply']:
+                    arg[p] = arg_str[p]
+                elif arg_str[p] in ('true', 'on'):
+                    arg[p] = True
+                elif arg_str[p] in ('false', 'off'):
+                    arg[p] = False
+                elif re.match('\d\d\d\d-\d\d-\d\d', arg_str[p]):
+                    arg[p] = datetime.datetime.strptime(arg_str[p], '%Y-%m-%d')
+                elif re.match('\d\d\/\d\d\/\d\d\d\d', arg_str[p]):
+                    arg[p] = datetime.datetime.strptime(arg_str[p], '%m/%d/%Y')
+                elif re.match('\d+', arg_str[p]):
+                    arg[p] = int(arg_str[p])
+                else:
+                    arg[p] = arg_str[p]
+        except:
+            self.show_error('Error processing argument: %s="%s"' %
+                            (p, arg_str[p]), arg_str)
+            return
 
         #print(arg)
         #print(arg_str)
@@ -72,9 +82,17 @@ class SearchHandler(tornado.web.RequestHandler):
         arg['enddate'] = arg['enddate'] + datetime.timedelta(days=1)
 
         # Parse the kingdom search field
-        (sup, shel, col, err) = self.parse_supply(arg_str['supply'])
+        print(arg_str['supply'])
+        x = self.parse_supply(arg_str['supply'])
+        if x:
+            (sup, shel, col, err) = x
+        else:
+            self.show_error('Error parsing supply', arg_str)
+            return
+
         if err:
             self.show_error(err, arg_str)
+            return
         else:
             arg['supply'] = sup
             if shel:
@@ -88,6 +106,7 @@ class SearchHandler(tornado.web.RequestHandler):
         (nsup, nshel, ncol, err) = self.parse_supply(arg_str['nonsupply'])
         if err:
             self.show_error(err, arg_str)
+            return
         else:
             arg['nonsupply'] = nsup
             if nshel:
@@ -106,12 +125,13 @@ class SearchHandler(tornado.web.RequestHandler):
 
         # Don't do an overly-imprecise non-indexed search
         if (not arg['p1name'] and not arg['p2name'] and not arg['supply']):
-            self.show_error("""Please enter a player name or a kingdom""", 
+            self.show_error("""Please enter a player name or a kingdom""",
                             arg_str)
             return
 
         # Don't do an overly-precise non-indexed search
-        if (not arg['p1name'] and not arg['p2name'] and len(arg['supply'])>3):
+        if (not arg['p1name'] and not arg['p2name']
+                and len(arg['supply']) > 3):
             self.show_error("""No way am I gonna try that search. Please
                             enter a player name or a smaller kingdom""",
                             arg_str)
@@ -191,8 +211,7 @@ class SearchHandler(tornado.web.RequestHandler):
                 error = "Unrecognized card: %s" % card
                 return
 
-        return (out,shelters,colony,error)
-
+        return (out, shelters, colony, error)
 
     def show_error(self, err_text, arg_str):
         #print('show_error')
@@ -202,3 +221,7 @@ class SearchHandler(tornado.web.RequestHandler):
             error_text=err_text,
             games=[])
         self.write(out)
+
+    def write_error(self, status_code, **kwargs):
+        self.write("""Unhandled exception (probably a programming error).
+                   Please report in the forums if you can reproduce it.""")
