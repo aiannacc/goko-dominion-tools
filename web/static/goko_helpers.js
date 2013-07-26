@@ -115,7 +115,7 @@ AM.create_game = function(opps, rsys) {
                         kingdomCards: testKingdom,
                         platinumColony: false,
                         useShelters: false,
-                        ratingType: "pro"};
+                        ratingType: rsys};
     var testOpts = {settings: JSON.stringify(testSettings),
                     isLock: false,
                     isRequestJoin: true,

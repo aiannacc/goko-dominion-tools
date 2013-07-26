@@ -4,7 +4,7 @@
 // @description Automatch for goko
 // @include     http://play.goko.com/Dominion/gameClient.html
 // @include     https://play.goko.com/Dominion/gameClient.html
-// @version     1
+// @version     2 
 // @grant       none
 // ==/UserScript==
 
@@ -24,6 +24,8 @@ var AM = {ws: null,
 // etc. See the Greasemonkey security wiki for details.
 unsafeWindow.AM = AM;
 
+console.log('AM version nothing2');
+
 // Choose Automatch server
 AM.server = 'gokologs.drunkensailor.org';     // For production
 //AM.server = 'iron:8080';                      // For testing
@@ -37,7 +39,8 @@ $.getScript('http://' + AM.server + '/static/goko_helpers.js');
 //
 AM.rgc = FS.MeetingRoom.prototype.registerGameClass;
 FS.MeetingRoom.prototype.registerGameClass = function(gameClass) {
-    AM.rgc(gameClass);    // Run the Goko method like normal
+    mtgRoom.GameClass = gameClass;
+    //AM.rgc(gameClass);    // Run the Goko method like normal
     AM.initialize();      // Then initialize automatch
 };
 

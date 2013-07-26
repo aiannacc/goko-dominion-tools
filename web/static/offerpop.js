@@ -50,6 +50,8 @@ AM.show_offerpop = function(visible) {
                 $('#offersets').html(sets.length + ' sets');
         }
 
+        $('#offerrating').html(AM.state.offer.rating_system);
+
         $('#offerhost').html(AM.state.offer.hostname);
         $('#offerroom').html(AM.state.offer.roomname);
         $('#offerwaitinfo').html('');
