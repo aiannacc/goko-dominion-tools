@@ -96,6 +96,10 @@ class IsotropicMatchmaker(Matchmaker):
                     match = Match(players, rsys, None)
                     match = IsotropicMatchmaker.choose_host(match)
 
+                    # Assign the game to Outpost
+                    # TODO: choose this dynamically?
+                    match.roomname = 'Outpost';
+
                     # Save match and remove seeking players
                     if (match):
                         logging.info('Found match: ')

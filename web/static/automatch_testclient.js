@@ -9,8 +9,8 @@ $(document).ready(function() {
     console.log('Loaded automatch_client.js'); 
     load_automatch_testclient();
     $("#pname").val(Math.random().toString(36).substring(7));
-    $("#pro_rating").val(Math.floor(3000+3000*Math.random()));
-    $("#casual_rating").val(Math.floor(3000+3000*Math.random()));
+    $("#pro_rating").val(Math.floor(4000+500*Math.random()));
+    $("#casual_rating").val(Math.floor(4000+500*Math.random()));
     AM.update_ui();
   });
 });

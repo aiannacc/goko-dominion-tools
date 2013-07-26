@@ -1,5 +1,6 @@
 import uuid
 import json
+import collections
 from gdt.automatch.requirement import Requirement
 
 # NOTE: These objects are not guaranteed to be immutable. Use their unique ids
@@ -29,6 +30,15 @@ class Match:
             for r in s.requirements:
                 if not r.is_match_ok(s.player, self):
                     return False
+        # No player can appear twice in the same game
+        # TODO: implement one-seek-per-player for now
+        pnames = [s.player.pname for s in self.seeks]
+        seen = set()
+        for p in pnames:
+            if (p in seen):
+                print('Seen %s before' % p)
+                return False
+            seen.add(p)
         return True
 
     def to_dict(self):
@@ -45,8 +55,9 @@ class Match:
     def get_host(self):
         is_host = lambda s: s.player.pname == self.hostname
         hosts = list(filter(is_host, self.seeks))
-        assert(len(hosts) <= 1)
-        if len(hosts) == 1:
+        #assert(len(hosts) <= 1)
+        #if len(hosts) == 1:
+        if len(hosts) >= 1:
             return hosts[0].player
         else:
             return None
@@ -90,7 +101,7 @@ class Player:
         d = {}
         d['pname'] = self.pname
         d['rating'] = self.rating.to_dict()
-        d['self_owned'] = self.pname
+        d['sets_owned'] = self.sets_owned
         return d
 
 

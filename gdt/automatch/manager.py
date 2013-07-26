@@ -96,7 +96,6 @@ class AutomatchManager():
     @synchronized(lock)
     def ping(self, pname):
         self.last_ping[pname] = time.time()
-        self.comm.confirm_receipt(pname)
 
     @synchronized(lock)
     def disconnected(self, pname):
@@ -110,7 +109,6 @@ class AutomatchManager():
     @synchronized(lock)
     def cancel_seek(self, pname, seekid):
         self._rem_seek(seekid, 'Seek canceled by player %s' % pname)
-        self.comm.confirm_receipt(pname)
 
     @synchronized(lock)
     def accept_offer(self, pname, matchid):
@@ -126,8 +124,6 @@ class AutomatchManager():
                 self.offers.pop(matchid, None)
                 print(o.to_dict())
                 self.comm.announce_game(o)
-            else:
-                self.comm.confirm_receipt(pname)
 
     @synchronized(lock)
     def decline_offer(self, pname, matchid):

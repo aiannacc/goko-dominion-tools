@@ -64,6 +64,9 @@ class AutomatchCommunicator():
         self.wsh = {}
         self.pname = {}
 
+        # WSH connections from server view UIs
+        self.server_views = set()
+
         # Handles timing and match logic
         self.manager = AutomatchManager(self)
 
@@ -112,19 +115,23 @@ class AutomatchCommunicator():
 
     def update_server_view(self):
         """ Send the current automatch info the the server view UI. """
-        view = self.wsh.get('SERVER_VIEW', None)
-        if view:
-            data = self.manager.get_data()
-            data['clients'] = list(self.pname.values())
-            msg = {'server_data': data, 'msgtype': 'server_state'}
-            msg = AutomatchEncoder().encode(msg)
+        data = self.manager.get_data()
+        data['clients'] = list(self.pname.values())
+        msg = {'server_data': data, 'msgtype': 'server_state'}
+        msg = AutomatchEncoder().encode(msg)
+        for view in self.server_views:
             view.write_message(msg)
 
-    # Message arrives from client. Handle with the approriate function.
     @synchronized(lock)
     def receive_message(self, wsh, msg):
         """ When any websocket client sends a message, invoke the method it
-        specifies with the player's name and message. """
+        specifies with the player's name and message, then confirm reciept. """
+
+        pname = self.pname.get(wsh, None)
+        logging.debug('Received message from %s: ' % pname)
+        logging.debug(msg)
+
+        # Handle with the named method
         methods = {'disconnect': self._disconnect_pname,
                    'ping': self._ping,
                    'submit_seek': self._submit_seek,
@@ -135,10 +142,11 @@ class AutomatchCommunicator():
                    'game_started': self._game_started,
                    'game_failed': self._game_failed,
                    'cancel_game': self._cancel_game}
-        pname = self.pname.get(wsh, None)
-        logging.debug('Received message from %s: ' % pname)
-        logging.debug(msg)
+         
         methods[msg['msgtype']](pname, msg['message'])
+
+        # Confirm receipt
+        self.confirm_receipt(pname, msg['msgid'])
 
     ############################
     # Connection communication #
@@ -148,14 +156,18 @@ class AutomatchCommunicator():
     def _connect(self, wsh, pname):
         """ When a client connects, associate his player name with his
         websocket handler. """
-        self.pname[wsh] = pname
-        self.wsh[pname] = wsh
-        self.confirm_receipt(pname)
+        if pname == 'SERVER_VIEW':
+            self.server_views.add(wsh)
+        else:
+            self.pname[wsh] = pname
+            self.wsh[pname] = wsh
 
     @synchronized(lock)
     def _disconnect(self, wsh):
         """ When a client disconnects, remove its websocket handlers and notify
         the AutomatchManager. """
+        if wsh in self.server_views:
+            self.server_views.remove(wsh)
         if wsh in self.pname:
             pname = self.pname.pop(wsh)
             self.wsh.pop(pname)
@@ -175,11 +187,10 @@ class AutomatchCommunicator():
         self.manager.ping(pname)
 
     @synchronized(lock)
-    def confirm_receipt(self, pname):
+    def confirm_receipt(self, pname, msgid):
         """ Tell the client that the server has just received a message.
-        Intented for synchronizing client-server communication. To be sent when
-        the server wouldn't otherwise respond to the client's message. """
-        self._send_message(pname, 'confirm_receipt')
+        Intented for synchronizing client-server communication. """
+        self._send_message(pname, 'confirm_receipt', msgid=msgid)
 
     ######################
     # Seek communication #
