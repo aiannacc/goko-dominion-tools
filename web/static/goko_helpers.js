@@ -57,43 +57,39 @@ AM.getAllTables = function() {
                 .currentRoom.attributes.tableList.models;
 }
 
-//AM.getRealTables = function() {
-//    return AM.getAllTables().filter(
-//        function(m) { return m.get('owner') != null; }
-//    );
-//};
+AM.getRealTables = function() {
+    return AM.getAllTables().filter(
+        function(m) { return m.get('owner') != null; }
+    );
+};
 
-//AM.printRealTableCount = function() {
-//  console.log(AM.getRealTables().length);
-//};
+AM.printRealTableCount = function() {
+  console.log(AM.getRealTables().length);
+};
 
-//AM.changeRoom = function(roomName) {
-//  AM.changeRoomAnd(roomName, function() {} );
-//};
+AM.printIt = function(x) { console.log(x); };
 
-//AM.printIt = function(x) { console.log(x); };
+AM.make_game = function(kingdom) {
+    var testKingdom = kingdom.split(',');
+    var testSettings = {name: "test",
+                        seatsState: [true, true, false, false, false, false],
+                        gameData: {uid: ""},
+                        kingdomCards: testKingdom,
+                        platinumColony: false,
+                        useShelters: false,
+                        ratingType: "casual"};
+    var testOpts = {settings: JSON.stringify(testSettings),
+                    isLock: false,
+                    isRequestJoin: false,
+                    isRequestSit: false,
+                    tableIndex: null};
+    console.log(testOpts);
+    mtgRoom.helpers.ZoneClassicHelper.createTable(testOpts);
+};
 
-//AM.make_game = function(kingdom) {
-//    var testKingdom = kingdom.split(',');
-//    var testSettings = {name: "test",
-//                        seatsState: [true, true, false, false, false, false],
-//                        gameData: {uid: ""},
-//                        kingdomCards: testKingdom,
-//                        platinumColony: false,
-//                        useShelters: false,
-//                        ratingType: "casual"};
-//    var testOpts = {settings: JSON.stringify(testSettings),
-//                    isLock: false,
-//                    isRequestJoin: false,
-//                    isRequestSit: false,
-//                    tableIndex: null};
-//    console.log(testOpts);
-//    mtgRoom.helpers.ZoneClassicHelper.createTable(testOpts);
-//};
-
-//AM.make_testgame1 = function() {
-//    AM.make_game('cellar,warehouse,forager,scavenger,scheme,rebuild,tunnel,hamlet,goons,oracle');
-//};
+AM.make_testgame1 = function() {
+    AM.make_game('cellar,warehouse,forager,scavenger,scheme,rebuild,tunnel,hamlet,goons,oracle');
+};
 
 AM.create_game = function(opps, rsys) {
 

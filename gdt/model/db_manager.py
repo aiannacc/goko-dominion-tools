@@ -268,6 +268,12 @@ def search_all_2p_scores(limit, time, logfile):
     return ps(limit, time, logfile)
 
 
+def fetch_rated_game_counts():
+    ps = _con.prepare("""SELECT pname, COUNT(pname) FROM ts_rating_history
+                      GROUP BY pname""")
+    return ps();
+    
+
 def fetch_all_ratings():
     mu_sig = {}
     # TODO: Fix the Boodaloo problem more elegantly

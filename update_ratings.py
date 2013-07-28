@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import gdt
-from gdt.ratings.trueskill import *
+import gdt.model.db_manager as db_manager
+import gdt.ratings.trueskill as ts
 
 count = -1
 while count != 0:
@@ -10,4 +10,4 @@ while count != 0:
     (t, l) = x
   else:
     (t, l) = (None, None)
-  count = record_ratings(10000, t, l)
+  count = ts.record_ratings(100, t, l, ts.isodominion_env)

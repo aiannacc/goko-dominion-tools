@@ -98,7 +98,8 @@ class IsotropicMatchmaker(Matchmaker):
 
                     # Assign the game to Outpost
                     # TODO: choose this dynamically?
-                    match.roomname = 'Outpost';
+                    if match != None:
+                        match.roomname = 'Outpost';
 
                     # Save match and remove seeking players
                     if (match):

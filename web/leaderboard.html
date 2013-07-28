@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html";charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <script src="/static/jquery-1.9.1.js"></script>
+    <script src="/static/sorttable.js"></script>
   </head>
   <body>
 
@@ -13,7 +14,7 @@
     <a href='/leaderboard/'>Leaderboard</a>
     <br>
 
-    <h2>Unofficial Goko TrueSkill Leaderboard</h2>
+    <h2>Isotropesque TrueSkill Leaderboard for Goko</h2>
 
     <p>
 
@@ -31,18 +32,19 @@
     </table-->
 
     <p><a href="http://forum.dominionstrategy.com/index.php?topic=8891.msg269556#msg269556">Implementation details and discussion</a><p>
-    <p class=date>Last updated on {{date_updated}}</p>
+    <p class=date>Includes Goko games from May 12, 2013 through {{date_updated}}</p>
 
     <hr>
 
     {% if player_ratings %}
-    <table class=leaderboard>
+    <table class="leaderboard sortable">
 
       <tr>
-        <th></th>
-        <th>TrueSkill</th>
+        <th>Skill</th>
+        <th>&mu;</th> <th>&plusmn;</th>
+        <th>3&sigma;</th>
         <th>Rank</th>
-        <!--th>Games</th-->
+        <th>Games</th>
         <th>Goko Username</th>
       </tr>
 
@@ -51,11 +53,19 @@
         <tr class=level>
           <td class=level>
               {% if pr['level'] != last_level %}
-              Level {{pr['level']}}
+                {% set n=0 %}
+                Level {{pr['level']}}
+              {% else %}
+                {% set n = n + 1 %}
+                {% if n%5==0 %}
+                  <div style="color:#999999;"> Level {{pr['level']}}</div>
+                {% end %}
               {% end %}
               {% set last_level = pr['level'] %}
           </td>
-          <td>{{pr['mu']}} &plusmn; {{pr['sigma']}}</td>
+          <td>{{pr['mu']}}</td>
+          <td>&plusmn;</td>
+          <td>{{pr['3sigma']}}</td>
           <td class=c2>
             {{pr['rank']}}
             <!--span class=up>
@@ -67,7 +77,7 @@
               <{{pr['updown_n']}}>
             </span-->
           </td>
-          <!--td class=c>{{pr['games']}}</td-->
+          <td class=c>{{pr['games']}}</td>
           <td>{{pr['pname']}}</td>
         </tr>
       {% end %}

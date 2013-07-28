@@ -7,17 +7,18 @@ from ..model import db_manager
 
 
 dominion_env = trueskill.TrueSkill(draw_probability=0.0175, backend='scipy')
+isodominion_env = trueskill.TrueSkill(mu=25, sigma=25, beta=25, tau=25/100, draw_probability=0.05, backend='scipy')
 
 
-def rate(ra, rb, score):
+def rate(ra, rb, score, env):
     if score == 1:
-        return trueskill.rate_1vs1(ra, rb, env=dominion_env)
+        return trueskill.rate_1vs1(ra, rb, env=env)
     elif score == -1:
-        return reversed(trueskill.rate_1vs1(rb, ra, env=dominion_env))
+        return reversed(trueskill.rate_1vs1(rb, ra, env=env))
     else:
-        return trueskill.rate_1vs1(ra, rb, drawn=True, env=dominion_env)
+        return trueskill.rate_1vs1(ra, rb, env=env, drawn=True)
 
-def generate_ratings(limit, last_time, last_logfile):
+def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
     history = []
     r = {}
     for row in db_manager.search_all_2p_scores(limit, last_time, last_logfile):
@@ -26,15 +27,18 @@ def generate_ratings(limit, last_time, last_logfile):
         # Initialize or look up ratings if necessary
         for pname in (p1name, p2name):
             if not pname in r:
-                ms = db_manager.get_rating(pname)
-                if ms:
-                    r[pname] = dominion_env.create_rating(ms[0], ms[1])
+                if do_lookup:
+                    ms = db_manager.get_rating(pname)
+                    if ms:
+                        r[pname] = env.create_rating(ms[0], ms[1])
+                    else:
+                        r[pname] = env.create_rating()
                 else:
-                    r[pname] = dominion_env.create_rating()
+                    r[pname] = env.create_rating()
 
         # Update ratings
         (oldr1, oldr2) = (r[p1name], r[p2name])
-        (r[p1name], r[p2name]) = rate(r[p1name], r[p2name], p1score)
+        (r[p1name], r[p2name]) = rate(r[p1name], r[p2name], p1score, env)
 
         # Cache game and rating info
         history.append({'time': time,
@@ -54,10 +58,10 @@ def generate_ratings(limit, last_time, last_logfile):
     return (history, r)
 
 
-def record_ratings(limit, last_time, last_logfile):
+def record_ratings(limit, last_time, last_logfile, env):
     """Starting with the first game after <last_logfile>, process the next
        <count> games, updating and caching players' ratings"""
 
-    (history, ratings) = generate_ratings(limit, last_time, last_logfile)
+    (history, ratings) = generate_ratings(limit, last_time, last_logfile, True, env)
     db_manager.insert_ratings(history)
     return len(history)

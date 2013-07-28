@@ -16,6 +16,13 @@ class LeaderboardHandler(tornado.web.RequestHandler):
 
     def get(self):
         ratings = db_manager.fetch_all_ratings()
+
+        counts_tuples = db_manager.fetch_rated_game_counts()
+        counts = {}
+        for [pname,n] in counts_tuples:
+            assert not pname in counts
+            counts[pname] = n
+
         rank = lambda x: ratings[x]['mu'] - 3 * ratings[x]['sigma']
         pnames = sorted(ratings, key=rank)
 
@@ -25,12 +32,13 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             r = ratings[p]
             r['pname'] = p
             r['rank'] = rank
-            r['games'] = 0
-            r['level'] = int(r['mu'] - 3 * r['sigma'])
+            r['games'] = counts[p]
+            r['level'] = int(ratings[p]['mu'] - 3 * ratings[p]['sigma'])
             r['updown'] = ''
             r['updown_n'] = ''
-            r['mu'] = "%5.2f" % r['mu']
-            r['sigma'] = "%4.2f" % r['sigma']
+            r['mu'] = "%5.2f" % ratings[p]['mu']
+            r['3sigma'] = "%4.2f" % (3*ratings[p]['sigma'])
+            r['sigma'] = "%4.2f" % ratings[p]['sigma']
             prs.append(r)
             rank = rank - 1
         prs = reversed(prs)
