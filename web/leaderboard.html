@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html";charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <script src="/static/jquery-1.9.1.js"></script>
-    <script src="/static/sorttable.js"></script>
+    <!--script src="/static/sorttable.js"></script-->
   </head>
   <body>
 
@@ -18,21 +18,15 @@
 
     <p>
 
-    <!--table class=stats>
-      <tr>
-        <th></th>
-        <th class=r>All</th>
-        <th class=r>Yesterday</th>
-      </tr>
-      <tr>
-        <th class=b>Games</th>
-        <td>{{game_count_all}}</td>
-        <td>{{game_count_yesterday}}</td>
-      </tr>
-    </table-->
-
     <p><a href="http://forum.dominionstrategy.com/index.php?topic=8891.msg269556#msg269556">Implementation details and discussion</a><p>
-    <p class=date>Includes Goko games from May 12, 2013 through {{date_updated}}</p>
+    <p class=date>Last updated {{ago_m}} min, {{ago_s}} seconds ago</p>
+
+    {% if full %}
+    <p class=date>Displaying all players. <a href={{"?full=False&sortkey=" + sortkey}}>Partial leaderboard</a> </p>
+    {% else %}
+    <p class=date>Displaying only players with 20+ games, 0+ level, and games played in the last
+    month. <a href={{"?full=True&sortkey=" + sortkey}}>Full leaderboard</a> </p>
+    {% end %}
 
     <hr>
 
@@ -40,19 +34,33 @@
     <table class="leaderboard sortable">
 
       <tr>
-        <th>Skill</th>
-        <th>&mu;</th> <th>&plusmn;</th>
-        <th>3&sigma;</th>
-        <th>Rank</th>
-        <th>Games</th>
-        <th>Goko Username</th>
+        <th style="text-align:center">
+          <a href="?sortkey=level&full={{full}}">Level</a>
+        </th>
+        <th style="text-align:center">
+          <a href="?sortkey=mu&full={{full}}">&mu;</a>
+        </th>
+        <th>
+        </th>
+        <th style="text-align:center">
+          <a href="?sortkey=sigma&full={{full}}">3&sigma;</a>
+        </th>
+        <th style="text-align:center">
+          <a href="?sortkey=level&full={{full}}">Rank</a>
+        </th>
+        <th style="text-align:center">
+          <a href="?sortkey=numgames&full={{full}}">Games</a>
+        </th>
+        <th>
+          <a href="?sortkey=pname&full={{full}}">Goko Username</a>
+        </th>
       </tr>
 
       {% set last_level = None %}
       {% for pr in player_ratings %}
         <tr class=level>
           <td class=level>
-              {% if pr['level'] != last_level %}
+              {% if pr['level'] != last_level or sortkey != "level" %}
                 {% set n=0 %}
                 Level {{pr['level']}}
               {% else %}
@@ -77,7 +85,7 @@
               <{{pr['updown_n']}}>
             </span-->
           </td>
-          <td class=c>{{pr['games']}}</td>
+          <td style="text-align:right">{{pr['games']}}</td>
           <td>{{pr['pname']}}</td>
         </tr>
       {% end %}

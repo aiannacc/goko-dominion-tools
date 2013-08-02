@@ -6,6 +6,9 @@ from ..model import db_manager
 
 # TODO: use player hash instead of player names
 
+# This class is in serious need of refactoring, as is all of the trueskill
+# leaderboard code.
+
 
 dominion_env = trueskill.TrueSkill(draw_probability=0.0175, backend='scipy')
 isodominion_env = trueskill.TrueSkill(mu=25, sigma=25, beta=25, tau=25/100, draw_probability=0.05, backend='scipy')
@@ -28,6 +31,7 @@ def rate(ra, rb, score, env):
 def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
     history = []
     r = {}
+    n = {}
     for row in db_manager.search_all_2p_scores(limit, last_time, last_logfile):
         (time, logfile, p1name, p2name, p1score) = row
 
@@ -38,10 +42,13 @@ def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
                     ms = db_manager.get_rating(pname)
                     if ms:
                         r[pname] = env.create_rating(ms[0], ms[1])
+                        n[pname] = db_manager.get_game_count(pname)
                     else:
                         r[pname] = env.create_rating()
+                        n[pname] = 0
                 else:
-                    r[pname] = env.create_rating()
+                    r[pname] = env.create_rating(ms[0], ms[1])
+                    n[pname] = 0
 
         # Update ratings
         (oldr1, oldr2) = (r[p1name], r[p2name])
@@ -54,14 +61,22 @@ def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
                         'old_rating': oldr1,
                         'old_opp_rating': oldr2,
                         'score': p1score,
-                        'new_rating': r[p1name]})
+                        'new_rating': r[p1name],
+                        'numgames': n[p1name] + 1})
         history.append({'time': time,
                         'logfile': logfile,
                         'pname': p2name,
                         'old_rating': oldr2,
                         'old_opp_rating': oldr1,
                         'score': -p1score,
-                        'new_rating': r[p2name]})
+                        'new_rating': r[p2name],
+                        'numgames': n[p2name] + 1})
+
+        #print(p1name, n[p1name])
+        #print(history[-2])
+        #print(p2name, n[p2name])
+        #print(history[-1])
+
     return (history, r)
 
 

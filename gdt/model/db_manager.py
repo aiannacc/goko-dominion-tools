@@ -6,7 +6,6 @@ import time
 import socket
 import datetime
 import copy
-import pprint
 
 import postgresql
 
@@ -44,7 +43,7 @@ def search_game_results(search):
 
 
 def delete_logs(logfiles):
-    print(len(logfiles))
+    #print(len(logfiles))
     _con.prepare('DELETE FROM game WHERE logfile=$1').load_rows(logfiles)
     _con.prepare('DELETE FROM presult WHERE logfile=$1').load_rows(logfiles)
     #_con.prepare('DELETE FROM gain WHERE logfile=$1').load_rows(logfiles)
@@ -86,9 +85,6 @@ def search_log_filenames(p):
         sql = log_search_sql_solo(p)
     else:
         sql = log_search_sql(p)
-
-    # Print search for debugging purposes
-    #pprint.pprint(p)
 
     (ps, params) = prepare(_con, sql, p)
     return [r[0] for r in ps(*params)]
@@ -200,7 +196,7 @@ def log_search_sql(p):
 
 
 def fetch_game_results(log_filenames):
-    """ Fetch supply, VPs per player, etc. Return a GameResult object. 
+    """ Fetch supply, VPs per player, etc. Return a GameResult object.
         Return results in the same order as the original log files"""
 
     ps = _con.prepare("""SELECT * FROM game g WHERE logfile = ANY($1)""")
@@ -271,17 +267,23 @@ def search_all_2p_scores(limit, time, logfile):
 def fetch_rated_game_counts():
     ps = _con.prepare("""SELECT pname, COUNT(pname) FROM ts_rating_history
                       GROUP BY pname""")
-    return ps();
-    
+    return ps()
 
-def fetch_all_ratings():
-    mu_sig = {}
+
+def fetch_all_ratings(mingames, lastactive, minlevel):
+    mu_sig_num = {}
     # TODO: Fix the Boodaloo problem more elegantly
-    for (p, m, s) in _con.query("""SELECT pname, mu, sigma
-                                   FROM ts_rating
-                                  WHERE pname != 'Boodaloo'"""):
-        mu_sig[p] = {'mu': m, 'sigma': s}
-    return mu_sig
+    ps = _con.prepare(
+        """SELECT pname, mu, sigma, numgames
+             FROM ts_rating
+            WHERE pname != 'Boodaloo'
+              AND ($1::smallint IS NULL OR numgames >= $1)
+              AND ($2::timestamp IS NULL OR time >= $2)
+              AND ($3::smallint IS NULL OR (mu - 3*sigma) >= $3)""")
+    for (p, m, s, n) in ps(mingames, lastactive, minlevel):
+        mu_sig_num[p] = {'mu': m, 'sigma': s, 'n': n}
+    return mu_sig_num
+
 
 def fetch_last_rated_log_time():
     return _con.query.first("""SELECT max(time) from ts_rating""")
@@ -350,8 +352,8 @@ def inserts(games):
 
         # Copy values from GameResult object.
         gd = {}
-        game_keys = ['time', 'logfile', 'supply', 'colony', 'shelters', 'pcount',
-                     'plist', 'bot', 'guest', 'rating', 'adventure']
+        game_keys = ['time', 'logfile', 'supply', 'colony', 'shelters',
+                     'pcount', 'plist', 'bot', 'guest', 'rating', 'adventure']
         for k in game_keys:
             gd[k] = getattr(g, k, None)
         gd['supply'] = ', '.join(g.supply)
@@ -414,9 +416,22 @@ def inserts(games):
     #      """ % tuple(gain_keys)
     #_con.prepare(sql).load_rows(rows['ret'])
 
+
 def get_ts_rating_history(limit):
-    return _con.prepare("""SELECT * from ts_rating_history ORDER BY
-                        time LIMIT $1""")(limit)
+    return _con.prepare("""SELECT *
+                             FROM ts_rating_history
+                            ORDER BY time
+                            LIMIT $1""")(limit)
+
+
+def get_game_count(pname):
+    x = _con.prepare("""SELECT numgames
+                          FROM ts_rating
+                         WHERE pname = $1""")(pname)
+    n = x[0][0] if len(x) > 0 else 0
+    #print(pname, x, n)
+    return n
+
 
 def insert_ratings(rating_history):
     h_rows = []
@@ -447,7 +462,7 @@ def insert_ratings(rating_history):
                                         (time, logfile, pname, mu, sigma)
                                  VALUES ($1,$2,$3,$4,$5)""")(*r)
             except:
-                print(r)
+                #print(r)
                 raise
 
     # Insert rating histories
