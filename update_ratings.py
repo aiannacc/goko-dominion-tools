@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import gdt.model.db_manager as db_manager
-import gdt.ratings.trueskill as ts
+import gdt.ratings.gdt_trueskill as ts
 
 count = -1
 while count != 0:

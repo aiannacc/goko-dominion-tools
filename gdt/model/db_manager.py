@@ -414,6 +414,9 @@ def inserts(games):
     #      """ % tuple(gain_keys)
     #_con.prepare(sql).load_rows(rows['ret'])
 
+def get_ts_rating_history(limit):
+    return _con.prepare("""SELECT * from ts_rating_history ORDER BY
+                        time LIMIT $1""")(limit)
 
 def insert_ratings(rating_history):
     h_rows = []
