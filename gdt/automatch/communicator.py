@@ -3,6 +3,7 @@ import threading
 import json
 import datetime
 import logging
+from pprint import pprint
 
 import tornado.web
 import tornado.websocket
@@ -43,10 +44,11 @@ class AutomatchWSH(tornado.websocket.WebSocketHandler):
     def on_message(self, message_str):
         """ Forward a message from an automatch client to the
         AutomatchCommunicator. """
-        #logging.debug('Message received: wsh = %s' % self.__repr__())
+        logging.debug('Message received: wsh = %s' % self.__repr__())
         msg = json.loads(message_str)
         AutomatchCommunicator.instance().receive_message(self, msg)
         AutomatchCommunicator.instance().update_server_view()
+        AutomatchCommunicator.instance().log_server_state()
 
 
 # Singleton class that translates messages between the AutomatchManager and
@@ -96,8 +98,9 @@ class AutomatchCommunicator():
         wsh = self.wsh.get(pname, None)
         if wsh:
             logging.debug('Sending message to %s:' % pname)
-            logging.debug(msg)
             wsh.write_message(AutomatchEncoder().encode(msg))
+            #logging.debug(AutomatchEncoder().encode(msg))
+            pprint(msg, width=1)
         else:
             logging.warn("""Couldn't find websocket for %s to send message: \n
                             %s\n
@@ -113,11 +116,22 @@ class AutomatchCommunicator():
         for pname in pnames:
             self._send_message(pname, msgtype, **kwargs)
 
+    @synchronized
+    def log_server_state(self):
+        data = self.manager.get_data()
+        print('Clients:')
+        [print('%20s' % p) for p in self.pname.values()]
+        print('Seeks:')
+        print('Offers:')
+        print('Games:')
+
+
+    @synchronized
     def update_server_view(self):
         """ Send the current automatch info the the server view UI. """
         data = self.manager.get_data()
         data['clients'] = list(self.pname.values())
-        msg = {'server_data': data, 'msgtype': 'server_state'}
+        msg = {'SERVER_DATA': data, 'msgtype': 'SERVER_STATE'}
         msg = AutomatchEncoder().encode(msg)
         for view in self.server_views:
             view.write_message(msg)
@@ -129,19 +143,20 @@ class AutomatchCommunicator():
 
         pname = self.pname.get(wsh, None)
         logging.debug('Received message from %s: ' % pname)
-        logging.debug(msg)
+        #logging.debug(AutomatchEncoder().encode(msg))
+        pprint(msg, width=1)
 
         # Handle with the named method
-        methods = {'disconnect': self._disconnect_pname,
-                   'ping': self._ping,
-                   'submit_seek': self._submit_seek,
-                   'cancel_seek': self._cancel_seek,
-                   'accept_offer': self._accept_offer,
-                   'decline_offer': self._decline_offer,
-                   'unaccept_offer': self._unaccept_offer,
-                   'game_started': self._game_started,
-                   'game_failed': self._game_failed,
-                   'cancel_game': self._cancel_game}
+        methods = {'DISCONNECT': self._disconnect_pname,
+                   'PING': self._ping,
+                   'SUBMIT_SEEK': self._submit_seek,
+                   'CANCEL_SEEK': self._cancel_seek,
+                   'ACCEPT_OFFER': self._accept_offer,
+                   'DECLINE_OFFER': self._decline_offer,
+                   'UNACCEPT_OFFEr': self._unaccept_offer,
+                   'GAME_STARTED': self._game_started,
+                   'GAME_FAILED': self._game_failed,
+                   'CANCEL_GAME': self._cancel_game}
          
         methods[msg['msgtype']](pname, msg['message'])
 
@@ -190,7 +205,7 @@ class AutomatchCommunicator():
     def confirm_receipt(self, pname, msgid):
         """ Tell the client that the server has just received a message.
         Intented for synchronizing client-server communication. """
-        self._send_message(pname, 'confirm_receipt', msgid=msgid)
+        self._send_message(pname, 'CONFIRM_RECEIPT', msgid=msgid)
 
     ######################
     # Seek communication #
@@ -207,7 +222,7 @@ class AutomatchCommunicator():
     @synchronized(lock)
     def confirm_seek(self, seek):
         """ Tell a player that his seek request has been received. """
-        self._send_message(seek.player.pname, 'confirm_seek', seek=seek)
+        self._send_message(seek.player.pname, 'CONFIRM_SEEK', seek=seek)
 
     # Player cancels a seek request.
     @synchronized(lock)
@@ -224,7 +239,7 @@ class AutomatchCommunicator():
     def offer_match(self, match):
         """ Send a match offer to all players involved. """
         self._send_message_to_all(match.get_pnames(),
-                                  'offer_match', offer=match)
+                                  'OFFER_MATCH', offer=match)
 
     @synchronized(lock)
     def _accept_offer(self, pname, msg):
@@ -245,7 +260,7 @@ class AutomatchCommunicator():
     @synchronized(lock)
     def rescind_offer(self, match, reason):
         """ Tell all involved players that a match offer has been canceled. """
-        self._send_message_to_all(match.get_pnames(), msgtype='rescind_offer',
+        self._send_message_to_all(match.get_pnames(), msgtype='RESCIND_OFFER',
                                   offer=match, reason=reason)
 
     ######################
@@ -256,7 +271,7 @@ class AutomatchCommunicator():
     def announce_game(self, game):
         """ Server tells players to start a game. """
         self._send_message_to_all(game.get_pnames(),
-                                  'announce_game', game=game)
+                                  'ANNOUNCE_GAME', game=game)
 
     @synchronized(lock)
     def _game_started(self, pname, msg):
@@ -277,4 +292,4 @@ class AutomatchCommunicator():
     def unannounce_game(self, game, reason):
         """ Server tells players that a game is canceled. """
         self._send_message_to_all(game.get_pnames(),
-                                  'unannounce_game', game=game, reason=reason)
+                                  'UNANNOUNCE_GAME', game=game, reason=reason)

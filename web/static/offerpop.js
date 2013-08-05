@@ -22,7 +22,7 @@ $('#offerpop').css("background", "white");
  */
 
 // Update and show/hide the dialog
-AM.show_offerpop = function(visible) {
+AM.showOfferpop = function(visible) {
 
     if (AM.state.offer !== null) {
 
@@ -35,7 +35,7 @@ AM.show_offerpop = function(visible) {
         });
 
         // List or count card sets
-        var sets = AM.get_host(AM.state.offer).sets_owned;
+        var sets = AM.getHost(AM.state.offer).setsOwned;
         switch(sets.length) {
             case 15:
                 $('#offersets').html('All Cards');
@@ -71,7 +71,7 @@ $('#offeracc').click(function (evt) {
     $('#offerwaitinfo').html('Accepted offer. Waiting for server to confirm.');
 
     // Notify server
-    AM.send_message('accept_offer', {matchid: AM.state.offer.matchid}, function() {
+    AM.sendMessage('ACCEPT_OFFER', {matchid: AM.state.offer.matchid}, function() {
         $('#offerwaitinfo').html('Accepted offer. Waiting for opponents(s) to accept.');
         $('#offeracc').prop('disabled', true);
         $('#offerrej').prop('disabled', false);
@@ -79,14 +79,14 @@ $('#offeracc').click(function (evt) {
 });
 
 $('#offerdec').click(function (evt) {
-    AM.show_offerpop(false);
+    AM.showOfferpop(false);
 
     if (AM.state.offer.accepted !== null && AM.state.offer.accepted) {
-        AM.send_message('unaccept_offer', {matchid: AM.state.offer.matchid}, function() {
+        AM.sendMessage('UNACCEPT_OFFER', {matchid: AM.state.offer.matchid}, function() {
             AM.state.offer = null;
         });
     } else {
-        AM.send_message('decline_offer', {matchid: AM.state.offer.matchid}, function() {
+        AM.sendMessage('DECLINE_OFFER', {matchid: AM.state.offer.matchid}, function() {
             AM.state.offer = null;
         });
     }

@@ -2,6 +2,7 @@
 
 import sys
 import logging
+import os
 
 import tornado.web
 import tornado.ioloop
@@ -40,10 +41,6 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(
             self, handlers,
             #static_path='web/static',
-            ssl_options={
-                "certfile": "cert.cer",
-                "keyfile":  "key.key",
-            }
         )
 
 if __name__ == '__main__':
@@ -55,5 +52,9 @@ if __name__ == '__main__':
     print('Starting server on port %d' % port)
 
     # Start server and keep process open
-    tornado.httpserver.HTTPServer(Application()).listen(port)
+    #tornado.httpserver.HTTPServer(Application()).listen(port)
+    tornado.httpserver.HTTPServer(Application(), ssl_options={
+        "certfile": os.path.join(".", "server.crt"),
+        "keyfile": os.path.join(".", "server.key"),
+    }).listen(port)
     tornado.ioloop.IOLoop.instance().start()

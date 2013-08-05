@@ -22,14 +22,14 @@ $('#seekpop').css("background", "white");
  */
 
 // Update and show/hide the dialog
-AM.show_seekpop = function(visible) {
-    AM._update_seekpop();
+AM.showSeekpop = function(visible) {
+    AM.updateSeekpop();
     $('#seekpop').css('visibility', visible ? 'visible' : 'hidden');
 }
 
 // Change status and enable/disable elements based on whether we have an
 // outstanding seek request.
-AM._update_seekpop = function() {
+AM.updateSeekpop = function() {
     var seeking = (AM.state.seek !== null);
     var canceling = seeking
         && (typeof AM.state.seek.canceling !== 'undefined')
@@ -54,43 +54,43 @@ $('#seekreq').click(function() {
     console.log('requested seek');
 
     var np = {class: 'NumPlayers', props: {}};
-    np.props.min_players = parseInt($('#min_players').val());
-    np.props.max_players = parseInt($('#max_players').val());
+    np.props.min_players = parseInt($('#minPlayers').val());
+    np.props.max_players = parseInt($('#maxPlayers').val());
 
     var ns = {class: 'NumSets', props: {}};
-    ns.props.min_sets = parseInt($('#min_sets').val());
-    ns.props.max_sets = parseInt($('#max_sets').val());
+    ns.props.min_sets = parseInt($('#minSets').val());
+    ns.props.max_sets = parseInt($('#maxSets').val());
 
     var rr = {class: 'RelativeRating', props: {}};
     rr.props.pts_lower = parseInt($('#rdiff').val());
     rr.props.pts_higher = parseInt($('#rdiff').val());
-    rr.props.rating_system = $('#rating_system').val();
+    rr.props.rating_system = $('#ratingSystem').val();
 
     var rs = {class: 'RatingSystem', props: {}};
-    rs.props.rating_system = $('#rating_system').val();
+    rs.props.rating_system = $('#ratingSystem').val();
 
     // Send seek request
     AM.state.seek = {player: AM.player,
                      requirements: [np, ns, rr, rs]};
-    AM.send_message('submit_seek', {seek: AM.state.seek});
+    AM.sendMessage('SUBMIT_SEEK', {seek: AM.state.seek});
 
     // Hide the dialog
-    AM.show_seekpop(false);
+    AM.showSeekpop(false);
 });
 
 // Cancel outstanding request, if any, and close dialog
 $('#seekcan').click(function() {
     if (AM.state.seek !== null) {
         AM.state.seek.canceled = true;
-        AM.send_message('cancel_seek',
+        AM.sendMessage('CANCEL_SEEK',
             {seekid: AM.state.seek.seekid},
             function() { AM.state.seek = null; });
     }
-    AM.show_seekpop(false);
+    AM.showSeekpop(false);
 });
 
 $('#seekhide').click(function() {
-    AM.show_seekpop(false);
+    AM.showSeekpop(false);
 });
 
 
@@ -98,26 +98,26 @@ $('#seekhide').click(function() {
  * Input validation
  */
 
-$('#min_players').change(function() {
-    if (parseInt($('#min_players').val()) > parseInt($('#max_players').val())) {
-        $('#max_players').val($('#min_players').val());
+$('#minPlayers').change(function() {
+    if (parseInt($('#minPlayers').val()) > parseInt($('#maxPlayers').val())) {
+        $('#maxPlayers').val($('#minPlayers').val());
     }
 });
 
-$('#max_players').change(function() {
-    if (parseInt($('#max_players').val()) < parseInt($('#min_players').val())) {
-        $('#min_players').val($('#max_players').val());
+$('#maxPlayers').change(function() {
+    if (parseInt($('#maxPlayers').val()) < parseInt($('#minPlayers').val())) {
+        $('#minPlayers').val($('#maxPlayers').val());
     }
 });
 
-$('#min_sets').change(function() {
-    if (parseInt($('#min_sets').val()) > parseInt($('#max_sets').val())) {
-        $('#max_sets').val($('#min_sets').val());
+$('#minSets').change(function() {
+    if (parseInt($('#minSets').val()) > parseInt($('#maxSets').val())) {
+        $('#maxSets').val($('#minSets').val());
     }
 });
 
-$('#max_sets').change(function() {
-    if (parseInt($('#max_sets').val()) < parseInt($('#min_sets').val())) {
-        $('#min_sets').val($('#max_sets').val());
+$('#maxSets').change(function() {
+    if (parseInt($('#maxSets').val()) < parseInt($('#minSets').val())) {
+        $('#minSets').val($('#maxSets').val());
     }
 });

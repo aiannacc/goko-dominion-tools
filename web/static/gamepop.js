@@ -22,14 +22,14 @@ $('#gamepop').css("background", "white");
  */
 
 // Update and show/hide the dialog
-AM.show_gamepop = function(visible) {
-    AM._update_gamepop();
+AM.showGamepop = function(visible) {
+    AM.updateGamepop();
     $('#gamepop').css('visibility', visible ? 'visible' : 'hidden');
 }
 
 // Change status and enable/disable elements based on whether we have an
 // outstanding game request.
-AM._update_gamepop = function() {
+AM.updateGamepop = function() {
 
     $('#gamehost').html();
     $('#gameguests').empty();
@@ -39,7 +39,7 @@ AM._update_gamepop = function() {
         $('#gamehost').html(AM.state.game.hostname);
 
         // List guests
-        AM.get_oppnames(AM.state.game, AM.state.game.hostname).map(function(p) {
+        AM.getOppnames(AM.state.game, AM.state.game.hostname).map(function(p) {
             $('#gameguests').append('<li>' + p + '</li>');
         });
 
@@ -49,6 +49,6 @@ AM._update_gamepop = function() {
 
 $('#abortgame').click(function (evt) {
     $('#abortgame').prop('disabled', true)
-    AM.send_message('cancel_game', {matchid: AM.state.game.matchid});
+    AM.sendMessage('CANCEL_GAME', {matchid: AM.state.game.matchid});
     $('#gamepop').css('visibility', 'hidden')
 });

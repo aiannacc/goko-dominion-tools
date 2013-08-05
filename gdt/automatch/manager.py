@@ -1,13 +1,13 @@
 import threading
 import time
 import logging
+from pprint import pprint
 
 import tornado.ioloop
 
+from gdt.automatch.model import AutomatchEncoder
 from gdt.automatch.matchmaker.isotropic import IsotropicMatchmaker
 from gdt.util.sync import synchronized
-
-from pprint import pprint
 
 TIMEOUT = 2*1000
 PERIOD = 5*1000
@@ -122,7 +122,6 @@ class AutomatchManager():
                 logging.info('All players accept offer %s' % matchid)
                 self.games[matchid] = o
                 self.offers.pop(matchid, None)
-                print(o.to_dict())
                 self.comm.announce_game(o)
 
     @synchronized(lock)
@@ -202,5 +201,4 @@ class AutomatchManager():
         data['seeks'] = list(self.seeks.values())
         data['offers'] = list(self.offers.values())
         data['games'] = list(self.games.values())
-        pprint(data)
         return data

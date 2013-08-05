@@ -43,6 +43,8 @@ def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
                     if ms:
                         r[pname] = env.create_rating(ms[0], ms[1])
                         n[pname] = db_manager.get_game_count(pname)
+                        if n[pname] is None:
+                            n[pname] = 0
                     else:
                         r[pname] = env.create_rating()
                         n[pname] = 0
@@ -53,6 +55,8 @@ def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
         # Update ratings
         (oldr1, oldr2) = (r[p1name], r[p2name])
         (r[p1name], r[p2name]) = rate(r[p1name], r[p2name], p1score, env)
+        n[p1name] = n[p1name] + 1
+        n[p2name] = n[p2name] + 1
 
         # Cache game and rating info
         history.append({'time': time,
@@ -62,7 +66,7 @@ def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
                         'old_opp_rating': oldr2,
                         'score': p1score,
                         'new_rating': r[p1name],
-                        'numgames': n[p1name] + 1})
+                        'numgames': n[p1name]})
         history.append({'time': time,
                         'logfile': logfile,
                         'pname': p2name,
@@ -70,12 +74,7 @@ def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
                         'old_opp_rating': oldr1,
                         'score': -p1score,
                         'new_rating': r[p2name],
-                        'numgames': n[p2name] + 1})
-
-        #print(p1name, n[p1name])
-        #print(history[-2])
-        #print(p2name, n[p2name])
-        #print(history[-1])
+                        'numgames': n[p2name]})
 
     return (history, r)
 

@@ -43,7 +43,6 @@ def search_game_results(search):
 
 
 def delete_logs(logfiles):
-    #print(len(logfiles))
     _con.prepare('DELETE FROM game WHERE logfile=$1').load_rows(logfiles)
     _con.prepare('DELETE FROM presult WHERE logfile=$1').load_rows(logfiles)
     #_con.prepare('DELETE FROM gain WHERE logfile=$1').load_rows(logfiles)
@@ -429,7 +428,6 @@ def get_game_count(pname):
                           FROM ts_rating
                          WHERE pname = $1""")(pname)
     n = x[0][0] if len(x) > 0 else 0
-    #print(pname, x, n)
     return n
 
 
@@ -462,7 +460,6 @@ def insert_ratings(rating_history):
                                         (time, logfile, pname, mu, sigma)
                                  VALUES ($1,$2,$3,$4,$5)""")(*r)
             except:
-                #print(r)
                 raise
 
     # Insert rating histories

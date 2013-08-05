@@ -16,8 +16,7 @@ var AM = {ws: null,
           player: null,
           state: {seek: null,
                   offer: null,
-                  game: null,
-                  playing: null}};
+                  game: null}};
 
 // Make AM available in the global namespace of Goko's script. This is
 // "unsafe" in that Goko can potentially read this JS script, disable it, 
@@ -190,8 +189,7 @@ AM.connect = function() {
             console.log('Connected to Automatch server as ' + AM.player.pname);
             AM.state = {seek: null,
                         offer: null,
-                        game: null,
-                        playing: null};
+                        game: null};
             if (typeof AM.show_seekpop !== 'undefined') {
                 AM.show_seekpop(false);
             }
@@ -282,7 +280,6 @@ AM.announce_game = function(msg) {
             var opps = AM.get_oppnames(AM.state.game, AM.player.pname);
 
             // After all opponents join:
-            // TODO: Why am I not getting any join events?
             var after_join = function() {
                 var g = AM.get_game_owned_by(AM.player.pname);
                 if (typeof g !== 'undefined'
@@ -305,21 +302,9 @@ AM.announce_game = function(msg) {
             // Accept guest's join request automatically.
             AM.set_autoaccept(true, opps);
 
-            // Finally ready to create the game
+            // All listeners and callbacks are ready. Finally create the game.
             AM.create_game(opps, AM.state.game.rating_system);
 
-            // TODO: optionally start game automatically
-
-            // When the game starts...
-            AM.on_game_start = function() {
-
-                // ... update local variables
-                AM.state.playing = AM.state.game;
-                AM.state.game = null;
-
-                // ... notify the server
-                AM.send_message('game_started', AM.state.playing.matchid);
-            }
         } else {
 
             // If guest, go to the game room and wait for the host's game.
@@ -332,19 +317,8 @@ AM.announce_game = function(msg) {
                     console.log('Joining automatch game. Automatch complete.');
                     AM.join_game(g);
                     AM.show_gamepop(false);
-
-                    // When the game starts...
-                    AM.on_game_start = function() {
-                        
-                        // ... update local variables
-                        AM.state.playing = AM.state.game;
-                        AM.state.game = null;
-
-                        // ... notify the server
-                        AM.send_message('game_started', AM.state.playing.matchid);
-                    }
                 }
-            }, 500);
+            }, 100);
         }
     });
 };
@@ -354,6 +328,21 @@ AM.unannounce_game = function(msg) {
     AM.state.game = null;
     AM.state.reason = msg.reason;
 };
+
+/*
+ * Handle started game.
+ */ 
+AM.on_game_start = function() {
+
+   // update local variables
+   AM.state.seek = null;
+   AM.state.offer = null;
+   AM.state.game = null;
+
+   // notify the server
+   // TODO: Find some way to determine whether this is an automatch game or not
+   AM.send_message('game_started');
+}
 
 /*
  * UI Construction

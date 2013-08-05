@@ -128,6 +128,7 @@ class Rating:
 # TODO: get rid of to_dict()?
 class AutomatchEncoder(json.JSONEncoder):
     def default(self, obj):
+        print('Class is' + obj.__class__.__name__)
         if isinstance(obj, Match):
             return obj.to_dict()
         elif isinstance(obj, Seek):
@@ -138,4 +139,6 @@ class AutomatchEncoder(json.JSONEncoder):
             return obj.to_dict()
         elif isinstance(obj, Requirement):
             return obj.to_dict()
+        elif isinstance(obj, dict):
+            return obj
         return json.JSONEncoder.default(self, obj)
