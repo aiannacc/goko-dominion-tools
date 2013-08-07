@@ -14,11 +14,14 @@ from gdt.automatch.requirement import Requirement
 # A Match can represent either a game offer or an actual game.
 #
 class Match:
-    def __init__(self, seeks, rating_system, hostname, roomname=None):
+    def __init__(self, seeks, rating_system, hostname, roomname=None,
+                 roomid=None, tableindex=None):
         self.seeks = seeks
         self.rating_system = rating_system
         self.hostname = hostname
         self.roomname = roomname
+        self.roomid = roomid
+        self.tableindex = tableindex
         self.acceptors = set()
         self.matchid = uuid.uuid4().hex
 
@@ -45,6 +48,8 @@ class Match:
         return {'seeks': [s.to_dict() for s in self.seeks],
                 'hostname': self.hostname,
                 'roomname': self.roomname,
+                'roomid': self.roomid,
+                'tableindex': self.tableindex,
                 'rating_system': self.rating_system,
                 'acceptors': list(self.acceptors),
                 'matchid': self.matchid}
@@ -55,13 +60,14 @@ class Match:
     def get_host(self):
         is_host = lambda s: s.player.pname == self.hostname
         hosts = list(filter(is_host, self.seeks))
-        #assert(len(hosts) <= 1)
-        #if len(hosts) == 1:
         if len(hosts) >= 1:
             return hosts[0].player
         else:
             return None
 
+    def get_guests(self):
+        is_guest = lambda s: s.player.pname != self.hostname
+        return list(filter(is_guest, self.seeks))
 
 # A Seek is a Player and his SeekRequirements. ID is random.
 class Seek:

@@ -68,11 +68,12 @@ class AutomatchManager():
         if g:
             self.comm.unannounce_game(g, reason)
 
-    def _rem_player(self, pname, reason):
+    def _rem_player(self, pname, reason, include_ping=True):
         """ Remove a player entirely: remove his seeks, cancel match offers and
         unannounce games that involve him, remove his ping times. """
         logging.info('Removing all for player %s' % pname)
-        self.last_ping.pop(pname, None)
+        if include_ping:
+            self.last_ping.pop(pname, None)
 
         seek_is_from_pname = lambda s: s.player.pname == pname
         match_has_pname = lambda o: pname in o.get_pnames()
@@ -140,12 +141,27 @@ class AutomatchManager():
         self._rem_game(matchid, msg)
 
     @synchronized(lock)
-    def game_started(self, pname, matchid):
-        """ Player tells server that the game has started. """
-        g = self.games.pop(matchid, None)
+    def game_created(self, pname, game):
+        """ Automatch host player tells server that the table is ready. """
+        logging.debug('Game Created:')
+        logging.debug(game)
+        g = self.games.get(game['matchid'], None)
         if g:
-            msg = 'Game %s started.' % matchid
-            self._rem_game(matchid, msg)
+            g.roomid = game['roomid']
+            g.tableindex = game['tableindex']
+            self.comm.game_ready(g)
+
+    @synchronized(lock)
+    def game_started(self, pname, matchid):
+        """ Player tells server that he has started a game. """
+        g = self.games.pop(matchid, None)
+        if (g):
+            # It's an automatch game. No action necessary
+            pass
+        else:
+            # It's not an automatch game. Remove player from seek queue, etc.
+            msg = 'Player %s started a non-automatch game.' % pname
+            self._rem_player(pname, msg, False)
 
     @synchronized(lock)
     def cancel_game(self, pname, matchid):

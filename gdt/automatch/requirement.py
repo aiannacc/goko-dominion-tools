@@ -12,12 +12,12 @@ class Requirement():
 
     @staticmethod
     def from_dict(d):
-        out = globals()[d['class']]()
+        out = globals()[d['rclass']]()
         out.__dict__ = d['props']
         return out
 
     def to_dict(self):
-        return {'class': self.__class__.__name__,
+        return {'rclass': self.__class__.__name__,
                 'props': copy.deepcopy(self.__dict__)}
 
 

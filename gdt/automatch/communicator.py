@@ -154,6 +154,7 @@ class AutomatchCommunicator():
                    'ACCEPT_OFFER': self._accept_offer,
                    'DECLINE_OFFER': self._decline_offer,
                    'UNACCEPT_OFFEr': self._unaccept_offer,
+                   'GAME_CREATED': self._game_created,
                    'GAME_STARTED': self._game_started,
                    'GAME_FAILED': self._game_failed,
                    'CANCEL_GAME': self._cancel_game}
@@ -272,6 +273,17 @@ class AutomatchCommunicator():
         """ Server tells players to start a game. """
         self._send_message_to_all(game.get_pnames(),
                                   'ANNOUNCE_GAME', game=game)
+
+    @synchronized(lock)
+    def _game_created(self, pname, msg):
+        """ Automatch hostlplayer tells server that he created the table. """
+        self.manager.game_created(pname, msg['game'])
+
+    @synchronized(lock)
+    def game_ready(self, game):
+        """ Server tells players to start a game. """
+        self._send_message_to_all(game.get_pnames(),
+                                  'GAME_READY', game=game)
 
     @synchronized(lock)
     def _game_started(self, pname, msg):

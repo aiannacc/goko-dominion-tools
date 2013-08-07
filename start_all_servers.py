@@ -22,7 +22,7 @@ class SFH(tornado.web.StaticFileHandler):
 
 
 # Handle requests for log search, kingdom visualizer, and leaderboard.
-class Application(tornado.web.Application):
+class LogApplication(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", SearchHandler),
@@ -34,27 +34,40 @@ class Application(tornado.web.Application):
             (r"/kingdomvisualize/", KingdomHandler),
             (r"/leaderboard", LeaderboardHandler),
             (r"/leaderboard/", LeaderboardHandler),
-            (r"/automatch", AutomatchWSH),
             (r"/wshblast", BlastWSH),
             (r"/static/(.*)", SFH, {"path": "web/static"})
         ]
         tornado.web.Application.__init__(
-            self, handlers,
-            #static_path='web/static',
+            self, handlers
         )
 
+class AutomatchApplication(tornado.web.Application):
+    def __init__(self):
+        handlers = [
+            (r"/automatch", AutomatchWSH),
+        ]
+        tornado.web.Application.__init__(
+            self, handlers
+        )
+
+
 if __name__ == '__main__':
-    # Detailed logging while developing
-    logging.basicConfig(level=logging.DEBUG)
+    # Detailed logging for development
+    #logging.basicConfig(level=logging.DEBUG)
 
-    # Usage: python start_logserver.py <port>
-    port = int(sys.argv[-1])
-    print('Starting server on port %d' % port)
+    # Less detailed logging for production
+    logging.basicConfig(level=logging.INFO)
 
-    # Start server and keep process open
-    #tornado.httpserver.HTTPServer(Application()).listen(port)
-    tornado.httpserver.HTTPServer(Application(), ssl_options={
-        "certfile": os.path.join(".", "server.crt"),
-        "keyfile": os.path.join(".", "server.key"),
-    }).listen(port)
+    # Run logsearch+ on the requested port
+    http_port = int(sys.argv[1])
+    print('Starting log server on port %d' % http_port)
+    ws_port = int(sys.argv[2])
+    print('Starting automatch server on port %d' % ws_port)
+
+    tornado.httpserver.HTTPServer(LogApplication()).listen(http_port)
+    tornado.httpserver.HTTPServer(AutomatchApplication(), ssl_options={
+                "certfile": os.path.join("/etc/ssl/certs/", "andrewiannaccone_com.crt"),
+                "keyfile": os.path.join("/etc/ssl/private/", "key.pem"),
+            }).listen(ws_port)
+
     tornado.ioloop.IOLoop.instance().start()
