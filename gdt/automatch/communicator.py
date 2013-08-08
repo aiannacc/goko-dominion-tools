@@ -164,7 +164,7 @@ class AutomatchCommunicator():
                    'CANCEL_SEEK': self._cancel_seek,
                    'ACCEPT_OFFER': self._accept_offer,
                    'DECLINE_OFFER': self._decline_offer,
-                   'UNACCEPT_OFFEr': self._unaccept_offer,
+                   'UNACCEPT_OFFER': self._unaccept_offer,
                    'GAME_CREATED': self._game_created,
                    'GAME_STARTED': self._game_started,
                    'GAME_FAILED': self._game_failed,
