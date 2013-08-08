@@ -1,3 +1,5 @@
+var data;
+
 (function () {
     "use strict";
     /*jslint browser:true, forin:true */
@@ -36,7 +38,7 @@
     };
 
     update_ui = function (evt) {
-        var data, client_str, seek_str, game_str, g, h, c, s, offer_str, i, o, history_str;
+        var client_str, seek_str, game_str, g, h, c, s, offer_str, i, o, history_str;
         data = JSON.parse(evt.data);
         console.log(data);
         if (data.msgtype === 'SERVER_STATE') {

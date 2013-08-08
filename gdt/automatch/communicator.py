@@ -3,7 +3,6 @@ import threading
 import json
 import datetime
 import logging
-from pprint import pprint
 
 import tornado.web
 import tornado.websocket
@@ -99,8 +98,6 @@ class AutomatchCommunicator():
         if wsh:
             logging.debug('Sending message to %s:' % pname)
             wsh.write_message(AutomatchEncoder().encode(msg))
-            #logging.debug(AutomatchEncoder().encode(msg))
-            #pprint(msg, width=1)
             if msgtype == 'CONFIRM_RECEIPT':
                 logging.debug(msg)
             else:

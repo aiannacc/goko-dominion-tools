@@ -69,9 +69,9 @@ if __name__ == '__main__':
 
     # Run logsearch+ on the requested port
     http_port = int(sys.argv[1])
-    print('Starting log server on port %d' % http_port)
+    logging.info('Starting log server on port %d' % http_port)
     ws_port = int(sys.argv[2])
-    print('Starting automatch server on port %d' % ws_port)
+    logging.info('Starting automatch server on port %d' % ws_port)
 
     tornado.httpserver.HTTPServer(LogApplication()).listen(http_port)
     tornado.httpserver.HTTPServer(AutomatchApplication(), ssl_options={

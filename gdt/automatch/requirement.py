@@ -1,7 +1,6 @@
 import uuid
 import json
 import copy
-from pprint import pprint as pprint
 
 
 # A Requirement is a rule that determines whether a proposed match is

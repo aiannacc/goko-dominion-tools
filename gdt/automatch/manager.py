@@ -1,7 +1,6 @@
 import threading
 import time
 import logging
-from pprint import pprint
 
 import tornado.ioloop
 

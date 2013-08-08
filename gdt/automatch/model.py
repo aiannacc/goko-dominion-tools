@@ -39,7 +39,6 @@ class Match:
         seen = set()
         for p in pnames:
             if (p in seen):
-                #print('Seen %s before' % p)
                 return False
             seen.add(p)
         return True
