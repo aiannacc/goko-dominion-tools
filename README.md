@@ -16,7 +16,7 @@ Work in Progress:
 
 Contributions are welcome.
 
-### Installation
+### Installation (out of date)
 
 You'll need Python v3.3.2+ and the following PyPi packages:
 
@@ -37,7 +37,7 @@ You can either connect to a remote database of parsed games or create your own. 
 
 The default configuration is to connect to the PostgreSQL server at gokologs.drunkensailor.org, which has all the games played on Goko and updates every 15 minutes. Configuration information is in `gdt/model/db_manager`.
 
-#### Local
+#### Local (out of date)
 
 To create your own database, install PostgreSQL and create a database with UTF-8 encoding. Then create the database schema:
 
@@ -54,7 +54,7 @@ Download and parse logs from the Goko log archive:
 where `<logdir>` is the local directory where you want to store unparsed logs, `<codebase>` is this project's root, and `<dates>` are formatted like YYYYMMDD. You'll have to run this for each day. The import process is IO-bound on a modern machine. An SSD drive helps a lot. As of July 2013, the full database is about 100G.
 
 
-### Server setup
+### Server setup (out of date)
 
 Start the server:
 
