@@ -70,6 +70,9 @@ def parse_goko_log(logtext):
     cur_player = None
 
     first_quit_line = None
+    first_quitter = None
+    num_quitters = 0
+
     game_over_line = None
     line_number = 0
     for line in logtext.split('\n'):
@@ -136,6 +139,8 @@ def parse_goko_log(logtext):
             first_quit_line = (first_quit_line
                                if first_quit_line
                                else line_number)
+            first_quitter = m.group(1)
+            num_quitters += 1
             continue
         m = RE_GAMEOVER.match(line)
         if m:
@@ -301,6 +306,10 @@ def parse_goko_log(logtext):
                     # Ignore a Goko bug where games that never really start end
                     # up with the wrong places.
                     print('Wrong rankings in <2 turn game')
+                elif num_quitters > 1:
+                    # Ignore a Goko bug where when both players quit, the loser
+                    # is the player whose turn it was
+                    print('Wrong rankings with 2+ quitters') 
                 else:
                     print(presults)
                     print(pname, place)

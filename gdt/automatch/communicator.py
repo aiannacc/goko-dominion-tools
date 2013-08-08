@@ -196,9 +196,10 @@ class AutomatchCommunicator():
         if wsh in self.server_views:
             self.server_views.remove(wsh)
         if wsh in self.pname:
-            pname = self.pname.pop(wsh)
-            self.wsh.pop(pname)
-            self.manager.disconnected(pname)
+            pname = self.pname.pop(wsh, None)
+            self.wsh.pop(pname, None)
+            if pname:
+                self.manager.disconnected(pname)
 
     @synchronized(lock)
     def _disconnect_pname(self, pname, message):
