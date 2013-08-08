@@ -36,6 +36,7 @@ class AutomatchManager():
         self.offers = {}     # Outstanding offers, by matchid
         self.games = {}      # Announced but unstarted games, by matchid
         self.last_ping = {}  # Most recent ping time, by player name
+        self.history = []    # Successfully matched and started games
 
         # Start matchmaking cycle
         self.matchmaker = IsotropicMatchmaker()
@@ -50,20 +51,20 @@ class AutomatchManager():
 
     def _rem_seek(self, seekid, reason):
         """ Remove seek request. """
-        logging.info('Removing seek %s' % seekid)
+        logging.debug('Removing seek %s' % seekid)
         self.seeks.pop(seekid, None)
         # TODO: Maybe tell player his seek has been removed <?>
 
     def _rem_offer(self, matchid, reason):
         """ Remove match offer. Notify involved players. """
-        logging.info('Removing offer %s' % matchid)
+        logging.debug('Removing offer %s' % matchid)
         o = self.offers.pop(matchid, None)
         if o:
             self.comm.rescind_offer(o, reason)
 
     def _rem_game(self, matchid, reason):
         """ Remove game. Notify involved players. """
-        logging.info('Removing game %s' % matchid)
+        logging.debug('Removing game %s' % matchid)
         g = self.games.pop(matchid, None)
         if g:
             self.comm.unannounce_game(g, reason)
@@ -71,7 +72,7 @@ class AutomatchManager():
     def _rem_player(self, pname, reason, include_ping=True):
         """ Remove a player entirely: remove his seeks, cancel match offers and
         unannounce games that involve him, remove his ping times. """
-        logging.info('Removing all for player %s' % pname)
+        logging.debug('Removing all for player %s' % pname)
         if include_ping:
             self.last_ping.pop(pname, None)
 
@@ -115,12 +116,12 @@ class AutomatchManager():
     def accept_offer(self, pname, matchid):
         """ Add player name to the set of players that have accepted the match
         offer. If all involved players have accepted, announce game. """
-        logging.info('%s accepts offer %s' % (pname, matchid))
+        logging.debug('%s accepts offer %s' % (pname, matchid))
         o = self.offers.get(matchid, None)
         if o:
             o.acceptors.add(pname)
             if len(o.acceptors) == len(o.get_pnames()):
-                logging.info('All players accept offer %s' % matchid)
+                logging.debug('All players accept offer %s' % matchid)
                 self.games[matchid] = o
                 self.offers.pop(matchid, None)
                 self.comm.announce_game(o)
@@ -156,11 +157,13 @@ class AutomatchManager():
         """ Player tells server that he has started a game. """
         g = self.games.pop(matchid, None)
         if (g):
-            # It's an automatch game. No action necessary
-            pass
+            # It's an automatch game. Save to history.
+            logging.info('Automatch game started: %s' % matchid)
+            self.history.append(g) 
         else:
             # It's not an automatch game. Remove player from seek queue, etc.
             msg = 'Player %s started a non-automatch game.' % pname
+            logging.debug(msg)
             self._rem_player(pname, msg, False)
 
     @synchronized(lock)
@@ -217,4 +220,5 @@ class AutomatchManager():
         data['seeks'] = list(self.seeks.values())
         data['offers'] = list(self.offers.values())
         data['games'] = list(self.games.values())
+        data['history'] = self.history;
         return data

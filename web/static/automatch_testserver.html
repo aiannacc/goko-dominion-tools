@@ -4,21 +4,38 @@
     <title>Automatch Server View</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <!--link rel="stylesheet"
+        href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" /-->
+    <link rel="stylesheet" href="http://jqueryui.com/resources/demos/style.css" />
     <script src="/static/jquery-1.9.1.js"></script>
     <script src="/static/automatch_testserver.js"></script>
+
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
   </head>
 
   <body>
-    <div>
-      <h3>Automatch Server View</h3>
-      Clients:<br/> 
-      <textarea id="clients" cols="50" rows="4"></textarea><br/>
-      Seeks:<br/> 
-      <textarea id="seeks" cols="50" rows="4"></textarea><br/>
-      Offers:<br/> 
-      <textarea id="offers" cols="50" rows="4"></textarea><br/>
-      Games:<br/> 
-      <textarea id="games" cols="50" rows="4"></textarea><br/>
+    <h2>Automatch Server View</h2>
+    <div style='float:left'>
+        <h3> Extension Users: </h3>
+        <textarea id="clients" cols="30" rows="30"></textarea><br/>
+    </div>
+    <div style='float:left'>
+      <div>
+        <h3>Seeks:</h3>
+        <textarea id="seeks" cols="50" rows="4"></textarea><br/>
+      </div>
+      <div>
+        <h3>Offers:</h3>
+        <textarea id="offers" cols="50" rows="2"></textarea><br/>
+      </div>
+      <div>
+        <h3>Games:</h3>
+        <textarea id="games" cols="50" rows="2"></textarea><br/>
+      </div>
+      <div>
+        <h3>History:</h3>
+        <textarea id="games" cols="50" rows="10"></textarea><br/>
+      </div>
     </div>
   </body>
 

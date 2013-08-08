@@ -30,14 +30,14 @@ class AutomatchWSH(tornado.websocket.WebSocketHandler):
             # TODO: close websocket
             pass
         else:
-            logging.info('Browser connected: pname=%s, wsh=%s' % (pname, self))
+            logging.debug('Browser connected: pname=%s, wsh=%s' % (pname, self))
             AutomatchCommunicator.instance()._connect(self, pname)
             AutomatchCommunicator.instance().update_server_view()
 
     def on_close(self):
         """ Tell the AutomatchCommunicator that an automatch client has
         disconnected. """
-        logging.info('Browser closed: wsh = %s' % self.__repr__())
+        logging.debug('Browser closed: wsh = %s' % self.__repr__())
         AutomatchCommunicator.instance()._disconnect(self)
         AutomatchCommunicator.instance().update_server_view()
 
@@ -100,7 +100,11 @@ class AutomatchCommunicator():
             logging.debug('Sending message to %s:' % pname)
             wsh.write_message(AutomatchEncoder().encode(msg))
             #logging.debug(AutomatchEncoder().encode(msg))
-            pprint(msg, width=1)
+            #pprint(msg, width=1)
+            if msgtype == 'CONFIRM_RECEIPT':
+                logging.debug(msg)
+            else:
+                logging.info(msg)
         else:
             logging.warn("""Couldn't find websocket for %s to send message: \n
                             %s\n
@@ -119,11 +123,16 @@ class AutomatchCommunicator():
     @synchronized(lock)
     def log_server_state(self):
         data = self.manager.get_data()
-        print('Clients:')
-        [print('%20s' % p) for p in self.pname.values()]
-        print('Seeks:')
-        print('Offers:')
-        print('Games:')
+        logging.debug('Clients:')
+        [logging.debug('%20s' % p) for p in self.pname.values()]
+        logging.debug('Seeks:')
+        [logging.debug('%20s' % p) for p in data['seeks']]
+        logging.debug('Offers:')
+        [logging.debug('%20s' % p) for p in data['offers']]
+        logging.debug('Games:')
+        [logging.debug('%20s' % p) for p in data['games']]
+        logging.debug('History:')
+        [logging.debug('%20s' % p) for p in data['history']]
 
     @synchronized(lock)
     def update_server_view(self):
@@ -142,9 +151,11 @@ class AutomatchCommunicator():
         specifies with the player's name and message, then confirm reciept. """
 
         pname = self.pname.get(wsh, None)
-        logging.debug('Received message from %s: ' % pname)
-        #logging.debug(AutomatchEncoder().encode(msg))
-        pprint(msg, width=1)
+        if msg['msgtype'] == 'PING':
+            logging.debug('Ping from %s' % pname)
+        else:
+            logging.info('Received message from %s: ' % pname)
+            logging.info(msg)
 
         # Handle with the named method
         methods = {'DISCONNECT': self._disconnect_pname,
@@ -170,7 +181,6 @@ class AutomatchCommunicator():
 
     @synchronized(lock)
     def _connect(self, wsh, pname):
-        print('connect')
         """ When a client connects, associate his player name with his
         websocket handler. """
         if pname == 'SERVER_VIEW':
