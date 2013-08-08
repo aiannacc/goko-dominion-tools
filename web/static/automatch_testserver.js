@@ -86,6 +86,6 @@ var data;
             h = data.history[i];
             history_str += match_to_vs(h) + '\n';
         }
-        $("#history").val(game_str);
+        $("#history").val(history_str);
     };
 }());
