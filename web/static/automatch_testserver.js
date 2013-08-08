@@ -1,4 +1,4 @@
-url = "wss://andrewiannaccone.com:8888/automatch"; 
+url = "wss://andrewiannaccone.com/automatch"; 
 
 $(document).ready(function() {
   ws = new WebSocket(url + "?pname=SERVER_VIEW");
