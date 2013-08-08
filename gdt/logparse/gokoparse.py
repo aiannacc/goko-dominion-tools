@@ -246,14 +246,19 @@ def parse_goko_log(logtext):
         turns = int(m.group(2))
         p = presults[pname]
         if not turns == p.turns:
+            # Note: Goko counts turns incorrectly sometimes, and i can't figure
+            # out why. I'm ignoring their count and using my own.
+            pass
+
+            # My past notes/code on the same error:
             # Note: Goko counts turns incorrectly with outpost.  This may have
             # led to some incorrect game results.  I'm ignoring it.
-            if (someoneQuit or someoneResigned or ('Outpost' in supply)):
-                p.turns = turns
-            else:
-                #print(someoneQuit)
-                #print(someoneResigned)
-                raise TurnCountException()
+            #if (someoneQuit or someoneResigned or ('Outpost' in supply)):
+            #    p.turns = turns
+            #else:
+            #    #print(someoneQuit)
+            #    #print(someoneResigned)
+            #    raise TurnCountException()
 
     # Calculate players' places/ranks
     # Note: I'm counting on there having been fewer than 1000 turns and

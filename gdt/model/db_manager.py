@@ -50,7 +50,7 @@ def delete_logs(logfiles):
 
 
 def search_daily_log_filenames(day):
-    start = day
+    start = datetime.datetime.strptime(day.strftime('%Y%m%d'), '%Y%m%d')
     end = day + datetime.timedelta(days=1)
     sql = """SELECT logfile FROM game g WHERE g.time between $1 and $2"""
     return [r[0] for r in _con.prepare(sql)(start, end)]
@@ -390,6 +390,9 @@ def inserts(games):
         #        retd[k] = getattr(ret, k, None)
         #    retd['logfile'] = g.logfile
         #    rows['ret'].append([retd[k] for k in ret_keys])
+
+    if len(games) == 0: 
+        return
 
     # Insert game data
     sql = """INSERT INTO game (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
