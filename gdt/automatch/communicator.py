@@ -116,7 +116,7 @@ class AutomatchCommunicator():
         for pname in pnames:
             self._send_message(pname, msgtype, **kwargs)
 
-    @synchronized
+    @synchronized(lock)
     def log_server_state(self):
         data = self.manager.get_data()
         print('Clients:')
@@ -125,8 +125,7 @@ class AutomatchCommunicator():
         print('Offers:')
         print('Games:')
 
-
-    @synchronized
+    @synchronized(lock)
     def update_server_view(self):
         """ Send the current automatch info the the server view UI. """
         data = self.manager.get_data()
@@ -134,6 +133,7 @@ class AutomatchCommunicator():
         msg = {'SERVER_DATA': data, 'msgtype': 'SERVER_STATE'}
         msg = AutomatchEncoder().encode(msg)
         for view in self.server_views:
+            logging.debug(msg)
             view.write_message(msg)
 
     @synchronized(lock)
@@ -158,7 +158,7 @@ class AutomatchCommunicator():
                    'GAME_STARTED': self._game_started,
                    'GAME_FAILED': self._game_failed,
                    'CANCEL_GAME': self._cancel_game}
-         
+
         methods[msg['msgtype']](pname, msg['message'])
 
         # Confirm receipt
@@ -170,6 +170,7 @@ class AutomatchCommunicator():
 
     @synchronized(lock)
     def _connect(self, wsh, pname):
+        print('connect')
         """ When a client connects, associate his player name with his
         websocket handler. """
         if pname == 'SERVER_VIEW':

@@ -1,5 +1,7 @@
+url = "wss://andrewiannaccone.com:8888/automatch"; 
+
 $(document).ready(function() {
-  ws = new WebSocket("ws://iron:8080/automatch?pname=SERVER_VIEW");
+  ws = new WebSocket(url + "?pname=SERVER_VIEW");
   ws.onopen = function(evt) {};
   ws.onclose = function(evt) {};
   ws.onmessage = update_ui;
@@ -14,15 +16,11 @@ match_to_vs = function(match) {
 update_ui = function(evt) {
   var data = JSON.parse(evt.data);
   console.log(data);
-  if (data.msgtype == 'server_state') {
-    data = data.server_data
+  if (data.msgtype == 'SERVER_STATE') {
+    data = data.SERVER_DATA
   } else {
     return
   }
-
-  console.log(data);
-  console.log(data.offers);
-  console.log(data.offers.length);
 
   var client_str = ''
   for (var c in data.clients) {
@@ -36,13 +34,9 @@ update_ui = function(evt) {
   }
   $("#seeks").val(seek_str)
 
-  console.log(data.offers);
-  console.log(data.offers.length);
   var offer_str = ''
   for (var i=0; i < data.offers.length; i++) {
     var o = data.offers[i];
-    console.log('----');
-    console.log(o);
     offer_str += match_to_vs(o);
     offer_str += ' [Host: ' + o.hostname + ']\n'
   }

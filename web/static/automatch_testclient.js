@@ -134,7 +134,7 @@ var load_automatch_testclient = function() {
     });
 
     $("#ping").click(function(evt) {
-      AM.send_message('ping');
+      AM.send_message('PING');
     });
 
     $("#submit_seek").click(function(evt) {

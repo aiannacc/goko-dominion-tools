@@ -1,3 +1,5 @@
+url = "wss://andrewiannaccone.com:8888/automatch"
+
 /////////////////////////////////////////////////
 // Abstract Automatch Client
 //
@@ -59,20 +61,20 @@ AM.connect = function() {
 
   // Open new websocket connection to automatch server
   // TODO: Use production server parameters
-  AM.ws = new WebSocket("ws://iron:8080/automatch?pname=" + AM.player.pname);
+  AM.ws = new WebSocket(url + "?pname=" + AM.player.pname);
 
   AM.ws.onopen = function(evt) {
-    // Start pinging the server every 10 seconds
-    setInterval(function() {
-      AM.send_message('ping');
-    }, 5*1000);
+    //// Start pinging the server every 10 seconds
+    //setInterval(function() {
+    //  AM.send_message('PING');
+    //}, 5*1000);
 
-    // Start detecting disconnect
-    setInterval(function() {
-      if (Date.now() - AM.last_message > 10*1000) {
-        AM.on_timeout();
-      }
-    }, 1000);
+    //// Start detecting disconnect
+    //setInterval(function() {
+    //  if (Date.now() - AM.last_message > 10*1000) {
+    //    AM.on_timeout();
+    //  }
+    //}, 1000);
   };
 
   // For handling formatted messages from the automatch server
