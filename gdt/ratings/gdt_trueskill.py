@@ -76,13 +76,13 @@ def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
                         'new_rating': r[p2name],
                         'numgames': n[p2name]})
 
-    return (history, r)
+    return (history, r, n)
 
 
 def record_ratings(limit, last_time, last_logfile, env):
     """Starting with the first game after <last_logfile>, process the next
        <count> games, updating and caching players' ratings"""
 
-    (history, ratings) = generate_ratings(limit, last_time, last_logfile, True, env)
+    (history, ratings, counts) = generate_ratings(limit, last_time, last_logfile, True, env)
     db_manager.insert_ratings(history)
     return len(history)

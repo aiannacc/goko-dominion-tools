@@ -276,19 +276,34 @@ def parse_goko_log(logtext):
     for i in range(len(pnames)):
         presults[pnames[i]].rank = ranks[i]
 
-    # Search & verify places/ranks
+    # Search & verify places/ranks. There are many ways that Goko screws up
+    # ranking at the end of the game. I'm trusting my own rankings over theirs
+    # whenever I can roughly determine that the error is one that they make
+    # consistently.
     for m in placel:
         pname = m.group(2)
         place = int(m.group(1))
-        # Ignore a Goko bug where player ranks were listed twice (with
-        # different results)
         if (presults[pname].rank != place):
             if presults[pname].rank != place:
                 if (len(placel) > pCount):
+                    # Ignore a Goko bug where player ranks were listed twice
+                    # (with different results)
                     print('Places listed twice.')
                 elif (first_quit_line == game_over_line + 1):
+                    # Ignore a Goko bug where the "quit" shows up after the
+                    # game over log messages
                     print('Playerquit-gameend race condition.')
+                elif someoneQuit and len(presults) >= 3:
+                    # Ignore a Goko bug where a player quitting screws up the
+                    # ordering of the other players
+                    print('Quit screwed up opponent rankings')
+                elif presults[pname].turns < 2:
+                    # Ignore a Goko bug where games that never really start end
+                    # up with the wrong places.
+                    print('Wrong rankings in <2 turn game')
                 else:
+                    print(presults)
+                    print(pname, place)
                     raise WrongPlacesException()
 
     return GameResult(supply, gains, rets, rating, shelters, guest, bot,

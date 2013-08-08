@@ -7,6 +7,7 @@ import logging
 import gzip
 import sys
 import threading
+import traceback
 import time
 
 import requests
@@ -20,16 +21,20 @@ logging.basicConfig(level=logging.WARNING)
 LINK_REGEX = re.compile('href="(log\S*txt)"')
 FILE_REGEX = re.compile("log\.(.*)\.(.*)\.txt")
 
+# Download up to 20 logs simultaneously
+semaphore = threading.BoundedSemaphore(value=20)
 
 # Download a log and save it to file
 def download_log(logfile, dayurl, log_dir):
     headers = {'Accept-Encoding': 'gzip, deflate'}
     url = dayurl + '/' + logfile
-    r = requests.get(url, headers=headers)
+    with semaphore:
+        logging.debug('Fetching %s' % url)
+        r = requests.get(url, headers=headers)
     gzip.open(log_dir + '/' + logfile, 'wt').write(r.text)
 
 
-def download_new_logs(date):
+def download_new_logs(date, threads):
     datestr = date.strftime('%Y%m%d')
     dayurl = 'http://dominionlogs.goko.com/%s' % datestr
     r = requests.get(dayurl)
@@ -42,7 +47,6 @@ def download_new_logs(date):
     logging.info('Found %d new logs on Goko' % len(not_downloaded))
 
     # Download logs in threads
-    threads = []
     i = 0
     for lf in not_downloaded:
         i += 1
@@ -105,13 +109,20 @@ def download_new_logs(date):
 
     # TODO: handle failed logs
     for f in failed:
-        logging.warn(f)
-        logging.warn(failed[f])
+        logging.warn('Failed to parse: %s in %s' % (failed[f][0].__name__, f))
+        for line in traceback.format_tb(failed[f][2]):
+            logging.warn(line)
 
     print('Finished log cycle')
 
 if __name__ == '__main__':
     while True:
-        today = datetime.datetime.now()
-        download_new_logs(today)
-        time.sleep(1)
+        try:
+            threads = []
+            today = datetime.datetime.now()
+            download_new_logs(today, threads)
+            time.sleep(1)
+        except:
+            logging.error(sys.exc_info()[1])
+            logging.error(sys.exc_info()[2])
+            pass
