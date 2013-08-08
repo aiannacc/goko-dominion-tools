@@ -58,7 +58,7 @@ if __name__ == '__main__':
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         datefmt='%m-%d %H:%M',
         filename='./servers.log',
-        filemode='w')
+        filemode='a')
 
     # WARNING-level logging to the sys.stderr
     console = logging.StreamHandler()
