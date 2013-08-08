@@ -103,11 +103,7 @@ class AutomatchCommunicator():
             else:
                 logging.info(msg)
         else:
-            logging.warn("""Couldn't find websocket for %s to send message: \n
-                            %s\n
-                            Websockets:\n
-                            %s""" % (pname, msg.__repr__(),
-                                     self.wsh.__repr__()))
+            logging.debug("Couldn't find websocket for %s to send message: %s")
 
         self.update_server_view()
 
