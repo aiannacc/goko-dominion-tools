@@ -52,11 +52,20 @@ class AutomatchApplication(tornado.web.Application):
 
 
 if __name__ == '__main__':
-    # Detailed logging for development
-    #logging.basicConfig(level=logging.DEBUG)
 
-    # Less detailed logging for production
-    logging.basicConfig(level=logging.INFO)
+    # DEBUG-level logging to file
+    logging.basicConfig(level=logging.DEBUG,
+        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+        datefmt='%m-%d %H:%M',
+        filename='./servers.log',
+        filemode='w')
+
+    # WARNING-level logging to the sys.stderr
+    console = logging.StreamHandler()
+    console.setLevel(logging.WARN)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
 
     # Run logsearch+ on the requested port
     http_port = int(sys.argv[1])
