@@ -53,8 +53,8 @@ class AutomatchApplication(tornado.web.Application):
 
 if __name__ == '__main__':
 
-    # DEBUG-level logging to file
-    logging.basicConfig(level=logging.DEBUG,
+    # INFO-level logging to file
+    logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         datefmt='%m-%d %H:%M',
         filename='./servers.log',
