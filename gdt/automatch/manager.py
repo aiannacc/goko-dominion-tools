@@ -190,12 +190,18 @@ class AutomatchManager():
         """ Remove timed-out players and match offers. Generate new offers. """
         # Remove seeks, offers, etc for lagged-out players
         now = time.time()
+
+        to_remove = {}
         for pname in self.last_ping:
             elapsed = now - self.last_ping[pname]
             logging.debug('Time since last ping: %f' % elapsed)
             if elapsed > TIMEOUT:
                 msg = 'Lost contact with %s' % pname
-                self._rem_player(pname, msg)
+                to_remove[pname] = msg
+        
+        for pname in to_remove:
+            msg = to_remove[pname]
+            self._rem_player(pname, msg)
 
         # Remove outstanding (and now expired) match offers
         #for match in self.offers.values():
