@@ -35,7 +35,8 @@ class LogApplication(tornado.web.Application):
             (r"/leaderboard", LeaderboardHandler),
             (r"/leaderboard/", LeaderboardHandler),
             (r"/wshblast", BlastWSH),
-            (r"/static/(.*)", SFH, {"path": "web/static"})
+            (r"/automatch", AutomatchWSH),
+            (r"/static/(.*)", SFH, {"path": "web/static"}),
         ]
         tornado.web.Application.__init__(
             self, handlers
