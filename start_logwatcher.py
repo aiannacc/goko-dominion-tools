@@ -42,7 +42,7 @@ def download_new_logs(date, threads):
 
     # Determine which logs haven't been downloaded
     log_dir = '/mnt/raid/media/dominion/logs/%s' % datestr
-    if !os.path.isdir(log_dir):
+    if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     local_logs = os.listdir(log_dir)
     not_downloaded = set(remote_logs) - set(local_logs)
