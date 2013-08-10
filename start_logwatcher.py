@@ -123,8 +123,8 @@ if __name__ == '__main__':
             threads = []
             today = datetime.datetime.now()
             download_new_logs(today, threads)
-            time.sleep(1)
         except:
             logging.error(sys.exc_info()[1])
             logging.error(sys.exc_info()[2])
             pass
+        time.sleep(1)
