@@ -46,8 +46,6 @@ class AutomatchWSH(tornado.websocket.WebSocketHandler):
         logging.debug('Message received: wsh = %s' % self.__repr__())
         msg = json.loads(message_str)
         AutomatchCommunicator.instance().receive_message(self, msg)
-        AutomatchCommunicator.instance().update_server_view()
-        AutomatchCommunicator.instance().log_server_state()
 
 
 # Singleton class that translates messages between the AutomatchManager and
@@ -149,6 +147,8 @@ class AutomatchCommunicator():
         else:
             logging.info('Received message from %s: ' % pname)
             logging.info(msg)
+            self.update_server_view()
+            self.log_server_state()
 
         # Handle with the named method
         methods = {'DISCONNECT': self._disconnect_pname,
