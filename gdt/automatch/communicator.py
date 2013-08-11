@@ -100,10 +100,9 @@ class AutomatchCommunicator():
                 logging.debug(msg)
             else:
                 logging.info(msg)
+                self.update_server_view()
         else:
             logging.debug("Couldn't find websocket for %s to send message: %s")
-
-        self.update_server_view()
 
     @synchronized(lock)
     def _send_message_to_all(self, pnames, msgtype, **kwargs):
