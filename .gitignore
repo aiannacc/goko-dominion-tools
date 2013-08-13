@@ -10,3 +10,9 @@ __pycache__
 
 # VIM swap files
 .*.swp
+
+nohup.out
+updategamecount.sh
+web/static/extension.html
+web/static/extensions/
+web/static/extsrc
