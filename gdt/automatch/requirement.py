@@ -53,6 +53,14 @@ class NumPlayers(Requirement):
     def is_match_ok(self, player, match):
         return self.min_players <= len(match.seeks) <= self.max_players
 
+class HostName(Requirement):
+
+    def __init__(self, hostname=None):
+        self.hostname = hostname
+
+    def is_match_ok(self, player, match):
+        return match.hostname == self.hostname
+
 
 class RatingSystem(Requirement):
 
@@ -71,7 +79,7 @@ class RelativeRating(Requirement):
         self.pts_higher = pts_higher
 
     def is_match_ok(self, player, match):
-        assert self.rating_system in ('pro', 'casual', 'aits'),\
+        assert self.rating_system in ('pro', 'casual', 'unrated', 'isotropish'),\
             'Unknown rating system: ' + self.rating_system
 
         def r(p):
@@ -79,7 +87,10 @@ class RelativeRating(Requirement):
                 return p.rating.goko_pro_rating
             elif self.rating_system == 'casual':
                 return p.rating.goko_casual_rating
+            elif self.rating_system == 'unrated':
+                return p.rating.goko_casual_rating
             else:
+                # TODO: implement using isotropish rating
                 return NotImplemented
 
         opps = set([s.player for s in match.seeks]) - set([player])
@@ -91,18 +102,32 @@ class RelativeRating(Requirement):
         return True
 
 
-#class AbsoluteRating(Requirement):
-#
-#    def __init__(self, rating_system=None, min_pts=None, max_pts=None):
-#        self.rating_system = rating_system
-#        self.min_pts = min_pts
-#        self.max_pts = max_pts
-#
-#    def is_match_ok(self, player, match):
-#        opps = set([s.player for s in match.seeks]) - set([player])
-#        for o in opps:
-#            toolow = (o.rating < self.pts_lower)
-#            toohigh = (o.rating > self.pts_higher)
-#            if (toolow or toohigh):
-#                return False
-#        return True
+class AbsoluteRating(Requirement):
+
+    def __init__(self, rating_system=None, min_pts=None, max_pts=None):
+        self.rating_system = rating_system
+        self.min_pts = min_pts
+        self.max_pts = max_pts
+
+    def is_match_ok(self, player, match):
+        assert self.rating_system in ('pro', 'casual', 'unrated', 'isotropish'),\
+            'Unknown rating system: ' + self.rating_system
+
+        def r(p):
+            if self.rating_system == 'pro':
+                return p.rating.goko_pro_rating
+            elif self.rating_system == 'casual':
+                return p.rating.goko_casual_rating
+            elif self.rating_system == 'unrated':
+                return p.rating.goko_casual_rating
+            else:
+                # TODO: implement using isotropish rating
+                return NotImplemented
+
+        opps = set([s.player for s in match.seeks]) - set([player])
+        for o in opps:
+            if self.min_pts and (r(o) < self.min_pts):
+                return False
+            if self.max_pts and (r(o) > self.max_pts):
+                return False
+        return True
