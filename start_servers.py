@@ -76,7 +76,8 @@ if __name__ == '__main__':
 
     tornado.httpserver.HTTPServer(LogApplication()).listen(http_port)
     tornado.httpserver.HTTPServer(AutomatchApplication(), ssl_options={
-                "certfile": os.path.join("/etc/ssl/certs/", "andrewiannaccone_com.crt"),
+                "certfile": os.path.join("/etc/ssl/certs/",
+                                         "andrewiannaccone_com.full.crt"),
                 "keyfile": os.path.join("/etc/ssl/private/", "key.pem"),
             }).listen(ws_port)
 
