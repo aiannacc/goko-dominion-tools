@@ -15,16 +15,16 @@ from gdt.automatch.requirement import RatingSystem
 # Implementation of isotropic's matchmaking algorithm, as described by dougz at
 # http://forum.dominionstrategy.com/index.php?topic=8720.msg264754#msg264754:
 #
-# > every 30 seconds or so:
-# >   for N in (4, 3, 2):
-# >     let S be the set of all players interested in an N-player match.
-# >     while |S| >= N:
-# >       randomly choose a player X, remove from S.
-# >       try 5 times:
-# >         randomly choose N-1 other players from S (but don't remove them from S).
-# >         see if {X + the N-1 other players} is a feasible game (no conflicting requirements).
-# >         if it is, remove the N-1 other players from S and propose the game.
-#
+#> every 30 seconds or so:
+#>  for N in (4, 3, 2):
+#>   let S be the set of all players interested in an N-player match.
+#>   while |S| >= N:
+#>    randomly choose a player X, remove from S.
+#>    try 5 times:
+#>     randomly choose N-1 other players from S (but don't remove them from S).
+#>     see if {X + the N-1 other players} is a feasible game.
+#>     if it is, remove the N-1 other players from S and propose the game.
+
 # Modified to deal with Goko's multiple rating systems and the possibility of
 # six-player games. Prioritizes Pro > Casual > Unrated.
 #
@@ -58,14 +58,32 @@ class IsotropicMatchmaker(Matchmaker):
     # Requirements (probably the player with most sets). Return the match
     # object with him as the host. If no host found, return None.
     #
-    # TODO: move this to the Match class. Maybe even into the constructor?
+    # TODO: move this to the Match class (?). Maybe even into the constructor?
     @staticmethod
     def choose_host(match):
+
+        # Find all the possible hosts
+        possible_hosts = []
         for s in match.seeks:
             match.hostname = s.player.pname
             if match.is_match_ok():
-                return match
-        return None
+                possible_hosts.append(s.player)
+
+        # Return None when no possible host
+        if len(possible_hosts) == 0:
+            return None
+
+        # Otherwise choose the host with the most sets
+        max_hostsets = 0
+        max_host = None
+        for host in possible_hosts:
+            if len(host.sets_owned) > max_hostsets:
+                max_hostsets = len(host.sets_owned)
+                max_host = host
+
+        # And return the match with that player as host
+        match.hostname = host.pname
+        return match
 
     def generate_matches(self, seeks):
 
@@ -98,8 +116,8 @@ class IsotropicMatchmaker(Matchmaker):
 
                     # Assign the game to Outpost
                     # TODO: choose this dynamically?
-                    if match != None:
-                        match.roomname = 'Outpost';
+                    if match is not None:
+                        match.roomname = 'Outpost'
 
                     # Save match and remove seeking players
                     if (match):
