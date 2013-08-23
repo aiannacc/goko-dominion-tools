@@ -82,7 +82,7 @@ class IsotropicMatchmaker(Matchmaker):
                 max_host = host
 
         # And return the match with that player as host
-        match.hostname = host.pname
+        match.hostname = max_host.pname
         return match
 
     def generate_matches(self, seeks):
