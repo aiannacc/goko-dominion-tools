@@ -256,9 +256,9 @@ CREATE TABLE ts_state (
     pname character varying(50) NOT NULL,
     mu numeric(6,4) NOT NULL,
     sigma numeric(6,4) NOT NULL,
-    last_game_time time without time zone NOT NULL,
+    last_game_time time without time zone,
     num_games integer NOT NULL,
-    last_log character varying(80) NOT NULL
+    last_log character varying(50)
 );
 
 
