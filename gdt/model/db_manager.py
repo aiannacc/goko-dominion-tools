@@ -72,7 +72,7 @@ def search_log_filenames(p):
                          else None)
     del p['nonsupply']
 
-    if 'p1score' in p:
+    if 'p1score' in p and p['p1score'] is not None:
         p['p1score'] = int(p['p1score'])
 
     # Solo games require a different query
