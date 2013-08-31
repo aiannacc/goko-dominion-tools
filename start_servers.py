@@ -79,6 +79,6 @@ if __name__ == '__main__':
                 "certfile": os.path.join("/etc/ssl/certs/",
                                          "andrewiannaccone_com.full.crt"),
                 "keyfile": os.path.join("/etc/ssl/private/", "key.pem"),
-            }).listen(ws_port)
+            }, no_keep_alive=True).listen(ws_port)
 
     tornado.ioloop.IOLoop.instance().start()
