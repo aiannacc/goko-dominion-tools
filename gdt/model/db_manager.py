@@ -72,6 +72,9 @@ def search_log_filenames(p):
                          else None)
     del p['nonsupply']
 
+    if 'p1score' in p:
+        p['p1score'] = int(p['p1score'])
+
     # Solo games require a different query
     if 'pcount' in p and p['pcount'] == 1:
         sql = log_search_sql_solo(p)
@@ -143,7 +146,7 @@ def log_search_sql(p):
            AND ({p2name}::varchar IS NULL
                 OR {casesensitive} AND {p2name} = p2.pname
                 OR NOT {casesensitive} AND lower({p2name}) = p2.pname_lower)
-           AND ({p1score}::float    IS NULL OR {p1score} = (p2.rank - p1.rank))
+           AND ({p1score}::smallint    IS NULL OR {p1score} = (p2.rank - p1.rank))
            AND ({bot}::boolean      IS NULL OR {bot} = g.bot)
            AND ({guest}::boolean    IS NULL OR {guest} = g.guest)
            AND ({shelters}::boolean IS NULL OR {shelters} = g.shelters)
