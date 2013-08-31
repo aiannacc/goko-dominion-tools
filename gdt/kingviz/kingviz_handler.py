@@ -45,6 +45,7 @@ class KingdomHandler(tornado.web.RequestHandler):
                                    bbcode=bbcode,
                                    htmlcode=htmlcode,
                                    err=err))
+        self.finish()
 
     def write_error(self, status_code, **kwargs):
         import traceback

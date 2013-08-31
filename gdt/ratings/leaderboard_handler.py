@@ -80,6 +80,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             full=full,
             sortkey=sortkey
         ))
+        self.finish()
 
     def write_error(self, status_code, **kwargs):
         import traceback

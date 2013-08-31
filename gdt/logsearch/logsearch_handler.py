@@ -158,6 +158,7 @@ class SearchHandler(tornado.web.RequestHandler):
             games=games,
             search_params=arg_str)
         self.write(out)
+        self.finish()
 
     def parse_supply(self, supply_str):
         out = []
@@ -221,6 +222,7 @@ class SearchHandler(tornado.web.RequestHandler):
             error_text=err_text,
             games=[])
         self.write(out)
+        self.finish()
 
     def write_error(self, status_code, **kwargs):
         import traceback
