@@ -38,8 +38,9 @@ class LogApplication(tornado.web.Application):
             (r"/automatch", AutomatchWSH),
             (r"/static/(.*)", SFH, {"path": "web/static"}),
         ]
+        settings = dict(debug=True)
         tornado.web.Application.__init__(
-            self, handlers
+            self, handlers, **settings
         )
 
 class AutomatchApplication(tornado.web.Application):
@@ -79,6 +80,6 @@ if __name__ == '__main__':
                 "certfile": os.path.join("/etc/ssl/certs/",
                                          "andrewiannaccone_com.full.crt"),
                 "keyfile": os.path.join("/etc/ssl/private/", "key.pem"),
-            }, no_keep_alive=True).listen(ws_port)
+                }, no_keep_alive=True).listen(ws_port)
 
     tornado.ioloop.IOLoop.instance().start()

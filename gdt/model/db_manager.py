@@ -15,14 +15,7 @@ from . import constants
 
 # Database connection object.
 # TODO: Initialized on first use instead of on load
-if socket.gethostname() == 'iron':
-    _con = postgresql.open(user='ai', host='localhost', database='goko')
-else:
-    _con = postgresql.open(
-        user='forum',
-        host='gokologs.drunkensailor.org',
-        database='goko',
-        password='fds')
+_con = postgresql.open(user='ai', host='localhost', database='goko')
 
 
 def prepare(conn, sql, d):
