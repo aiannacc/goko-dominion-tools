@@ -224,4 +224,4 @@ class SearchHandler(tornado.web.RequestHandler):
 
     def write_error(self, status_code, **kwargs):
         self.write("""Unhandled exception (probably a programming error).
-                   Please report in the forums if you can reproduce it.""")
+                   Please report how to reproduce it in the forums.""")
