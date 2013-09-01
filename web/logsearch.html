@@ -17,9 +17,9 @@
         //       DOM instead of reloading the page?
         {% for p in search_params %}
         {% set v = search_params[p] %}
-        $("input[name='{{p}}']").val("{{v}}");
+        $('input[name="{{p}}"]').val("{{v}}");
         $('[name="{{p}}"] option').filter(function() { 
-            return ($(this).val() == '{{v}}');
+            return ($(this).val() == "{{v}}");
         }).prop('selected', true);
         {% end %}
         //{% if search_params['casesensitive'] == 'true' %}
