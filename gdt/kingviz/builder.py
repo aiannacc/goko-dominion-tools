@@ -62,9 +62,12 @@ def build_kingdom_bb(kingdom, width):
 
     bb = '[center]\n'
     for card in k10[5:len(kingdom)]:
-        bb += '[img width=%s]%s[/img] ' % (width, urls[card])
+        link = 'http://wiki.dominionstrategy.com/index.php/' + card
+        bb += '[url=%s][img width=%s]%s[/img][/url] ' % (link, width,
+                                                         urls[card])
     bb += '\n'
     for card in k10[0:5]:
-        bb += '[img width=%s]%s[/img] ' % (width, urls[card])
+        bb += '[url=%s][img width=%s]%s[/img][/url] ' % (link, width,
+                                                         urls[card])
     bb += '\n[/center]'
     return(bb)
