@@ -75,11 +75,15 @@ if __name__ == '__main__':
     ws_port = int(sys.argv[2])
     logging.info('Starting automatch server on port %d' % ws_port)
 
-    tornado.httpserver.HTTPServer(LogApplication(), no_keep_alive=True).listen(http_port)
-    tornado.httpserver.HTTPServer(AutomatchApplication(), ssl_options={
-                "certfile": os.path.join("/etc/ssl/certs/",
-                                         "andrewiannaccone_com.full.crt"),
-                "keyfile": os.path.join("/etc/ssl/private/", "key.pem"),
-                }, no_keep_alive=True).listen(ws_port)
+    ssl_options={"certfile": os.path.join("/etc/ssl/certs/",
+                                          "andrewiannaccone_com.full.crt"),
+                 "keyfile": os.path.join("/etc/ssl/private/", "key.pem")}
 
+    LogApplication().listen(
+        http_port, "",
+        no_keep_alive=True)
+    AutomatchApplication().listen(
+        ws_port, "",
+        ssl_options=ssl_options,
+        no_keep_alive=True)
     tornado.ioloop.IOLoop.instance().start()
