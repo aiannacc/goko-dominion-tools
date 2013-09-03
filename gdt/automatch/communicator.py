@@ -178,6 +178,8 @@ class AutomatchCommunicator():
         if pname == 'SERVER_VIEW':
             self.server_views.add(wsh)
         else:
+            if pname in self.wsh:
+                self.wsh[pname].close()
             self.pname[wsh] = pname
             self.wsh[pname] = wsh
 
