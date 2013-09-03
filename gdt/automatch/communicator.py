@@ -77,7 +77,8 @@ class AutomatchCommunicator():
     def close_expired_connections(self):
         now = time.time()
         for wsh in self.last_times:
-            if now - self.last_times[wsh] > 60:
+            if wsh is not None and (wsh in self.last_times)
+            and (now - self.last_times[wsh] > 60):
                 wsh.close()
                 self.last_times.pop(wsh)
                 pname = self.pname.pop(wsh)
