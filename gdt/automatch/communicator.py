@@ -29,7 +29,7 @@ class AutomatchWSH(tornado.websocket.WebSocketHandler):
             # TODO: close websocket
             pass
         else:
-            logging.debug('Connected: pname=%s, wsh=%s' % (pname, self))
+            logging.warn('Connected: pname=%s, wsh=%s' % (pname, self))
             AutomatchCommunicator.instance()._connect(self, pname)
             AutomatchCommunicator.instance().update_server_view()
             # TODO handle this somewhere more sensible
@@ -76,14 +76,26 @@ class AutomatchCommunicator():
 
     def close_expired_connections(self):
         now = time.time()
+        to_close = []
+
         for wsh in self.last_times:
-            if wsh is not None and (wsh in self.last_times)
-            and (now - self.last_times[wsh] > 60):
+            if (not wsh is None):
+                if (wsh in self.last_times) and (now - self.last_times[wsh] > 180):
+                    to_close.append(wsh)
+
+        for wsh in to_close:
+            self.last_times.pop(wsh, None)
+            pname = self.pname.pop(wsh, None)
+            self.wsh.pop(pname, None)
+
+            logging.warn('Closing expired connection')
+            logging.warn(wsh)
+            logging.warn(pname)
+
+            try:
                 wsh.close()
-                self.last_times.pop(wsh)
-                pname = self.pname.pop(wsh)
-                if pname:
-                    self.wsh.pop(pname)
+            except:
+                pass
 
     @staticmethod
     @synchronized(lock)
@@ -145,6 +157,7 @@ class AutomatchCommunicator():
         """ Send the current automatch info the the server view UI. """
         data = self.manager.get_data()
         data['clients'] = list(self.pname.values())
+        data['pings'] = list(self.last_times.values())
         msg = {'SERVER_DATA': data, 'msgtype': 'SERVER_STATE'}
         msg = AutomatchEncoder().encode(msg)
         for view in self.server_views:
@@ -200,6 +213,7 @@ class AutomatchCommunicator():
             #    self.wsh[pname].close()
             self.pname[wsh] = pname
             self.wsh[pname] = wsh
+            self.last_times[wsh] = time.time()
 
     @synchronized(lock)
     def _disconnect(self, wsh):
