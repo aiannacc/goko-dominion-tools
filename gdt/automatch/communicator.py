@@ -29,9 +29,11 @@ class AutomatchWSH(tornado.websocket.WebSocketHandler):
             # TODO: close websocket
             pass
         else:
-            logging.debug('Browser connected: pname=%s, wsh=%s' % (pname, self))
+            logging.debug('Connected: pname=%s, wsh=%s' % (pname, self))
             AutomatchCommunicator.instance()._connect(self, pname)
             AutomatchCommunicator.instance().update_server_view()
+            # TODO handle this somewhere more sensible
+            AutomatchCommunicator.instance().close_expired_connections()
 
     def on_close(self):
         """ Tell the AutomatchCommunicator that an automatch client has
@@ -63,11 +65,24 @@ class AutomatchCommunicator():
         self.wsh = {}
         self.pname = {}
 
+        # Last communication time by player name
+        self.last_times = {}
+
         # WSH connections from server view UIs
         self.server_views = set()
 
         # Handles timing and match logic
         self.manager = AutomatchManager(self)
+
+    def close_expired_connections(self):
+        now = time.time()
+        for wsh in self.last_times:
+            if now - self.last_times[wsh] > 60:
+                wsh.close()
+                self.last_times.pop(wsh)
+                pname = self.pname.pop(wsh)
+                if pname:
+                    self.wsh.pop(pname)
 
     @staticmethod
     @synchronized(lock)
@@ -141,6 +156,8 @@ class AutomatchCommunicator():
         specifies with the player's name and message, then confirm reciept. """
 
         pname = self.pname.get(wsh, None)
+        self.last_times[wsh] = time.time()
+
         if msg['msgtype'] == 'PING':
             logging.debug('Ping from %s' % pname)
         else:
@@ -178,8 +195,8 @@ class AutomatchCommunicator():
         if pname == 'SERVER_VIEW':
             self.server_views.add(wsh)
         else:
-            if pname in self.wsh:
-                self.wsh[pname].close()
+            #if pname in self.wsh:
+            #    self.wsh[pname].close()
             self.pname[wsh] = pname
             self.wsh[pname] = wsh
 
