@@ -84,11 +84,12 @@ class AutomatchCommunicator():
                     to_close.append(wsh)
 
         for wsh in to_close:
-            self.last_times.pop(wsh, None)
+            lt = self.last_times.pop(wsh, None)
             pname = self.pname.pop(wsh, None)
             self.wsh.pop(pname, None)
 
             logging.warn('Closing expired connection')
+            logging.warn(now - lt)
             logging.warn(wsh)
             logging.warn(pname)
 
