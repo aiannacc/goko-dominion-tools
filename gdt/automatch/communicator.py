@@ -3,6 +3,7 @@ import threading
 import json
 import datetime
 import logging
+import math
 
 import tornado.web
 import tornado.websocket
@@ -158,7 +159,18 @@ class AutomatchCommunicator():
         """ Send the current automatch info the the server view UI. """
         data = self.manager.get_data()
         data['clients'] = list(self.pname.values())
-        data['pings'] = list(self.last_times.values())
+        elapsed = {}
+        now = time.time()
+        for wsh in self.last_times:
+            if (not wsh is None):
+                if (wsh in self.last_times): 
+                    pname = self.pname.get(wsh)
+                    if not pname in elapsed:
+                        elapsed[pname] = []
+                    elapsed[pname].append(math.floor((now -
+                                                      self.last_times[wsh])))
+        data['elapsed'] = elapsed
+
         msg = {'SERVER_DATA': data, 'msgtype': 'SERVER_STATE'}
         msg = AutomatchEncoder().encode(msg)
         for view in self.server_views:
@@ -342,5 +354,4 @@ class AutomatchCommunicator():
     @synchronized(lock)
     def unannounce_game(self, game, reason):
         """ Server tells players that a game is canceled. """
-        self._send_message_to_all(game.get_pnames(),
-                                  'UNANNOUNCE_GAME', game=game, reason=reason)
+        self._send_message_to_all(game.get_pnames(), 'UNANNOUNCE_GAME', game=game, reason=reason)
