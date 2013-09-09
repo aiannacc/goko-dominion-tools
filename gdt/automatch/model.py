@@ -29,18 +29,26 @@ class Match:
     def is_match_ok(self):
         if not self.rating_system or not self.hostname:
             return False
-        for s in self.seeks:
-            for r in s.requirements:
-                if not r.is_match_ok(s.player, self):
-                    return False
+
         # No player can appear twice in the same game
-        # TODO: implement one-seek-per-player for now
         pnames = [s.player.pname for s in self.seeks]
         seen = set()
         for p in pnames:
             if (p in seen):
                 return False
             seen.add(p)
+
+        # Verify that no seek's requirements are violated and that no
+        # blacklisted players are included
+        for s in self.seeks:
+            for r in s.requirements:
+                if not r.is_match_ok(s.player, self):
+                    return False
+            if len(list(set(pnames) & set(s.blacklist))) > 0:
+                print('Blacklisted player(s):')
+                print(list(set(pnames) & set(s.blacklist)))
+                return False
+
         return True
 
     def to_dict(self):
@@ -68,23 +76,30 @@ class Match:
         is_guest = lambda s: s.player.pname != self.hostname
         return list(filter(is_guest, self.seeks))
 
+
 # A Seek is a Player and his SeekRequirements. ID is random.
 class Seek:
-    def __init__(self, player, requirements):
+    def __init__(self, player, requirements, blacklist):
         self.player = player
         self.requirements = requirements
+        self.blacklist = blacklist
         self.seekid = uuid.uuid4().hex
 
     @staticmethod
     def from_dict(d):
         player = Player.from_dict(d['player'])
         requirements = [Requirement.from_dict(r) for r in d['requirements']]
-        return Seek(player, requirements)
+        if 'blacklist' in d:
+            blacklist = d['blacklist']
+        else:
+            blacklist = []
+        return Seek(player, requirements, blacklist)
 
     def to_dict(self):
         d = {}
         d['player'] = self.player.to_dict()
         d['requirements'] = [sr.to_dict() for sr in self.requirements]
+        d['blacklist'] = self.blacklist
         d['seekid'] = self.seekid
         return d
 
