@@ -20,6 +20,15 @@ class SFH(tornado.web.StaticFileHandler):
     def set_extra_headers(self, path):
         self.set_header("Access-Control-Allow-Origin", "*")
 
+# Handle extension updating
+class ExtensionApplication(tornado.web.Application):
+    def __init__(self):
+        handlers = [
+            (r"/gs/(.*)", SFH, {"path": "web/static/gokosalvager/"}),
+        ]
+        tornado.web.Application.__init__(
+            self, handlers
+        )
 
 # Handle requests for log search, kingdom visualizer, and leaderboard.
 class LogApplication(tornado.web.Application):
@@ -38,9 +47,8 @@ class LogApplication(tornado.web.Application):
             (r"/automatch", AutomatchWSH),
             (r"/static/(.*)", SFH, {"path": "web/static"}),
         ]
-        settings = dict(debug=True)
         tornado.web.Application.__init__(
-            self, handlers, **settings
+            self, handlers
         )
 
 class AutomatchApplication(tornado.web.Application):
@@ -72,7 +80,9 @@ if __name__ == '__main__':
     # Run logsearch+ on the requested port
     http_port = int(sys.argv[1])
     logging.info('Starting log server on port %d' % http_port)
-    ws_port = int(sys.argv[2])
+    https_port = int(sys.argv[2])
+    logging.info('Starting extension server on port %d' % https_port)
+    ws_port = int(sys.argv[3])
     logging.info('Starting automatch server on port %d' % ws_port)
 
     ssl_options={"certfile": os.path.join("/etc/ssl/certs/",
@@ -81,6 +91,10 @@ if __name__ == '__main__':
 
     LogApplication().listen(
         http_port, "",
+        no_keep_alive=True)
+    ExtensionApplication().listen(
+        https_port, "",
+        ssl_options=ssl_options,
         no_keep_alive=True)
     AutomatchApplication().listen(
         ws_port, "",
