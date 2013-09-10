@@ -44,9 +44,11 @@ class Match:
             for r in s.requirements:
                 if not r.is_match_ok(s.player, self):
                     return False
-            if len(list(set(pnames) & set(s.blacklist))) > 0:
+            pnamesLC = [p.lower() for p in pnames]
+            blackLC = [b.lower() for b in s.blacklist]
+            if len(list(set(pnamesLC) & set(blackLC))) > 0:
                 print('Blacklisted player(s):')
-                print(list(set(pnames) & set(s.blacklist)))
+                print(list(set(pnamesLC) & set(blackLC)))
                 return False
 
         return True
