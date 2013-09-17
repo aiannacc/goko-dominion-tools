@@ -82,7 +82,7 @@ class SearchHandler(tornado.web.RequestHandler):
         arg['enddate'] = arg['enddate'] + datetime.timedelta(days=1)
 
         # Parse the kingdom search field
-        print(arg_str['supply'])
+        #print(arg_str['supply'])
         x = self.parse_supply(arg_str['supply'])
         if x:
             (sup, shel, col, err) = x
