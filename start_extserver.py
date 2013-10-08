@@ -40,6 +40,7 @@ if __name__ == '__main__':
 
     ssl_options={"certfile": os.path.join("/etc/ssl/certs/",
                                           "gokosalvager_com.full.crt"),
+                                          #"gokosalvager_com.crt"),
                  "keyfile": os.path.join("/etc/ssl/private/", "key.pem")}
 
     ExtensionApplication().listen(

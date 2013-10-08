@@ -272,6 +272,7 @@ def fetch_all_ratings(mingames, lastactive, minlevel):
         """SELECT pname, mu, sigma, numgames
              FROM ts_rating
             WHERE pname != 'Boodaloo'
+              AND pname != 'ottocar'
               AND ($1::smallint IS NULL OR numgames >= $1)
               AND ($2::timestamp IS NULL OR time >= $2)
               AND ($3::smallint IS NULL OR (mu - 3*sigma) >= $3)""")
