@@ -54,11 +54,15 @@ def build_kingdom_html(kingdom, width):
 def build_kingdom_bb(kingdom, width):
     urls = {}
     k10 = []
+    cards_string = ''
     for card in kingdom:
         if card in CORE_CARDS:
             continue
         urls[card] = db_manager.fetch_card_image_url(card)
         k10.append(card)
+        if cards_string != '':
+            cards_string += ', '
+        cards_string += card
 
     bb = '[center]\n'
     for card in k10[5:len(kingdom)]:
@@ -71,4 +75,5 @@ def build_kingdom_bb(kingdom, width):
         bb += '[url=%s][img width=%s]%s[/img][/url] ' % (link, width,
                                                          urls[card])
     bb += '\n[/center]'
+    bb += '\n[code]' + cards_string + '[/code]'
     return(bb)
