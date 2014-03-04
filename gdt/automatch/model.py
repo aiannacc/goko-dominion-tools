@@ -38,6 +38,9 @@ class Match:
                 return False
             seen.add(p)
 
+        if ('timmytucker' in pnames):
+            return False
+
         # Verify that no seek's requirements are violated and that no
         # blacklisted players are included
         for s in self.seeks:

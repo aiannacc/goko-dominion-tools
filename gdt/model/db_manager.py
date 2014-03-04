@@ -286,15 +286,15 @@ def fetch_last_rated_log_time():
 
 
 def get_rating(pname):
-    ps = _con.prepare("""SELECT mu, sigma
+    ps = _con.prepare("""SELECT mu, sigma, numgames
                             FROM ts_rating
                            WHERE pname=$1
                            ORDER BY time DESC""")
-    ms = ps.first(pname)
-    if ms:
-        return (float(ms[0]), float(ms[1]))
+    msn = ps.first(pname)
+    if msn:
+        return (float(msn[0]), float(msn[1]), msn[2])
     else:
-        return ms
+        return msn
 
 
 def summarize_scores(pname, search):
@@ -336,6 +336,10 @@ def fetch_supply_cards():
 def insert_card_url(card, url):
     """ Store third-party URL for a Dominion card image. """
     _con.prepare("""INSERT INTO card_url VALUES ($1, $2)""")(card, url)
+
+
+def insert_parsefail(failedlog):
+    print('TODO: Record that parsing failed for log: %s' + failedlog)
 
 
 def inserts(games):
@@ -438,7 +442,8 @@ def insert_ratings(rating_history):
     for r in rating_history:
         # Store last rating for each player
         r_rows[r['pname']] = (r['time'], r['logfile'], r['pname'],
-                              r['new_rating'].mu, r['new_rating'].sigma)
+                              r['new_rating'].mu, r['new_rating'].sigma,
+                              r['numgames'])
 
         # Store rating history entry
         h_rows.append((r['time'], r['logfile'], r['pname'],
@@ -448,17 +453,15 @@ def insert_ratings(rating_history):
 
     # Insert or update rating
     ps = _con.prepare("""UPDATE ts_rating
-                            SET time=$1, logfile=$2, mu=$4, sigma=$5
+                            SET time=$1, logfile=$2, mu=$4, sigma=$5, numgames=$6
                           WHERE pname=$3""").load_rows(r_rows.values())
     for pname in r_rows:
-        r = r_rows[pname]
-
         ps = _con.prepare("SELECT 1 FROM ts_rating WHERE pname=$1")
         if not ps(pname):
             try:
                 ps = _con.prepare("""INSERT INTO ts_rating
-                                        (time, logfile, pname, mu, sigma)
-                                 VALUES ($1,$2,$3,$4,$5)""")(*r)
+                                        (time, logfile, pname, mu, sigma, numgames)
+                                 VALUES ($1,$2,$3,$4,$5,$6)""")(*r_rows[pname])
             except:
                 raise
 

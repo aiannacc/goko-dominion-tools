@@ -28,7 +28,7 @@ def rate(ra, rb, score, env):
     else:
         return trueskill.rate_1vs1(ra, rb, env=env, drawn=True)
 
-def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
+def generate_ratings(limit, last_time, last_logfile, env):
     history = []
     r = {}
     n = {}
@@ -38,18 +38,14 @@ def generate_ratings(limit, last_time, last_logfile, do_lookup, env):
         # Initialize or look up ratings if necessary
         for pname in (p1name, p2name):
             if not pname in r:
-                if do_lookup:
-                    ms = db_manager.get_rating(pname)
-                    if ms:
-                        r[pname] = env.create_rating(ms[0], ms[1])
-                        n[pname] = db_manager.get_game_count(pname)
-                        if n[pname] is None:
-                            n[pname] = 0
-                    else:
-                        r[pname] = env.create_rating()
+                msn = db_manager.get_rating(pname)
+                if msn:
+                    r[pname] = env.create_rating(msn[0], msn[1])
+                    n[pname] = msn[2]
+                    if n[pname] is None:
                         n[pname] = 0
                 else:
-                    r[pname] = env.create_rating(ms[0], ms[1])
+                    r[pname] = env.create_rating()
                     n[pname] = 0
 
         # Update ratings
@@ -83,6 +79,17 @@ def record_ratings(limit, last_time, last_logfile, env):
     """Starting with the first game after <last_logfile>, process the next
        <count> games, updating and caching players' ratings"""
 
-    (history, ratings, counts) = generate_ratings(limit, last_time, last_logfile, True, env)
+    (history, ratings, counts) = generate_ratings(limit, last_time, last_logfile, env)
     db_manager.insert_ratings(history)
     return len(history)
+
+# TODO: Rather than calculating new ratings while parsing and inserting games,
+# start by just doing the parsing/inserting, then come along later reading the
+# results from the database to determine the ratings.  This solves the ordering
+# problem and makes for quicker corrections to ratings when changing TS
+# parameters or otherwise discovering errors.
+#
+# I'll need to use a query like this one:
+#    # select time, logfile, p1.pname, p2.pname, p1.rank from game join presult
+#    # p1 using(logfile) join presult p2 using(logfile) where game.pcount = 2
+#    # and p1.pname < p2.pname and rating='pro' order by time limit 100;

@@ -1,0 +1,614 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Dominion Online Log Prettifier</title>
+<style>
+body {
+margin:0px auto;
+font-size:16px;
+font-family:Helvetica, Arial;
+background-color:white;
+position:relative;
+}
+table {
+margin: 5px 10px;
+padding: 0px 20px;
+}
+td {
+padding: 0px 1px;
+}
+td.c1 {
+text-align:right;
+width:200px;
+}
+h1 {
+margin: 5px 10px;
+padding: 0px 20px;
+font-size:20px;
+background-color: lightgray;
+border: 2px solid gray; 
+border-radius: 5px;
+}
+*.p3 {
+background-color: lightgreen;
+border-color: green; 
+}
+*.p1 {
+background-color: pink;
+border-color: red; 
+}
+*.p4 {
+background-color: yellow;
+border-color: orange; 
+}
+*.p2 {
+background-color: lightblue;
+border-color: blue; 
+}
+*.p5 {
+background-color: #CC33FF;
+border-color: purple; 
+}
+action
+ { background-color:rgb(240,240,240) ; border-radius: 6px; padding: 0px 4px; }
+treasure
+ { background-color:rgb(253,225,100) ; border-radius: 6px; padding: 0px 4px; }
+action-reaction
+ { background-color:rgb(64,168,227) ; border-radius: 6px; padding: 0px 4px; }
+action-duration
+ { background-color:rgb(254,143,78) ; border-radius: 6px; padding: 0px 4px; }
+victory
+ { background-color:rgb(146,193,125) ; border-radius: 6px; padding: 0px 4px; }
+curse
+ { background-color:rgb(215,138,219) ; border-radius: 6px; padding: 0px 4px; }
+action-ruins
+ { background-color:rgb(150,104,51) ; border-radius: 6px; padding: 0px 4px; }
+shelter
+ { background-color:rgb(230,108,104) ; border-radius: 6px; padding: 0px 4px; }
+vp-chip
+ { background-color:rgb(0,0,0) ; border-radius: 6px; padding: 0px 4px;
+   color:rgb(255,255,255) ; }
+treasure-victory
+{ background: -moz-linear-gradient(top, rgb(253,225,100), rgb(146,193,125));
+  background: -webkit-linear-gradient(top, rgb(253,225,100), rgb(146,193,125));
+  background: -o-linear-gradient(top, rgb(253,225,100), rgb(146,193,125));
+  background: -ms-linear-gradient(top, rgb(253,225,100), rgb(146,193,125));
+  background: linear-gradient(top, rgb(253,225,100), rgb(146,193,125)); border-radius: 6px; padding: 0px 4px; }
+treasure-reaction
+{ background: -moz-linear-gradient(top, rgb(253,225,100), rgb(64,168,227));
+  background: -webkit-linear-gradient(top, rgb(253,225,100), rgb(64,168,227));
+  background: -o-linear-gradient(top, rgb(253,225,100), rgb(64,168,227));
+  background: -ms-linear-gradient(top, rgb(253,225,100), rgb(64,168,227));
+  background: linear-gradient(top, rgb(253,225,100), rgb(64,168,227)); border-radius: 6px; padding: 0px 4px; }
+victory-reaction
+{ background: -moz-linear-gradient(top, rgb(146,193,125), rgb(64,168,227));
+  background: -webkit-linear-gradient(top, rgb(146,193,125), rgb(64,168,227));
+  background: -o-linear-gradient(top, rgb(146,193,125), rgb(64,168,227));
+  background: -ms-linear-gradient(top, rgb(146,193,125), rgb(64,168,227));
+  background: linear-gradient(top, rgb(146,193,125), rgb(64,168,227)); border-radius: 6px; padding: 0px 4px; }
+shelter-reaction
+{ background: -moz-linear-gradient(top, rgb(230,108,104), rgb(64,168,227));
+  background: -webkit-linear-gradient(top, rgb(230,108,104), rgb(64,168,227));
+  background: -o-linear-gradient(top, rgb(230,108,104), rgb(64,168,227));
+  background: -ms-linear-gradient(top, rgb(230,108,104), rgb(64,168,227));
+  background: linear-gradient(top, rgb(230,108,104), rgb(64,168,227)); border-radius: 6px; padding: 0px 4px; }
+action-shelter
+{ background: -moz-linear-gradient(top, rgb(240,240,240), rgb(230,108,104));
+  background: -webkit-linear-gradient(top, rgb(240,240,240), rgb(230,108,104));
+  background: -o-linear-gradient(top, rgb(240,240,240), rgb(230,108,104));
+  background: -ms-linear-gradient(top, rgb(240,240,240), rgb(230,108,104));
+  background: linear-gradient(top, rgb(240,240,240), rgb(230,108,104));  border-radius: 6px; padding: 0px 4px; }
+shelter-victory
+{ background: -moz-linear-gradient(top, rgb(230,108,104), rgb(146,193,125));
+  background: -webkit-linear-gradient(top, rgb(230,108,104), rgb(146,193,125));
+  background: -o-linear-gradient(top, rgb(230,108,104), rgb(146,193,125));
+  background: -ms-linear-gradient(top, rgb(230,108,104), rgb(146,193,125));
+  background: linear-gradient(top, rgb(230,108,104), rgb(146,193,125));  border-radius: 6px; padding: 0px 4px; }
+action-victory
+{ background: -moz-linear-gradient(top, rgb(240,240,240), rgb(146,193,125));
+  background: -webkit-linear-gradient(top, rgb(240,240,240), rgb(146,193,125));
+  background: -o-linear-gradient(top, rgb(240,240,240), rgb(146,193,125));
+  background: -ms-linear-gradient(top, rgb(240,240,240), rgb(146,193,125));
+  background: linear-gradient(top, rgb(240,240,240), rgb(146,193,125)); border-radius: 6px; padding: 0px 4px; }
+
+table.sum {
+margin:2px;
+padding:2px;
+width:98%;
+}
+table.sum td:first-child {
+text-align:right;
+width:15%;
+}
+table.sum td[colspan="2"] {
+text-align:center;
+}
+</style>
+<script src="Chart.min.js"></script>
+<script>
+var types = {
+'Border Village':'action',
+'Farming Village':'action',
+'Mining Village':'action',
+'Native Village':'action',
+'Walled Village':'action',
+'Worker\'s Village':'action',
+'Ruined Village':'action-ruins',
+'Fishing Village':'action-duration',
+'Village':'action',
+'Ruined Library':'action-ruins',
+'Library':'action',
+'Abandoned Mine':'action-ruins',
+'Mine':'action',
+'Bag of Gold':'action',
+'Fool\'s Gold':'treasure-reaction',
+'Gold':'treasure',
+'Overgrown Estate':'shelter-victory',
+'Estate':'victory',
+'Counting House':'action',
+'Count':'action',
+'Coppersmith':'action',
+'Copper':'treasure',
+'Ruined Market':'action-ruins',
+'Grand Market':'action',
+'Black Market':'action',
+'Market Square':'action-reaction',
+'Market':'action',
+'Adventurer':'action',
+'Alchemist':'action',
+'Altar':'action',
+'Ambassador':'action',
+'Apothecary':'action',
+'Apprentice':'action',
+'Armory':'action',
+'Band of Misfits':'action',
+'Bandit Camp':'action',
+'Baron':'action',
+'Bazaar':'action',
+'Bishop':'action',
+'Bridge':'action',
+'Bureaucrat':'action',
+'Cartographer':'action',
+'Catacombs':'action',
+'Cellar':'action',
+'Chancellor':'action',
+'Chapel':'action',
+'City':'action',
+'Conspirator':'action',
+'Council Room':'action',
+'Courtyard':'action',
+'Crossroads':'action',
+'Cultist':'action',
+'Cutpurse':'action',
+'Dame Anna':'action',
+'Dame Molly':'action',
+'Dame Natalie':'action',
+'Dame Sylvia':'action',
+'Death Cart':'action',
+'Develop':'action',
+'Duchess':'action',
+'Embargo':'action',
+'Embassy':'action',
+'Envoy':'action',
+'Expand':'action',
+'Explorer':'action',
+'Familiar':'action',
+'Feast':'action',
+'Festival':'action',
+'Followers':'action',
+'Forager':'action',
+'Forge':'action',
+'Fortress':'action',
+'Fortune Teller':'action',
+'Ghost Ship':'action',
+'Golem':'action',
+'Goons':'action',
+'Governor':'action',
+'Graverobber':'action',
+'Haggler':'action',
+'Hamlet':'action',
+'Harvest':'action',
+'Herbalist':'action',
+'Hermit':'action',
+'Highway':'action',
+'Hunting Grounds':'action',
+'Hunting Party':'action',
+'Inn':'action',
+'Ironmonger':'action',
+'Ironworks':'action',
+'JackOfAllTrades':'action',
+'Jester':'action',
+'Junk Dealer':'action',
+'King\'s Court':'action',
+'Knights':'action',
+'Laboratory':'action',
+'Lookout':'action',
+'Madman':'action',
+'Mandarin':'action',
+'Marauder':'action',
+'Margrave':'action',
+'Masquerade':'action',
+'Menagerie':'action',
+'Mercenary':'action',
+'Militia':'action',
+'Minion':'action',
+'Mint':'action',
+'Moneylender':'action',
+'Monument':'action',
+'Mountebank':'action',
+'Mystic':'action',
+'Navigator':'action',
+'Noble Brigand':'action',
+'Nomad Camp':'action',
+'Oasis':'action',
+'Oracle':'action',
+'Pawn':'action',
+'Pearl Diver':'action',
+'Peddler':'action',
+'Pillage':'action',
+'Pirate Ship':'action',
+'Poor House':'action',
+'Possession':'action',
+'Princess':'action',
+'Procession':'action',
+'Rabble':'action',
+'Rats':'action',
+'Rebuild':'action',
+'Remake':'action',
+'Remodel':'action',
+'Rogue':'action',
+'Saboteur':'action',
+'Sage':'action',
+'Salvager':'action',
+'Scavenger':'action',
+'Scheme':'action',
+'Scout':'action',
+'Scrying Pool':'action',
+'Sea Hag':'action',
+'Shanty Town':'action',
+'Sir Bailey':'action',
+'Sir Destry':'action',
+'Sir Martin':'action',
+'Sir Michael':'action',
+'Sir Vander':'action',
+'Smithy':'action',
+'Smugglers':'action',
+'Spice Merchant':'action',
+'Spy':'action',
+'Squire':'action',
+'Stables':'action',
+'Steward':'action',
+'Storeroom':'action',
+'Swindler':'action',
+'Thief':'action',
+'Throne Room':'action',
+'Torturer':'action',
+'Tournament':'action',
+'Trade Route':'action',
+'Trading Post':'action',
+'Transmute':'action',
+'Treasure Map':'action',
+'Treasury':'action',
+'Tribute':'action',
+'Trusty Steed':'action',
+'University':'action',
+'Upgrade':'action',
+'Urchin':'action',
+'Vagrant':'action',
+'Vault':'action',
+'Wandering Minstrel':'action',
+'Warehouse':'action',
+'Wishing Well':'action',
+'Witch':'action',
+'Young Witch':'action',
+'Woodcutter':'action',
+'Workshop':'action',
+'Beggar':'action-reaction',
+'Watchtower':'action-reaction',
+'Horse Traders':'action-reaction',
+'Moat':'action-reaction',
+'Secret Chamber':'action-reaction',
+'Trader':'action-reaction',
+'Bank':'treasure',
+'Cache':'treasure',
+'Contraband':'treasure',
+'Counterfeit':'treasure',
+'Diadem':'treasure',
+'Hoard':'treasure',
+'Horn of Plenty':'treasure',
+'Ill-Gotten Gains':'treasure',
+'Loan':'treasure',
+'Philosopher\'s Stone':'treasure',
+'Platinum':'treasure',
+'Potion':'treasure',
+'Quarry':'treasure',
+'Royal Seal':'treasure',
+'Silver':'treasure',
+'Spoils':'treasure',
+'Stash':'treasure',
+'Talisman':'treasure',
+'Venture':'treasure',
+'Colony':'victory',
+'Duchy':'victory',
+'Duke':'victory',
+'Fairgrounds':'victory',
+'Farmland':'victory',
+'Feodum':'victory',
+'Gardens':'victory',
+'Province':'victory',
+'Silk Road':'victory',
+'Vineyard':'victory',
+'Caravan':'action-duration',
+'Haven':'action-duration',
+'Lighthouse':'action-duration',
+'Merchant Ship':'action-duration',
+'Outpost':'action-duration',
+'Tactician':'action-duration',
+'Wharf':'action-duration',
+'Survivors':'action-ruins',
+'Dame Josephine':'action-victory',
+'Great Hall':'action-victory',
+'Nobles':'action-victory',
+'Island':'action-victory',
+'Harem':'treasure-victory',
+'Hovel':'shelter-reaction',
+'Necropolis':'action-shelter',
+'Tunnel':'victory-reaction',
+'victory point chips':'vp-chip',
+'Curse':'curse',
+'Candlestick Maker':'action',
+'Stonemason':'action',
+'Doctor':'action',
+'Masterpiece':'treasure',
+'Advisor':'action',
+'Herald':'action',
+'Plaza':'action',
+'Taxman':'action-attack',
+'Baker':'action',
+'Butcher':'action',
+'Journeyman':'action',
+'Merchant Guild':'action',
+'Soothsayer':'action-attack',
+}
+var possessed, newLogMode, newLogPlayers;
+var playerDecks = [], vpchips = [], playervp = [];
+var vpoint = {
+'Estate':function() {return 1},
+'Colony':function() {return 10},
+'Duchy':function() {return 3},
+'Duke':function(d) {return d.Duchy || 0},
+'Fairgrounds':function(d) {var s=0;for(var c in d)s++;return 2*Math.floor(s/5)},
+'Farmland':function() {return 2},
+'Feodum':function(d) {return Math.floor((d.Silver || 0)/3)},
+'Gardens':function(d) {var s=0;for(var c in d)s+=d[c];return Math.floor(s/10)},
+'Province':function() {return 6},
+'Silk Road':function(d) {var s=0;for(var c in d)if(types[c].match(/victory/))s+=d[c];return Math.floor(s/4)},
+'Vineyard':function(d) {var s=0;for(var c in d)if(types[c].match(/\baction/))s+=d[c];return Math.floor(s/3)},
+//'Overgrown Estate':function() {return 0},
+'Dame Josephine':function() {return 2},
+'Great Hall':function() {return 1},
+'Nobles':function() {return 2},
+'Island':function() {return 2},
+'Harem':function() {return 2},
+'Tunnel':function() {return 2},
+'Curse':function() {return -1},
+}
+function vp_in_deck(deck) {
+    var points = 0;
+    for (var card in deck) if(vpoint[card]) {
+	points += deck[card] * vpoint[card](deck);
+    }
+    return points;
+}
+function updateCards(player, cards, v) {
+    for (var i = 0; i < cards.length; i++) {
+	playerDecks[player][cards[i]] = playerDecks[player][cards[i]] ?
+	    playerDecks[player][cards[i]] + v : v;
+	if (playerDecks[player][cards[i]] <= 0)
+	    delete playerDecks[player][cards[i]];
+    }
+    playervp[player] = vpchips[player] + vp_in_deck(playerDecks[player]);
+}
+function updateDeck(player, action) {
+    var h;
+    if (h = action.match(/^returns (.*) to the Supply$/)) {
+	updateCards(player, [h[1]], -1);
+    } else if (h = action.match(/^gains (.*)/)) {
+	updateCards(player, [h[1]], 1);
+    } else if (h = action.match(/^trashes (.*)/)) {
+	if (possessed && player == newLogMode) return;
+	updateCards(player, h[1].split(', ').filter(function(c){return c != "Fortress"}), -1);
+    } else if (h = action.match(/^starting cards: (.*)/)) {
+	updateCards(player, h[1].split(', '), 1);
+    } else if (h = action.match(/^passes (.*)/)) {
+	updateCards(player, [h[1]], -1);
+	updateCards(player == newLogPlayers - 1 ? 0 : player + 1, [h[1]], 1);
+    } else if (h = action.match(/^receives ([0-9]*) victory point chips$/)) {
+	vpchips[player]+=+h[1];
+	updateCards(player, []);
+    } else if (h = action.match(/^plays Bishop$/)) {
+	vpchips[player]++;
+	updateCards(player, []);
+    } else if (h = action.match(/^plays (Spoils|Madman)$/)) {
+	updateCards(player, [h[1]], -1);
+    }
+}
+
+
+
+var cards = Object.keys(types);
+var reg = new RegExp(cards.sort(function(a,b){return b.length-a.length}).join('|'),'g');
+function colorize(x) {
+    return x.replace(reg,function (m) {var t = types[m]; return "<"+t+">"+m+"</"+t+">"});
+}
+function sw(x) {
+    var t = types[x];
+    var w = 'Z';
+    var i;
+    if (t.match(/shelter/)) w = 'C';
+    else if (t.match(/victory/)) { w = 'D'; i = ['Estate','Duchy','Province','Colony'].indexOf(x); if(i>=0) x = i;}
+    else if (t.match(/treasure/)) { w = 'B'; i = ['Copper','Silver','Gold','Platinum'].indexOf(x); if(i>=0) x = i;}
+    else if (t.match(/\baction/)) w = 'A';
+    else if (t.match(/\bcurse/)) w = 'E';
+    return w + x;
+}
+var hov = [];
+function sethover(x) {
+    document.getElementById('z').innerHTML = hov[x];
+}
+var playercolors = [
+["rgba(255,192,203,0.5)", "rgba(255,0,0,1)"],
+["rgba(173,216,230,0.5)", "rgba(0,0,255,1)"],
+["rgba(144,238,144,0.5)", "rgba(0,128,0,1)"],
+["rgba(255,255,0,0.5)", "rgba(255,165,0,1)"],
+["rgba(204,51,255,0.5)", "rgba(128,0,128,1)"],
+["rgba(211,211,211,0.5)", "rgba(128,128,128,1)"]
+];
+function money(deck, cards) {
+    var m = (deck.Copper||0) + 2*(deck.Silver||0) + 3*(deck.Gold||0) + 4*(deck.Platinum||0);
+    return m*5/cards;
+}
+function format(x) {
+	var pars = x.split('\n \n---');
+	var tmp = '';
+	var players = [];
+	var graphdata = {labels:[0],datasets:[]};
+	var graphmin = 0, graphmax = 10;
+	playerDecks = []; vpchips = []; playervp = [];
+	newLogPlayers = 0;
+	tmp += '<p style="text-align:center"><a href="#Game Over"><button>End of the game</button></a></p>';
+	for (var i = 0; i < pars.length; i++) {
+	    var par = pars[i];
+	    var c = 0;
+	    var lines = par.split('\n');
+	    var h = lines.shift();
+	    var ha;
+	    h = ha = h.match(/-* (.*) -*/)[1];
+	    p = h.match(/(.*): turn (\d+( \[possessed\])?)/);
+	    newLogMode = 0;
+	    if (p) {
+		newLogMode = players.indexOf(p[1]);
+		c = players.indexOf(p[1]) + 1;
+		ha = c + '-' + p[2];
+		possessed = p[3] != undefined;
+		if (i) graphdata.labels.push(p[2]);
+	    }
+	    tmp += '<a name="'+ha+'"></a><h1 class="p'+c+'">'+h+'</h1>';
+	    if (i>0) {
+		var tmp2 = '<table class="sum">';
+		for (var j = 0; j < players.length; j++) {
+		    var tc = 0;
+		    var sc = Object.keys(playerDecks[j]).sort(function(aa,bb){var a=sw(aa),b=sw(bb);return a<b?-1:a>b?1:0});
+		    tmp2+='<tr><td colspan="2" class="p'+(j+1)+'">';
+		    tmp2+=players[j];
+		    tmp2+='</td></tr>';
+		    for (var k = 0; k<sc.length; k++) {
+			tmp2+='<tr><td>';
+			tmp2+=playerDecks[j][sc[k]];
+			tc+=playerDecks[j][sc[k]];
+			tmp2+='</td><td>';
+			tmp2+=colorize(sc[k]);
+			tmp2+='</td></tr>';
+		    }
+		    var cur_vp = vp_in_deck(playerDecks[j]) + vpchips[j];
+		    tmp2+='<tr><td>' + tc + '</td><td>cards in deck</td></tr>';
+		    if (vpchips[j]) tmp2+='<tr><td>' + vpchips[j] + '</td><td>VP chips</td></tr>';
+		    tmp2+='<tr><td>' + cur_vp + '</td><td>victory points</td></tr>';
+		    graphdata.datasets[j].data.push(cur_vp);
+		    if (cur_vp > graphmax) graphmax = 5*Math.floor((cur_vp+4)/5);
+		    if (cur_vp < graphmin) graphmin = 5*Math.floor((cur_vp-4)/5);
+//		    graphdata.datasets[j].data.push(money(playerDecks[j],tc));
+		}
+		tmp2+='</table>';
+		hov[i] = tmp2;
+	    }
+	    tmp += '<div onmouseover="sethover('+(i?i:1)+')">'
+	    tmp += '<table>';
+	    for (var j = 0; j < lines.length; j++) {
+		var line = lines[j];
+		var k;
+		tmp += '<tr>';
+		if (i == 0 && line.match(/- starting cards:/)) {
+		    var player = line.match(/(.*) - starting cards:/)[1];
+		    players.push(player);
+		    playerDecks.push({});
+		    vpchips.push(0);
+		    graphdata.datasets.push({
+			fillColor:playercolors[players.length-1][0],
+			strokeColor:playercolors[players.length-1][1],
+			data:[]
+		    });
+		    newLogPlayers++;
+		}
+		for (k = 0; k < players.length; k++) if (line.search(players[k] + ' - ') == 0) {
+		    updateDeck(k, line.substring(players[k].length + 3));
+		    tmp += '<td class="c1 p'+(k+1)+'">'+players[k]+'</td>';
+		    tmp += '<td>'+colorize(line.substring(players[k].length + 3))+'</td>';
+		    break;
+		}
+		if (k == players.length) {
+		    var m;
+		    if (m = line.match(/^(1st|2nd|3rd|4th|5th|6th) place:(.*)/)) {
+			tmp += '<td class="c1">'+m[1]+' place</td>';
+			tmp += '<td>'+m[2]+'</td>';
+		    } else if (i == 0 && (m = line.match(/^(Supply cards): (.*)/))) {
+			tmp += '<td class="c1">'+m[1]+'</td>';
+			tmp += '<td>'+colorize(m[2])+'</td>';
+		    } else if (i == 0 && (m = line.match(/^(Rating system): (.*)/))) {
+			tmp += '<td class="c1">'+m[1]+'</td>';
+			tmp += '<td>'+m[2]+'</td>';
+		    } else tmp += '<td colspan="2">'+colorize(line)+'</td>';
+		}
+		tmp += '</tr>';
+	    }
+	    tmp += '</table></div>';
+	}
+	tmp += '<p style="text-align:center"><a href="#Game Setup"><button>Start of the game</button></a></p>';
+	tmp += '<div style="width:100%;text-align:center;">Victory Points Chart<br><canvas id="myChart" width="1024" height="350" style="margin:10px;width:100%;height:350px;display:inline"></canvas></div>';
+        document.getElementById('y').innerHTML=tmp;
+        document.getElementById('z').innerHTML=hov[1];
+	var canvas = document.getElementById("myChart");
+	canvas.width = canvas.parentNode.clientWidth * 0.95;
+	var ctx = canvas.getContext("2d");
+	var myNewChart = new Chart(ctx).Line(graphdata,{pointDot : false, scaleOverride:true, scaleStepWidth:5, scaleStartValue:graphmin, scaleSteps:(graphmax-graphmin)/5});
+}
+function doit() {
+var xhr= new XMLHttpRequest();
+var filename=document.getElementById('x').value;
+if (!filename) {
+    document.getElementById('y').innerHTML='<h1>Put log address above</h1>';
+    return;
+}
+xhr.open('GET', filename, true);
+xhr.onreadystatechange= function() {
+    document.getElementById('y').innerHTML='<h1>Loading '+this.readyState+'...</h1>';
+    if (this.readyState!==4) return;
+    if (!this.status && filename.match(/\/dominionlogs\./)) {
+	xhr2 = new XMLHttpRequest();
+	xhr2.onreadystatechange = xhr.onreadystatechange;
+	xhr2.open('GET', filename.replace('dominionlogs','archive-dominionlogs'),true);
+	xhr2.send();
+	return;
+    }
+    if (this.status!==200) return;
+    document.getElementById('y').innerHTML='<h1>Parsing</h1>';
+    format(this.responseText);
+};
+document.getElementById('y').innerHTML='<h1>Loading</h1>';
+xhr.send();
+}
+function doget() {
+    if(window.location.search.substr(0,1) != '?') return;
+    document.getElementById('x').value = 'http://logs.prod.dominion.makingfun.com/'+window.location.search.substr(1);
+}
+</script>
+</head>
+<body onLoad="doget();doit()">
+<div style="text-align:left"><input id="x" style="width:79%" type="text" value="" onChange="doit();"/></div>
+<div id="y" style="width:80%">
+</div>
+<div id="z" style="overflow:auto;position:fixed;width:20%;left:80%;top:0px;bottom:0px;background:white"></div>
+</body>
+</html> 
