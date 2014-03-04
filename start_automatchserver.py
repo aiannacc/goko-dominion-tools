@@ -32,7 +32,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         datefmt='%m-%d %H:%M',
-        filename='./automatch_server.log',
+        filename='/var/log/automatch_server.log',
         filemode='a')
 
     # WARNING-level logging to the sys.stderr
