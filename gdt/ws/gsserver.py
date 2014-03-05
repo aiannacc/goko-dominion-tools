@@ -22,17 +22,17 @@ lock = threading.RLock()
 class MainWSH(tornado.websocket.WebSocketHandler):
 
     def open(self):
-        logging.info('WS connection opened: %s' % id(self))
+        logging.info('WS opened: %s' % id(self))
         req_detail = {'msgtype': 'REQUEST_CLIENT_INFO'}
         self.write_message(GSEncoder().encode(req_detail))
         logging.info('Requesting details from client: %s' % id(self))
 
     def on_close(self):
-        logging.info('WS connection closed: %s' % id(self))
+        logging.info('Received WS on_close: %s' % id(self))
         GSInterface.instance().handle_disconnect(self)
 
     def on_message(self, message_str):
-        logging.debug('Message received from WS connection: %s' % id(self))
+        logging.debug('Message received from WS: %s' % id(self))
         msg = json.loads(message_str)
         GSInterface.instance().receiveFromClient(self, msg)
 
@@ -108,14 +108,16 @@ class GSInterface():
 
     @synchronized(lock)
     def do_disconnect(self, conn):
-        logging.info('Closing connection: %s ' % id(conn))
-        conn.close()
+        if conn not None:
+            logging.info('Performing disconnection: %s ' % id(conn))
+            conn.close()
 
     @synchronized(lock)
     def handle_disconnect(self, conn):
         """ Remove and notify manager.  Ignore if called previously. """
+        logging.info('Handling disconnection: %s ' % id(conn))
         client = self.clients.pop(conn)
-        if (client is not None):
+        if (client not None):
             self.manager.remClient(client)
 
     @synchronized(lock)
@@ -126,7 +128,7 @@ class GSInterface():
                 to_close.add(conn)
         
         for conn in to_close:
-            logging.info('Client timed out.  Closing: %s' % id(conn))
+            logging.info('Client timed out.  Closing WS: %s' % id(conn))
             self.do_disconnect(conn)
 
 
@@ -143,9 +145,12 @@ class GSInterface():
             msg['message'][k] = kwargs[k]
 
         # Log and send message
-        logging.info('Sending message to %s:' % id(conn))
-        logging.info(msg)
-        conn.write_message(GSEncoder().encode(msg))
+        logging.debug('Sending message to %s:' % id(conn))
+        logging.debug(msg)
+        #print(msg)
+        msgJSON = GSEncoder().encode(msg)
+        conn.write_message(msgJSON)
+        #print(msgJSON)
 
     def respondToClient(self, conn, querytype, queryid, **kwargs):
         self.sendToClient(conn, 'RESPONSE', querytype=querytype, 
@@ -168,7 +173,7 @@ class GSInterface():
             self.manager.addClient(client)
         else:
             # Pass other messages to manager
-            logging.info('Received message from client: %s ' % id(conn))
-            logging.info(msg)
+            logging.debug('Received message from client: %s ' % id(conn))
+            logging.debug(msg)
             self.manager.receiveFromClient(conn, msg['msgtype'], 
                                            msg['msgid'], msg['message'])

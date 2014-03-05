@@ -25,13 +25,16 @@ class GSManager():
         self.interface = gsinterface
         self.clients = set()
 
+    @synchronized(lock)
     def addClient(self, client):
         self.clients.add(client)
 
+    @synchronized(lock)
     def remClient(self, client):
         self.clients.remove(client)
         # TODO: clean up client's remaining dependencies
 
+    @synchronized(lock)
     def receiveFromClient(self, client, msgtype, msgid, message):
         if msgtype == 'QUERY_CLIENTLIST':
             self.interface.respondToClient(client, msgtype, msgid,
@@ -40,8 +43,8 @@ class GSManager():
             pid = message['playerid']
             ainfo = db_manager.get_avatar_info(pid)
             if ainfo is None:
-                logging.info('Avatar info not found.  Looking up on ' \
-                             'retrobox -- playerid: %s' % pid)
+                logging.info('Avatar info not found.  Looking up on '
+                             + 'retrobox -- playerid: %s' % pid)
                 url = "http://dom.retrobox.eu/avatars/%s.png"
                 url = url % message['playerid']
                 r = requests.get(url, stream=True)
@@ -61,6 +64,7 @@ class GSManager():
                 self.interface.respondToClient(client, msgtype, msgid,
                                                available=available)
             else:
-                logging.debug('Avatar info found for %s' % pid)
+                logging.debug('Avatar info found for %s %s - %s, %s'
+                              % (pid, msgid, ainfo[0], ainfo[1]))
                 self.interface.respondToClient(client, msgtype, msgid,
-                                               available=ainfo[1])
+                                               playrid=pid, available=ainfo[1])
