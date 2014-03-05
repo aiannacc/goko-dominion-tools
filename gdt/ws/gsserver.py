@@ -50,10 +50,8 @@ class Client():
     def update_lastping(self):
         self.last_pingtime = time.time()
 
-    def check_lastping(self):
-        if (time.time() - self.last_pingtime > 60):
-            logging.info('Client timed out.  Closing: %s' % id(self.conn))
-            GSInterface.instance().disconnect(self.conn)
+    def timed_out(self):
+        return time.time() - self.last_pingtime > 60
 
     def to_dict(self):
         d = {}
@@ -114,11 +112,18 @@ class GSInterface():
         client = self.clients.pop(conn)
         if (client is not None):
             self.manager.remClient(client)
+            conn.close()
 
     @synchronized(lock)
     def check_lastpings(self):
+        to_close = set()
         for conn in self.clients:
-            self.clients[conn].check_lastping()
+            if self.clients[conn].timed_out():
+                to_close.add(conn)
+        
+        for conn in to_close:
+            logging.info('Client timed out.  Closing: %s' % id(conn))
+            self.disconnect(conn)
 
 
     #########################################
@@ -134,14 +139,9 @@ class GSInterface():
         for k in kwargs:
             msg['message'][k] = kwargs[k]
 
-        # Log it and send it
+        # Log and send message
         logging.info('Sending message to %s:' % id(conn))
         logging.info(msg)
-
-        print()
-        print(msg)
-        print()
-
         conn.write_message(GSEncoder().encode(msg))
 
     @synchronized(lock)

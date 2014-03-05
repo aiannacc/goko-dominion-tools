@@ -28,14 +28,14 @@ class GSApplication(tornado.web.Application):
 
 if __name__ == '__main__':
 
-    # INFO-level logging to file
+    # Logging to file
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         datefmt='%m-%d %H:%M',
         filename='/var/log/automatch_server.log',
         filemode='a')
 
-    # WARNING-level logging to the sys.stderr
+    # Logging to the sys.stderr
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
