@@ -476,3 +476,13 @@ def insert_ratings(rating_history):
 def insert_leaderboard(rating_tuples):
     ps = _con.prepare("""INSERT INTO rating VALUES ($1, $2, $3, $4)""")
     ps.load_rows(rating_tuples)
+
+
+def get_avatar_info(playerid):
+    ps = _con.prepare("""SELECT playerid, hasCustom from avatars
+                                WHERE playerid=$1""")
+    return ps.first(playerid)
+
+def save_avatar_info(playerid, hasCustom):
+    ps = _con.prepare("""INSERT INTO avatars VALUES ($1,$2)""")(playerid,
+                                                                hasCustom)

@@ -20,7 +20,7 @@ class GSApplication(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/gs/wsConn", MainWSH),
-            (r"/static/(.*)", SFH, {"path": "web/static"}),
+            (r"/avatars/(.*)", SFH, {"path": "web/static/avatars"}),
         ]
         tornado.web.Application.__init__(
             self, handlers
@@ -32,19 +32,18 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         datefmt='%m-%d %H:%M',
-        filename='/var/log/automatch_server.log',
+        filename='/var/log/gs_server.log',
         filemode='a')
 
     # Logging to the sys.stderr
     console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
 
     # Run logsearch+ on the requested port
     ws_port = int(sys.argv[1])
-    logging.info('Starting automatch server on port %d' % ws_port)
+    logging.info('Starting GokoSalvager server on port %d' % ws_port)
 
     ssl_options={"certfile": os.path.join("/etc/ssl/certs/",
                                           "andrewiannaccone_com.full.crt"),

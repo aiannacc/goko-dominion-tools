@@ -1,8 +1,10 @@
 import threading
 import time
 import logging
+import requests
 
 from gdt.util.sync import synchronized
+from gdt.model import db_manager
 
 # For synchronization. Can be acquired multiple times by the same thread, but a
 # second thread has to wait.
@@ -30,9 +32,35 @@ class GSManager():
         self.clients.remove(client)
         # TODO: clean up client's remaining dependencies
 
-    def receiveFromClient(self, client, msgtype, msgobj):
+    def receiveFromClient(self, client, msgtype, msgid, message):
         if msgtype == 'QUERY_CLIENTLIST':
-            self.interface.sendToClient(client, 'CLIENTLIST', 
-#                                        clientlist=client)
-                                        # TODO: fix when done testing
-                                        clientlist=self.clients)
+            self.interface.respondToClient(client, msgtype, msgid,
+                                           clientlist=self.clients)
+        elif msgtype == 'QUERY_AVATAR':
+            pid = message['playerid']
+            ainfo = db_manager.get_avatar_info(pid)
+            if ainfo is None:
+                logging.info('Avatar info not found.  Looking up on ' \
+                             'retrobox -- playerid: %s' % pid)
+                url = "http://dom.retrobox.eu/avatars/%s.png"
+                url = url % message['playerid']
+                r = requests.get(url, stream=True)
+                available = r.status_code != 404
+                if available:
+                    logging.info('Writing avatar to file: %s' % pid)
+                    path = "/home/ai/code/goko-dominion-tools/web/static/" \
+                           + "avatars/medium/%s.png" % pid
+                    with open(path, 'wb') as f:
+                        for chunk in r.iter_content(1024):
+                            f.write(chunk)
+                        f.flush()
+                        f.close()
+                    db_manager.save_avatar_info(pid, True)
+                else:
+                    db_manager.save_avatar_info(pid, False)
+                self.interface.respondToClient(client, msgtype, msgid,
+                                               available=available)
+            else:
+                logging.debug('Avatar info found for %s' % pid)
+                self.interface.respondToClient(client, msgtype, msgid,
+                                               available=ainfo[1])
