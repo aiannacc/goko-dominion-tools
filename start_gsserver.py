@@ -65,6 +65,7 @@ class AvatarHandler(tornado.web.RequestHandler):
             box = (0, d, w, h-d)
         img = img.crop(box)
         img = img.resize((100, 100), Image.ANTIALIAS)
+        img = img.convert('RGB')
         img.save('web/static/avatars/' + playerid + '.jpg', "JPEG",
                  quality=95)
 
