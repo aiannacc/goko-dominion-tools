@@ -33,8 +33,11 @@ class MainWSH(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message_str):
         logging.debug('Message received from WS: %s' % id(self))
-        msg = json.loads(message_str)
-        GSInterface.instance().receiveFromClient(self, msg)
+        try:
+            msg = json.loads(message_str)
+            GSInterface.instance().receiveFromClient(self, msg)
+        except Exception as e:
+            print(e)
 
 
 # Basic info for each connected client
@@ -108,16 +111,19 @@ class GSInterface():
 
     @synchronized(lock)
     def do_disconnect(self, conn):
-        if conn not None:
+        if conn is not None:
             logging.info('Performing disconnection: %s ' % id(conn))
-            conn.close()
+            try:
+                conn.close()
+            except:
+                pass
 
     @synchronized(lock)
     def handle_disconnect(self, conn):
         """ Remove and notify manager.  Ignore if called previously. """
         logging.info('Handling disconnection: %s ' % id(conn))
-        client = self.clients.pop(conn)
-        if (client not None):
+        if conn in self.clients:
+            client = self.clients.pop(conn)
             self.manager.remClient(client)
 
     @synchronized(lock)
@@ -126,11 +132,10 @@ class GSInterface():
         for conn in self.clients:
             if self.clients[conn].timed_out():
                 to_close.add(conn)
-        
+
         for conn in to_close:
             logging.info('Client timed out.  Closing WS: %s' % id(conn))
             self.do_disconnect(conn)
-
 
     #########################################
     # Messages between client and GSManager #
@@ -153,7 +158,7 @@ class GSInterface():
         #print(msgJSON)
 
     def respondToClient(self, conn, querytype, queryid, **kwargs):
-        self.sendToClient(conn, 'RESPONSE', querytype=querytype, 
+        self.sendToClient(conn, 'RESPONSE', querytype=querytype,
                           queryid=queryid, **kwargs)
 
     @synchronized(lock)
@@ -166,14 +171,16 @@ class GSInterface():
             logging.debug('Received ping from %s' % id(conn))
             self.respondToClient(conn, 'PING', msg['msgid'])
             logging.debug('Sent pingback to %s' % id(conn))
+
         elif msg['msgtype'] == 'CLIENT_INFO':
             info = msg['message']
             client = Client(conn, info['username'], info['gsversion'])
             self.clients[conn] = client
             self.manager.addClient(client)
+
         else:
             # Pass other messages to manager
             logging.debug('Received message from client: %s ' % id(conn))
             logging.debug(msg)
-            self.manager.receiveFromClient(conn, msg['msgtype'], 
+            self.manager.receiveFromClient(conn, msg['msgtype'],
                                            msg['msgid'], msg['message'])

@@ -2,6 +2,8 @@ import threading
 import time
 import logging
 import requests
+import os
+from PIL import Image
 
 from gdt.util.sync import synchronized
 from gdt.model import db_manager
@@ -39,6 +41,7 @@ class GSManager():
         if msgtype == 'QUERY_CLIENTLIST':
             self.interface.respondToClient(client, msgtype, msgid,
                                            clientlist=self.clients)
+
         elif msgtype == 'QUERY_AVATAR':
             pid = message['playerid']
             ainfo = db_manager.get_avatar_info(pid)
@@ -51,13 +54,27 @@ class GSManager():
                 available = r.status_code != 404
                 if available:
                     logging.info('Writing avatar to file: %s' % pid)
-                    path = "/home/ai/code/goko-dominion-tools/web/static/" \
-                           + "avatars/medium/%s.png" % pid
-                    with open(path, 'wb') as f:
+
+                    # As uploaded
+                    with open(pid, 'wb') as f:
                         for chunk in r.iter_content(1024):
                             f.write(chunk)
                         f.flush()
                         f.close()
+
+                    # As uploaded
+                    img = Image.open(pid)
+                    (w, h) = img.size
+                    img = img.resize((100, 100), Image.ANTIALIAS)
+                    img.save('web/static/avatars/' + pid + '.jpg', "JPEG", 
+                             quality=95)
+
+                    # As uploaded
+                    try:
+                        os.remove(pid)
+                    except OSError as e:
+                        print("Error: %s - %s." % (e.filename, e.strerror))
+
                     db_manager.save_avatar_info(pid, True)
                 else:
                     db_manager.save_avatar_info(pid, False)
