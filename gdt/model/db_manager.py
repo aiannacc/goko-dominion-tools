@@ -484,5 +484,9 @@ def get_avatar_info(playerid):
     return ps.first(playerid)
 
 def save_avatar_info(playerid, hasCustom):
-    ps = _con.prepare("""INSERT INTO avatars VALUES ($1,$2)""")(playerid,
-                                                                hasCustom)
+    if get_avatar_info(playerid) is None:
+        ps = _con.prepare("""INSERT INTO avatars VALUES ($1,$2)
+                          """)(playerid, hasCustom)
+    else:
+        ps = _con.prepare("""UPDATE avatars SET hasCustom=($1) WHERE
+                             playerid=($2)""")(hasCustom, playerid)

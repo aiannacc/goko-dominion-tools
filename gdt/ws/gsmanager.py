@@ -66,6 +66,7 @@ class GSManager():
                     img = Image.open(pid)
                     (w, h) = img.size
                     img = img.resize((100, 100), Image.ANTIALIAS)
+                    img = img.convert('RGB')
                     img.save('web/static/avatars/' + pid + '.jpg', "JPEG", 
                              quality=95)
 
