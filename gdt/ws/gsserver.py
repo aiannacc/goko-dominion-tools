@@ -44,9 +44,10 @@ class MainWSH(tornado.websocket.WebSocketHandler):
 #
 class Client():
 
-    def __init__(self, conn, username, gsVersion):
+    def __init__(self, conn, username, playerid, gsVersion):
         self.conn = conn
         self.username = username
+        self.playerid = playerid
         self.version = gsVersion
         self.last_pingtime = time.time()
 
@@ -174,7 +175,7 @@ class GSInterface():
 
         elif msg['msgtype'] == 'CLIENT_INFO':
             info = msg['message']
-            client = Client(conn, info['username'], info['gsversion'])
+            client = Client(conn, info['username'], info['playerid'], info['gsversion'])
             self.clients[conn] = client
             self.manager.addClient(client)
 
