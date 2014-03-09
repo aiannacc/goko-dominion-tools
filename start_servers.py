@@ -69,19 +69,19 @@ class AvatarUploadHandler(tornado.web.RequestHandler):
         pass
 
     def post(self):
-        playerid = self.get_argument('playerid')
-        logging.info('Handling avatar upload for playerid %s' % playerid)
+        playerId = self.get_argument('playerId')
+        logging.info('Handling avatar upload for playerId %s' % playerId)
 
         file1 = self.request.files['avatar'][0]
         original_fname = file1['filename']
 
         # TODO: read the binary directly into a PIL.Image
-        output_file = open(playerid, 'wb')
+        output_file = open(playerId, 'wb')
         output_file.write(file1['body'])
         output_file.close()
 
         # Crop/Resize image to 100x100
-        img = Image.open(playerid)
+        img = Image.open(playerId)
         (w, h) = img.size
         d = int(abs(w-h)/2)
         if w > h:
@@ -91,16 +91,16 @@ class AvatarUploadHandler(tornado.web.RequestHandler):
         img = img.crop(box)
         img = img.resize((100, 100), Image.ANTIALIAS)
         img = img.convert('RGB')
-        img.save('web/static/avatars/' + playerid + '.jpg', "JPEG",
+        img.save('web/static/avatars/' + playerId + '.jpg', "JPEG",
                  quality=95)
 
         try:
-            os.remove(playerid)
+            os.remove(playerId)
         except OSError as e:
             print("Error deleting temporary avatar file: %s - %s."
                   % (e.filename, e.strerror))
 
-        db_manager.save_avatar_info(playerid, True)
+        db_manager.save_avatar_info(playerId, True)
         self.finish(json.dumps('file uploaded successfully'))
 
 

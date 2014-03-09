@@ -43,23 +43,23 @@ class GSManager():
                                            clientlist=self.clients)
 
         elif msgtype == 'SUBMIT_BLACKLIST':
-            db_manager.store_blacklist(client.playerid, message.blacklist2,
+            db_manager.store_blacklist(client.playerId, message.blacklist2,
                                        message.share)
 
         elif msgtype == 'QUERY_BLACKLIST':
-            db_manager.fetch_blacklist(client.playerid)
+            db_manager.fetch_blacklist(client.playerId)
         
         elif msgtype == 'QUERY_BLACKLIST_COMMON':
             db_manager.fetch_blacklist_common()
 
         elif msgtype == 'QUERY_AVATAR':
-            pid = message['playerid']
+            pid = message['playerId']
             ainfo = db_manager.get_avatar_info(pid)
             if ainfo is None:
                 logging.info('Avatar info not found.  Looking up on '
-                             + 'retrobox -- playerid: %s' % pid)
+                             + 'retrobox -- playerId: %s' % pid)
                 url = "http://dom.retrobox.eu/avatars/%s.png"
-                url = url % message['playerid']
+                url = url % message['playerId']
                 r = requests.get(url, stream=True)
                 available = r.status_code != 404
                 if available:

@@ -33,21 +33,19 @@ class MainWSH(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message_str):
         logging.debug('Message received from WS: %s' % id(self))
-        try:
-            msg = json.loads(message_str)
-            GSInterface.instance().receiveFromClient(self, msg)
-        except Exception as e:
-            print(e)
+        msg = json.loads(message_str)
+        print(msg)
+        GSInterface.instance().receiveFromClient(self, msg)
 
 
 # Basic info for each connected client
 #
 class Client():
 
-    def __init__(self, conn, username, playerid, gsVersion):
+    def __init__(self, conn, username, playerId, gsVersion):
         self.conn = conn
         self.username = username
-        self.playerid = playerid
+        self.playerId = playerId
         self.version = gsVersion
         self.last_pingtime = time.time()
 
@@ -61,7 +59,7 @@ class Client():
         d = {}
         d['conn'] = id(self.conn)
         d['username'] = self.username
-        d['playerid'] = self.playerid
+        d['playerId'] = self.playerId
         d['version'] = self.version
         d['last_pingtime'] = time.strftime('%H:%M:%S',
                                            time.localtime(self.last_pingtime))
@@ -157,10 +155,8 @@ class GSInterface():
         # Log and send message
         logging.debug('Sending message to %s:' % id(conn))
         logging.debug(msg)
-        #print(msg)
         msgJSON = GSEncoder().encode(msg)
         conn.write_message(msgJSON)
-        #print(msgJSON)
 
     def respondToClient(self, conn, querytype, queryid, **kwargs):
         self.sendToClient(conn, 'RESPONSE', querytype=querytype,
@@ -179,13 +175,13 @@ class GSInterface():
 
         elif msg['msgtype'] == 'CLIENT_INFO':
             info = msg['message']
-            client = Client(conn, info['username'], info['playerid'], info['gsversion'])
+            client = Client(conn, info['username'], info['playerId'], info['gsversion'])
             self.clients[conn] = client
             self.manager.addClient(client)
 
         else:
             # Pass other messages to manager
-            logging.debug('Received message from client: %s ' % id(conn))
-            logging.debug(msg)
+            logging.info('Received message from client: %s ' % id(conn))
+            logging.info(msg)
             self.manager.receiveFromClient(conn, msg['msgtype'],
                                            msg['msgid'], msg['message'])
