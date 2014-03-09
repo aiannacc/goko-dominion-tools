@@ -115,6 +115,9 @@ class GSInterface():
     def do_disconnect(self, conn):
         if conn is not None:
             logging.info('Performing disconnection: %s ' % id(conn))
+            if conn in self.clients:
+                client = self.clients.pop(conn)
+                self.manager.remClient(client)
             try:
                 conn.close()
             except:
