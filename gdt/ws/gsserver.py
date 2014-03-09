@@ -65,6 +65,9 @@ class Client():
                                            time.localtime(self.last_pingtime))
         return d
 
+    def __str__(self):
+        return "%s:%d:%s" % (self.playerId, id(self.conn), self.playerName)
+
 
 # Encodes dictionary-type objects to JSON
 class GSEncoder(json.JSONEncoder):
@@ -145,7 +148,7 @@ class GSInterface():
     #########################################
 
     @synchronized(lock)
-    def sendToClient(self, conn, msgtype, **kwargs):
+    def sendToClient(self, client, msgtype, **kwargs):
 
         # Create message object
         msg = {'msgtype': msgtype, 'message': {}}
@@ -153,35 +156,45 @@ class GSInterface():
             msg['message'][k] = kwargs[k]
 
         # Log and send message
-        logging.debug('Sending message to %s:' % id(conn))
+        logging.debug('Sending message to %s:' % id(client.conn))
         logging.debug(msg)
         msgJSON = GSEncoder().encode(msg)
-        conn.write_message(msgJSON)
+        client.conn.write_message(msgJSON)
 
-    def respondToClient(self, conn, querytype, queryid, **kwargs):
-        self.sendToClient(conn, 'RESPONSE', querytype=querytype,
+    def respondToClient(self, client, querytype, queryid, **kwargs):
+        self.sendToClient(client, 'RESPONSE', querytype=querytype,
                           queryid=queryid, **kwargs)
 
     @synchronized(lock)
     def receiveFromClient(self, conn, msg):
-        """ Handle pings but pass all other client messages to GSManager. """
+        """ Handle client info and pings internally.  Pass all other
+            client messages to GSManager. """
 
-        if msg['msgtype'] == 'PING':
-            # Handle pings directly
-            self.clients[conn].update_lastping()
-            logging.debug('Received ping from %s' % id(conn))
-            self.respondToClient(conn, 'PING', msg['msgid'])
-            logging.debug('Sent pingback to %s' % id(conn))
-
-        elif msg['msgtype'] == 'CLIENT_INFO':
+        # Receive client info directly
+        if msg['msgtype'] == 'CLIENT_INFO':
             info = msg['message']
             client = Client(conn, info['playerName'], info['playerId'], info['gsversion'])
             self.clients[conn] = client
             self.manager.addClient(client)
 
         else:
+            # Verify that we have client info 
+            if conn in self.clients:
+                client = self.clients[conn]
+            else:
+                logging.error("""Received message from WS Connection with no
+                              registered client. Conn ID: %s""" % id(conn))
+    
+            # Handle pings directly
+            if msg['msgtype'] == 'PING':
+                logging.debug('Received ping from %s' % client)
+                client.update_lastping()
+                logging.debug('Sending pingback to %s' % client)
+                self.respondToClient(client, 'PING', msg['msgid'])
+    
             # Pass other messages to manager
-            logging.info('Received message from client: %s ' % id(conn))
-            logging.info(msg)
-            self.manager.receiveFromClient(conn, msg['msgtype'],
-                                           msg['msgid'], msg['message'])
+            else:
+                logging.info('Received message from client: %s ' % client)
+                logging.info(msg)
+                self.manager.receiveFromClient(self.clients[conn], msg['msgtype'],
+                                               msg['msgid'], msg['message'])

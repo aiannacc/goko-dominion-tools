@@ -43,11 +43,16 @@ class GSManager():
                                            clientlist=self.clients)
 
         elif msgtype == 'SUBMIT_BLACKLIST':
-            db_manager.store_blacklist(client.playerId, message.blacklist2,
-                                       message.share)
+            print('submit_bl')
+            print(message)
+            db_manager.store_blacklist(client.playerId, message['blacklist'],
+                                       message['share'])
 
         elif msgtype == 'QUERY_BLACKLIST':
-            db_manager.fetch_blacklist(client.playerId)
+            blist = db_manager.fetch_blacklist(client.playerId)
+            print(blist)
+            self.interface.respondToClient(client, msgtype, msgid,
+                                           blacklist=blist)
         
         elif msgtype == 'QUERY_BLACKLIST_COMMON':
             db_manager.fetch_blacklist_common()
