@@ -132,16 +132,22 @@ if __name__ == '__main__':
         "keyfile": os.path.join("/etc/ssl/private/", "key.pem")
     }
 
+    if len(sys.argv) == 2 and sys.argv[1] == 'test':
+        ports = [7080, 7443, 7889, 7888]
+    else:
+        ports = [80, 443, 8889, 8888]
+    print(ports)
+
     app = ComprehensiveApplication()
-    app.listen(80, "", no_keep_alive=True)
+    app.listen(ports[0], "", no_keep_alive=True)
 
     # Old websocket URL/port for v2.4.3 and below (automatch only)
-    app.listen(443, "", ssl_options=ssl_options_ai, no_keep_alive=True) 
+    app.listen(ports[1], "", ssl_options=ssl_options_ai, no_keep_alive=True) 
 
     # New websocket URL/port for v2.5 and above (all WS communication)
-    app.listen(8889, "", ssl_options=ssl_options_gs, no_keep_alive=True)
+    app.listen(ports[2], "", ssl_options=ssl_options_gs, no_keep_alive=True)
 
     # Support old extension-hosting port.  TODO: change to 443
-    app.listen(8888, "", ssl_options=ssl_options_gs, no_keep_alive=True) 
+    app.listen(ports[3], "", ssl_options=ssl_options_gs, no_keep_alive=True) 
 
     tornado.ioloop.IOLoop.instance().start()
