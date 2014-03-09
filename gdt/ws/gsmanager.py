@@ -45,8 +45,7 @@ class GSManager():
         elif msgtype == 'SUBMIT_BLACKLIST':
             print('submit_bl')
             print(message)
-            db_manager.store_blacklist(client.playerId, message['blacklist'],
-                                       message['share'])
+            db_manager.store_blacklist(client.playerId, message['blacklist'])
 
         elif msgtype == 'QUERY_BLACKLIST':
             blist = db_manager.fetch_blacklist(client.playerId)
@@ -101,3 +100,8 @@ class GSManager():
                               % (pid, msgid, ainfo[0], ainfo[1]))
                 self.interface.respondToClient(client, msgtype, msgid,
                                                playrid=pid, available=ainfo[1])
+        else:
+            logging.warn("""Received unknown message type %s from client %s
+                         """ % (msgtype, client))
+            self.interface.respondToClient(client, msgtype, msgid,
+                                           response="Unknown message type")

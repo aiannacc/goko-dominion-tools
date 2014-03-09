@@ -34,7 +34,6 @@ class MainWSH(tornado.websocket.WebSocketHandler):
     def on_message(self, message_str):
         logging.debug('Message received from WS: %s' % id(self))
         msg = json.loads(message_str)
-        print(msg)
         GSInterface.instance().receiveFromClient(self, msg)
 
 
@@ -196,5 +195,5 @@ class GSInterface():
             else:
                 logging.info('Received message from client: %s ' % client)
                 logging.info(msg)
-                self.manager.receiveFromClient(self.clients[conn], msg['msgtype'],
+                self.manager.receiveFromClient(client, msg['msgtype'],
                                                msg['msgid'], msg['message'])
