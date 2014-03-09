@@ -61,6 +61,7 @@ class Client():
         d = {}
         d['conn'] = id(self.conn)
         d['username'] = self.username
+        d['playerid'] = self.playerid
         d['version'] = self.version
         d['last_pingtime'] = time.strftime('%H:%M:%S',
                                            time.localtime(self.last_pingtime))
