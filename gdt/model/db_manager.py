@@ -485,8 +485,38 @@ def get_avatar_info(playerid):
 
 def save_avatar_info(playerid, hasCustom):
     if get_avatar_info(playerid) is None:
-        ps = _con.prepare("""INSERT INTO avatars VALUES ($1,$2)
-                          """)(playerid, hasCustom)
+         _con.prepare("""INSERT INTO avatars VALUES ($1,$2)
+                      """)(playerid, hasCustom)
     else:
-        ps = _con.prepare("""UPDATE avatars SET hasCustom=($1) WHERE
-                             playerid=($2)""")(hasCustom, playerid)
+        _con.prepare("""UPDATE avatars SET hasCustom=($1) WHERE
+                        playerid=($2)""")(hasCustom, playerid)
+
+def fetch_blacklist(playerid):
+    ps = _con.prepare("""SELECT blackname, noplay, nomatch, censor
+                         FROM blacklist WHERE playerid=$1""")
+    blist = {}
+    for (name, noplay, nomatch, censor) in ps(playerid):
+        bllist[name] = {
+            'noplay': noplay,
+            'nomatch': nomatch,
+            'censor': censor
+        }
+    return blist;
+
+def store_blacklist(playerid, newlist, share):
+    oldlist = fetch_blacklist(playerid)
+    for bname in newlist:
+        if bname in oldlist:
+            ps = _con.prepare("""UPDATE blacklist 
+                                    SET noplay=$3, nomatch=$4, censor=$5
+                                 WHERE playerid=$1 AND blackname=$2""")
+        else:
+            ps = _con.prepare("""INSERT INTO blacklist (playerid, blackname,
+                                        noplay, nomatch, censor)
+                                 VALUES ($1,$2,$3,$4,$5)""")
+        o = newlist[bname]
+        ps(playerid, bname, o['noplay'], o['nomatch'], o['censor'])
+
+def fetch_blacklist_common(threshold):
+    # TODO: Implement
+    return []

@@ -42,6 +42,16 @@ class GSManager():
             self.interface.respondToClient(client, msgtype, msgid,
                                            clientlist=self.clients)
 
+        elif msgtype == 'SUBMIT_BLACKLIST':
+            db_manager.store_blacklist(client.playerid, message.blacklist2,
+                                       message.share)
+
+        elif msgtype == 'QUERY_BLACKLIST':
+            db_manager.fetch_blacklist(client.playerid)
+        
+        elif msgtype == 'QUERY_BLACKLIST_COMMON':
+            db_manager.fetch_blacklist_common()
+
         elif msgtype == 'QUERY_AVATAR':
             pid = message['playerid']
             ainfo = db_manager.get_avatar_info(pid)
