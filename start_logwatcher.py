@@ -191,4 +191,5 @@ if __name__ == '__main__':
                 logging.error(sys.exc_info()[2])
                 pass
             print('Found %d new logs. Checking again in 5 seconds.' % parsecount)
+            print()
             time.sleep(5)
