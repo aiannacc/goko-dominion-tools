@@ -246,6 +246,7 @@ def parse_goko_log(logtext):
         someoneQuit = True
 
     # Number of turns taken
+    wrongTurnCounts = False
     for m in nturnl:
         pname = m.group(1)
         turns = int(m.group(2))
@@ -253,6 +254,7 @@ def parse_goko_log(logtext):
         if not turns == p.turns:
             # Note: Goko counts turns incorrectly sometimes, and i can't figure
             # out why. I'm ignoring their count and using my own.
+            wrongTurnCounts = True
             pass
 
             # My past notes/code on the same error:
@@ -294,6 +296,8 @@ def parse_goko_log(logtext):
                     # Ignore a Goko bug where player ranks were listed twice
                     # (with different results)
                     print('Places listed twice.')
+                elif (wrongTurnCounts):
+                    print('Goko miscounted number of turns')
                 elif (first_quit_line == game_over_line + 1):
                     # Ignore a Goko bug where the "quit" shows up after the
                     # game over log messages
