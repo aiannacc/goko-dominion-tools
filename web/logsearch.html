@@ -281,7 +281,7 @@
     {% set timestr = datetime.datetime.strftime(g.time,'%Y/%m/%d %H:%M') %}
     {% set dirstr = datetime.datetime.strftime(g.time,'%Y%m%d') %}
     {% set logurl = "http://dominionlogs.goko.com/%s/%s" % (dirstr,g.logfile) %}
-    {% set formattedurl = "http://dom.retrobox.eu/?/%s/%s" % (dirstr,g.logfile) %}
+    {% set formattedurl = "./static/logprettifier.html?%s/%s" % (dirstr,g.logfile) %}
 
     {{timestr}}
     <table border="0" cellpadding="2">
