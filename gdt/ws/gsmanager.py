@@ -45,16 +45,20 @@ class GSManager():
         elif msgtype == 'SUBMIT_BLACKLIST':
             print('submit_bl')
             print(message)
-            db_manager.store_blacklist(client.playerId, message['blacklist'])
+            db_manager.store_blacklist(client.playerId, message['blacklist'],
+                                       message['merge'])
 
         elif msgtype == 'QUERY_BLACKLIST':
             blist = db_manager.fetch_blacklist(client.playerId)
             print(blist)
             self.interface.respondToClient(client, msgtype, msgid,
                                            blacklist=blist)
-        
+
         elif msgtype == 'QUERY_BLACKLIST_COMMON':
-            db_manager.fetch_blacklist_common()
+            print(message)
+            cbl = db_manager.fetch_blacklist_common(message['percentile'])
+            self.interface.respondToClient(client, msgtype, msgid,
+                                           common_blacklist=cbl)
 
         elif msgtype == 'QUERY_AVATAR':
             pid = message['playerId']
@@ -81,7 +85,7 @@ class GSManager():
                     (w, h) = img.size
                     img = img.resize((100, 100), Image.ANTIALIAS)
                     img = img.convert('RGB')
-                    img.save('web/static/avatars/' + pid + '.jpg', "JPEG", 
+                    img.save('web/static/avatars/' + pid + '.jpg', "JPEG",
                              quality=95)
 
                     # As uploaded

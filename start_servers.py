@@ -46,13 +46,6 @@ class ComprehensiveApplication(tornado.web.Application):
 class AvatarSFH(tornado.web.StaticFileHandler):
     def set_extra_headers(self, path):
         self.set_header("Access-Control-Allow-Origin", "*")
-        #self.set_header("Pragma-directive", "no-cache")
-        #self.set_header("Cache-directive", "no-cache")
-        #self.set_header("Cache-control", "no-cache")
-        #self.set_header("Pragma", "no-cache")
-        #self.set_header("Expires", "0")
-        #self.set_header('Cache-Control',
-        #                'no-store, no-cache, must-revalidate, max-age=0')
 
 
 class DocumentSFH(tornado.web.StaticFileHandler):

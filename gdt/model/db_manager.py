@@ -44,6 +44,7 @@ def delete_logs(logfiles):
 
 def search_daily_log_filenames(day):
     start = datetime.datetime.strptime(day.strftime('%Y%m%d'), '%Y%m%d')
+    start = start + datetime.timedelta(hours=-1)
     end = day + datetime.timedelta(days=1)
     sql = """SELECT logfile FROM game g WHERE g.time between $1 and $2"""
     return [r[0] for r in _con.prepare(sql)(start, end)]
@@ -146,7 +147,7 @@ def log_search_sql(p):
            AND ({p2name}::varchar IS NULL
                 OR {casesensitive} AND {p2name} = p2.pname
                 OR NOT {casesensitive} AND lower({p2name}) = p2.pname_lower)
-           AND ({p1score}::smallint    IS NULL OR {p1score} = (p2.rank - p1.rank))
+           AND ({p1score}::smallint IS NULL OR {p1score} = (p2.rank - p1.rank))
            AND ({bot}::boolean      IS NULL OR {bot} = g.bot)
            AND ({guest}::boolean    IS NULL OR {guest} = g.guest)
            AND ({shelters}::boolean IS NULL OR {shelters} = g.shelters)
@@ -392,7 +393,7 @@ def inserts(games):
         #    retd['logfile'] = g.logfile
         #    rows['ret'].append([retd[k] for k in ret_keys])
 
-    if len(games) == 0: 
+    if len(games) == 0:
         return
 
     # Insert game data
@@ -453,15 +454,17 @@ def insert_ratings(rating_history):
 
     # Insert or update rating
     ps = _con.prepare("""UPDATE ts_rating
-                            SET time=$1, logfile=$2, mu=$4, sigma=$5, numgames=$6
+                            SET time=$1, logfile=$2, mu=$4, sigma=$5,
+                                numgames=$6
                           WHERE pname=$3""").load_rows(r_rows.values())
     for pname in r_rows:
         ps = _con.prepare("SELECT 1 FROM ts_rating WHERE pname=$1")
         if not ps(pname):
             try:
-                ps = _con.prepare("""INSERT INTO ts_rating
-                                        (time, logfile, pname, mu, sigma, numgames)
-                                 VALUES ($1,$2,$3,$4,$5,$6)""")(*r_rows[pname])
+                ps = _con.prepare("""
+                    INSERT INTO ts_rating
+                           (time, logfile, pname, mu, sigma, numgames)
+                    VALUES ($1,$2,$3,$4,$5,$6)""")(*r_rows[pname])
             except:
                 raise
 
@@ -483,13 +486,15 @@ def get_avatar_info(playerid):
                                 WHERE playerid=$1""")
     return ps.first(playerid)
 
+
 def save_avatar_info(playerid, hasCustom):
     if get_avatar_info(playerid) is None:
-         _con.prepare("""INSERT INTO avatars VALUES ($1,$2)
-                      """)(playerid, hasCustom)
+        _con.prepare("""INSERT INTO avatars VALUES ($1,$2)
+                     """)(playerid, hasCustom)
     else:
         _con.prepare("""UPDATE avatars SET hasCustom=($1) WHERE
                         playerid=($2)""")(hasCustom, playerid)
+
 
 def fetch_blacklist(playerid):
     ps = _con.prepare("""SELECT blackname, noplay, nomatch, censor
@@ -502,13 +507,14 @@ def fetch_blacklist(playerid):
             'nomatch': nomatch,
             'censor': censor
         }
-    return blist;
+    return blist
 
-def store_blacklist(playerid, newlist):
+
+def store_blacklist(playerid, newlist, merge):
     oldlist = fetch_blacklist(playerid)
     for bname in newlist:
         if bname in oldlist:
-            ps = _con.prepare("""UPDATE blacklist 
+            ps = _con.prepare("""UPDATE blacklist
                                     SET noplay=$3, nomatch=$4, censor=$5
                                   WHERE playerid=$1 AND blackname=$2""")
         else:
@@ -517,13 +523,23 @@ def store_blacklist(playerid, newlist):
                                  VALUES ($1,$2,$3,$4,$5)""")
         o = newlist[bname]
         ps(playerid, bname, o['noplay'], o['nomatch'], o['censor'])
-    for bname in oldlist:
-        if bname not in newlist:
-            ps = _con.prepare("""DELETE FROM blacklist
-                                  WHERE playerid=$1 and blackname=$2""")
-            ps(playerid, bname)
+
+    # Delete old DB entries, unless merge is enabled
+    if not merge:
+        for bname in oldlist:
+            if bname not in newlist:
+                ps = _con.prepare("""DELETE FROM blacklist
+                                      WHERE playerid=$1 and blackname=$2""")
+                ps(playerid, bname)
 
 
-def fetch_blacklist_common(threshold):
-    # TODO: Implement
-    return []
+def fetch_blacklist_common(percentage):
+    # TODO: Implement 
+    return {
+        'BLACKLIST_COMMONNAME':
+        {
+            'noplay': True,
+            'nomatch': False,
+            'censor': False
+        }
+    }
