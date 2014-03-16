@@ -55,10 +55,28 @@ class GSManager():
                                            blacklist=blist)
 
         elif msgtype == 'QUERY_BLACKLIST_COMMON':
-            print(message)
             cbl = db_manager.fetch_blacklist_common(message['percentile'])
             self.interface.respondToClient(client, msgtype, msgid,
                                            common_blacklist=cbl)
+
+        elif msgtype == 'QUERY_ISOLEVEL':
+            rating = db_manager.get_rating_by_id(message['playerId'])
+            if rating is None:
+                db_manager.record_player_id(message['playerId'],
+                                            message['playerName'])
+                rating = db_manager.get_rating(message['playerName'])
+            if rating is None:
+                isolevel = 0
+            else:
+                (mu, sigma, numgames) = rating
+                isolevel = round(mu - sigma, 2)
+            self.interface.respondToClient(client, msgtype, msgid,
+                                           isolevel=isolevel)
+
+        #elif msgtype == 'QUERY_ISOLEVELS':
+        #    print(message)
+        #    self.interface.respondToClient(client, msgtype, msgid,
+        #                                   isolevels=[19])
 
         elif msgtype == 'QUERY_AVATAR':
             pid = message['playerId']

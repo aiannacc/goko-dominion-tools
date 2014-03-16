@@ -286,6 +286,19 @@ def fetch_last_rated_log_time():
     return _con.query.first("""SELECT max(time) from ts_rating""")
 
 
+def get_rating_by_id(playerId):
+    ps = _con.prepare("""SELECT r.mu, r.sigma, r.numgames
+                            FROM ts_rating r 
+                            JOIN playerinfo i
+                              ON r.pname = i.playerName
+                           WHERE i.playerId=$1
+                           ORDER BY time DESC""")
+    msn = ps.first(playerId)
+    if msn:
+        return (float(msn[0]), float(msn[1]), msn[2])
+    else:
+        return msn
+
 def get_rating(pname):
     ps = _con.prepare("""SELECT mu, sigma, numgames
                             FROM ts_rating
@@ -543,3 +556,19 @@ def fetch_blacklist_common(percentage):
             'censor': False
         }
     }
+
+
+def record_player_id(playerId, playerName):
+    r = _con.prepare("""SELECT *
+                          FROM playerinfo
+                         WHERE playerId=$1""")(playerId)
+    print(r)
+    if len(r) == 0:
+        _con.prepare("""INSERT INTO playerinfo (observed, playerId, playerName)
+                             VALUES ($1, $2, $3)
+                     """)(datetime.datetime.now(), playerId, playerName)
+    else:
+        pass
+        #_con.prepare("""UPDATE ts_rating
+        #                   SET playerId=$1
+        #                 WHERE pname = $2""")(playerId, playerName)
