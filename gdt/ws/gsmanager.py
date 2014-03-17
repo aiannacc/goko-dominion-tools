@@ -69,7 +69,7 @@ class GSManager():
                 isolevel = 0
             else:
                 (mu, sigma, numgames) = rating
-                isolevel = round(mu - sigma, 2)
+                isolevel = round(mu - 3 * sigma, 2)
             self.interface.respondToClient(client, msgtype, msgid,
                                            isolevel=isolevel)
 
