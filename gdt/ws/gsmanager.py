@@ -4,6 +4,7 @@ import logging
 import requests
 import os
 from PIL import Image
+import tornado.ioloop
 
 from gdt.util.sync import synchronized
 from gdt.model import db_manager
@@ -26,6 +27,11 @@ class GSManager():
     def __init__(self, gsinterface):
         self.interface = gsinterface
         self.clients = set()
+        self.avatar_table = None
+
+        # Check for ratings changes every 3 seonds.  Notify clients.
+        (self.iso_table, self.iso_latest) = db_manager.get_all_ratings_by_id()
+        tornado.ioloop.PeriodicCallback(self.check_iso_levels, 3000).start()
 
     @synchronized(lock)
     def addClient(self, client):
@@ -43,14 +49,11 @@ class GSManager():
                                            clientlist=self.clients)
 
         elif msgtype == 'SUBMIT_BLACKLIST':
-            print('submit_bl')
-            print(message)
             db_manager.store_blacklist(client.playerId, message['blacklist'],
                                        message['merge'])
 
         elif msgtype == 'QUERY_BLACKLIST':
             blist = db_manager.fetch_blacklist(client.playerId)
-            print(blist)
             self.interface.respondToClient(client, msgtype, msgid,
                                            blacklist=blist)
 
@@ -65,6 +68,8 @@ class GSManager():
                 db_manager.record_player_id(message['playerId'],
                                             message['playerName'])
                 rating = db_manager.get_rating(message['playerName'])
+                logging.info('Recording new playerInfo: (%s, %s)' %
+                      (message['playerId'], message['playerName']))
             if rating is None:
                 isolevel = 0
             else:
@@ -73,15 +78,21 @@ class GSManager():
             self.interface.respondToClient(client, msgtype, msgid,
                                            isolevel=isolevel)
 
-        #elif msgtype == 'QUERY_ISOLEVELS':
-        #    print(message)
-        #    self.interface.respondToClient(client, msgtype, msgid,
-        #                                   isolevels=[19])
+        elif msgtype == 'QUERY_ISO_TABLE':
+            self.interface.respondToClient(client, msgtype, msgid,
+                                           isolevel=self.iso_table)
+
+        elif msgtype == 'QUERY_AVATAR_TABLE':
+            if self.avatar_table is None:
+                self.avatar_table = db_manager.get_all_avatar_info()
+            self.interface.respondToClient(client, msgtype, msgid,
+                                           available=self.avatar_table)
 
         elif msgtype == 'QUERY_AVATAR':
             pid = message['playerId']
-            ainfo = db_manager.get_avatar_info(pid)
-            if ainfo is None:
+            if self.avatar_table is None:
+                self.avatar_table = db_manager.get_all_avatar_info()
+            if not pid in self.avatar_table:
                 logging.info('Avatar info not found.  Looking up on '
                              + 'retrobox -- playerId: %s' % pid)
                 url = "http://dom.retrobox.eu/avatars/%s.png"
@@ -118,12 +129,21 @@ class GSManager():
                 self.interface.respondToClient(client, msgtype, msgid,
                                                available=available)
             else:
-                logging.debug('Avatar info found for %s %s - %s, %s'
-                              % (pid, msgid, ainfo[0], ainfo[1]))
+                logging.debug('Avatar info found for %s %s - %s'
+                              % (pid, msgid, self.avatar_table[pid]))
                 self.interface.respondToClient(client, msgtype, msgid,
-                                               playrid=pid, available=ainfo[1])
+                                               playerid=pid,
+                                               available=self.avatar_table[pid])
         else:
             logging.warn("""Received unknown message type %s from client %s
                          """ % (msgtype, client))
             self.interface.respondToClient(client, msgtype, msgid,
                                            response="Unknown message type")
+
+    def check_iso_levels(self):
+        (iso_new, self.iso_latest) = db_manager.get_new_ratings(self.iso_latest)
+        for playerId in iso_new:
+            self.iso_table[playerId] = iso_new[playerId]
+        if iso_new != {}:
+            print(iso_new)
+            self.interface.sendToAllClients('UPDATE_ISO_LEVELS', new_levels=iso_new)

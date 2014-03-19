@@ -160,6 +160,11 @@ class GSInterface():
         msgJSON = GSEncoder().encode(msg)
         client.conn.write_message(msgJSON)
 
+    @synchronized(lock)
+    def sendToAllClients(self, msgtype, **kwargs):
+        for k in self.clients:
+            self.sendToClient(self.clients[k], msgtype, **kwargs)
+
     def respondToClient(self, client, querytype, queryid, **kwargs):
         self.sendToClient(client, 'RESPONSE', querytype=querytype,
                           queryid=queryid, **kwargs)
@@ -175,6 +180,7 @@ class GSInterface():
             client = Client(conn, info['playerName'], info['playerId'], info['gsversion'])
             self.clients[conn] = client
             self.manager.addClient(client)
+            self.respondToClient(client, 'CLIENT_INFO', msg['msgid'])
 
         else:
             # Verify that we have client info 
@@ -183,6 +189,7 @@ class GSInterface():
             else:
                 logging.error("""Received message from WS Connection with no
                               registered client. Conn ID: %s""" % id(conn))
+                logging.error(msg)
     
             # Handle pings directly
             if msg['msgtype'] == 'PING':

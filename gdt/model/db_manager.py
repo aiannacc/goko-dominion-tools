@@ -286,9 +286,40 @@ def fetch_last_rated_log_time():
     return _con.query.first("""SELECT max(time) from ts_rating""")
 
 
+def get_all_ratings_by_id():
+    qrows = _con.prepare("""SELECT r.time, i.playerid,
+                                   r.mu - 3 * r.sigma as level
+                              FROM ts_rating r
+                              JOIN playerinfo i
+                                ON r.pname = i.playername""")()
+    out = {}
+    last_time = None
+    for (time, playerid, level) in qrows:
+        if last_time is None:
+            last_time = time
+        last_time = max(last_time, time)
+        out[playerid] = round(level, 2).__float__()
+    return (out, last_time)
+
+
+def get_new_ratings(since_time):
+    qrows = _con.prepare("""SELECT r.time, i.playerid,
+                                   r.mu - 3 * r.sigma as level
+                              FROM ts_rating r
+                              JOIN playerinfo i
+                                ON r.pname = i.playername
+                             WHERE r.time > $1""")(since_time)
+    out = {}
+    last_time = since_time
+    for (time, playerid, level) in qrows:
+        last_time = max(last_time, time)
+        out[playerid] = round(level, 2).__float__()
+    return (out, last_time)
+
+
 def get_rating_by_id(playerId):
     ps = _con.prepare("""SELECT r.mu, r.sigma, r.numgames
-                            FROM ts_rating r 
+                            FROM ts_rating r
                             JOIN playerinfo i
                               ON r.pname = i.playerName
                            WHERE i.playerId=$1
@@ -298,6 +329,7 @@ def get_rating_by_id(playerId):
         return (float(msn[0]), float(msn[1]), msn[2])
     else:
         return msn
+
 
 def get_rating(pname):
     ps = _con.prepare("""SELECT mu, sigma, numgames
@@ -500,6 +532,14 @@ def get_avatar_info(playerid):
     return ps.first(playerid)
 
 
+def get_all_avatar_info():
+    qrows = _con.query.rows("""SELECT playerid, hascustom from avatars""")
+    l = {}
+    for (playerid, hascustom) in qrows:
+        l[playerid] = hascustom
+    return l
+
+
 def save_avatar_info(playerid, hasCustom):
     if get_avatar_info(playerid) is None:
         _con.prepare("""INSERT INTO avatars VALUES ($1,$2)
@@ -547,7 +587,7 @@ def store_blacklist(playerid, newlist, merge):
 
 
 def fetch_blacklist_common(percentage):
-    # TODO: Implement 
+    # TODO: Implement
     return {
         'BLACKLIST_COMMONNAME':
         {
@@ -562,13 +602,10 @@ def record_player_id(playerId, playerName):
     r = _con.prepare("""SELECT *
                           FROM playerinfo
                          WHERE playerId=$1""")(playerId)
-    print(r)
     if len(r) == 0:
         _con.prepare("""INSERT INTO playerinfo (observed, playerId, playerName)
                              VALUES ($1, $2, $3)
                      """)(datetime.datetime.now(), playerId, playerName)
     else:
+        # TODO: update playerId-playerName connection
         pass
-        #_con.prepare("""UPDATE ts_rating
-        #                   SET playerId=$1
-        #                 WHERE pname = $2""")(playerId, playerName)
