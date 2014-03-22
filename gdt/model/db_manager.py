@@ -610,3 +610,8 @@ def record_player_id(playerId, playerName):
     else:
         # TODO: update playerId-playerName connection
         pass
+    
+def record_login(playerId, version):
+    _con.prepare("""INSERT INTO extlogin (time, playerId, version)
+                         VALUES ($1, $2, $3)
+                 """)(datetime.datetime.now(), playerId, version);

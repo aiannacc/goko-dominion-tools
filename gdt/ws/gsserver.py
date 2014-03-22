@@ -11,6 +11,7 @@ import tornado.ioloop
 
 from gdt.ws.gsmanager import GSManager
 from gdt.util.sync import synchronized
+from gdt.model import db_manager
 
 # For synchronization. Can be acquired multiple times by the same thread, but a
 # second thread has to wait.
@@ -181,6 +182,7 @@ class GSInterface():
             self.clients[conn] = client
             self.manager.addClient(client)
             self.respondToClient(client, 'CLIENT_INFO', msg['msgid'])
+            db_manager.record_login(info['playerId'], info['gsversion'])
 
         else:
             # Verify that we have client info 
