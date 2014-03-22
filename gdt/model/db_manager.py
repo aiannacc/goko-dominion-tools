@@ -411,13 +411,14 @@ def inserts(games):
         for pname in g.presults:
             p = g.presults[pname]
             pd = {}
-            pres_keys = ['pname', 'vps', 'turns', 'rank', 'quit',
+            pres_keys = ['pname', 'vps', 'turns', 'rank', 'quit', 'turnorder',
                          'resign', 'logfile', 'pcount', 'pname_lower']
             for k in pres_keys:
                 pd[k] = getattr(p, k, None)
             pd['pcount'] = len(g.presults)
             pd['pname_lower'] = pname.lower()
             pd['logfile'] = g.logfile
+            pd['turnorder'] = g.presults[pname].order
             rows['pres'].append([pd[k] for k in pres_keys])
 
         ## Copy values from GainRet object.
@@ -448,8 +449,8 @@ def inserts(games):
     _con.prepare(sql).load_rows(rows['game'])
 
     # Insert player data
-    sql = """INSERT INTO presult (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    sql = """INSERT INTO presult (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
           """ % tuple(pres_keys)
     _con.prepare(sql).load_rows(rows['pres'])
 

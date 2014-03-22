@@ -220,8 +220,9 @@ def parse_goko_log(logtext):
         pname = m.group(1)
         turn_num = int(m.group(2))
         presults[pname].turns = turn_num
-        iOrder += 1
-        presults[pname].order = iOrder
+        if presults[pname].order is None:
+            iOrder += 1
+            presults[pname].order = iOrder
 
     ## POST GAME ##
 
