@@ -17,6 +17,7 @@ from gdt.automatch.communicator import AutomatchWSH
 from gdt.ratings.leaderboard_handler import LeaderboardHandler
 from gdt.logsearch.logsearch_handler import SearchHandler
 from gdt.kingviz.kingviz_handler import KingdomHandler
+from gdt.logsearch.tourneysearch import TourneySearchHandler
 
 
 class ComprehensiveApplication(tornado.web.Application):
@@ -25,6 +26,7 @@ class ComprehensiveApplication(tornado.web.Application):
             (r"/", SearchHandler),
             (r"/logsearch", SearchHandler),
             (r"/logsearch/", SearchHandler),
+            (r"/tourneysearch", TourneySearchHandler),
             (r"/kingdom", KingdomHandler),
             (r"/kingdom/", KingdomHandler),
             (r"/kingdomvisualize", KingdomHandler),

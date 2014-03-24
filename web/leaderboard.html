@@ -17,11 +17,16 @@
 
     <br>
 
-    <h2>Isotropish Leaderboard (for Goko)</h2>
+    <h2>Isotropish Leaderboard (for Goko Online Dominion)</h2>
 
     <p>
 
-    <p><a href="http://forum.dominionstrategy.com/index.php?topic=8891.msg269556#msg269556">Implementation details and discussion</a><p>
+    <a href="#description">
+      Description and Implementation Details
+    </a>
+
+    <p>
+
     <p class=date>Last recorded game finished {{ago_m}} min, {{ago_s}} seconds ago</p>
 
     {% if full %}
@@ -95,6 +100,31 @@
 
     </table>
     {% end %}
+
+    <a id="description">
+    <p>
+      The Isotropish rating system is an unmodified implementation of
+      <a href="http://research.microsoft.com/en-us/projects/trueskill/">
+        Microsoft's TrueSkill rating system.
+      </a><br>
+      It's more stable and less easily gamed than Goko's Pro rating system.
+      <ul>
+        <li>
+          <a href="https://github.com/aiannacc/Goko-Salvager/wiki/Rating-Systems">
+            Simple comparison of Isotropish vs. Goko Pro
+          </a> 
+        </li>
+        <li>
+          <a href="http://forum.dominionstrategy.com/index.php?topic=8891.msg269556#msg269556">
+            DominionStrategy forum discussion of Isotropish
+          </a>
+        </li>
+      </ul>
+      Source code is available in the 
+      <a href="https://github.com/aiannacc/goko-dominion-tools">
+        github project that runs this server.
+      </a>
+    </p>
 
   </body>
 </html>
