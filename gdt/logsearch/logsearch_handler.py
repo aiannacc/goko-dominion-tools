@@ -78,6 +78,15 @@ class SearchHandler(tornado.web.RequestHandler):
 
         # TODO: log the logsearch request
 
+        if (arg['p1name'] and arg['p1name'] == 'ai'):
+            arg['p1name'] = 'Andrew Iannaccone'
+        if (arg['p1name'] and arg['p1name'] == 'scsn'):
+            arg['p1name'] = 'SheCantSayNo'
+        if (arg['p2name'] and arg['p2name'] == 'ai'):
+            arg['p2name'] = 'Andrew Iannaccone'
+        if (arg['p2name'] and arg['p2name'] == 'scsn'):
+            arg['p2name'] = 'SheCantSayNo'
+
         # Make end date inclusive
         arg['enddate'] = arg['enddate'] + datetime.timedelta(days=1)
 
