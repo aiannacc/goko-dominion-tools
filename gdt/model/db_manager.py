@@ -6,6 +6,7 @@ import time
 import socket
 import datetime
 import copy
+import math
 
 import postgresql
 
@@ -298,7 +299,7 @@ def get_all_ratings_by_id():
         if last_time is None:
             last_time = time
         last_time = max(last_time, time)
-        out[playerid] = round(level, 2).__float__()
+        out[playerid] = math.floor(level).__float__()
     return (out, last_time)
 
 
@@ -313,7 +314,7 @@ def get_new_ratings(since_time):
     last_time = since_time
     for (time, playerid, level) in qrows:
         last_time = max(last_time, time)
-        out[playerid] = round(level, 2).__float__()
+        out[playerid] = math.floor(level).__float__()
     return (out, last_time)
 
 

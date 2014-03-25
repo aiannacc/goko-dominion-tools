@@ -5,6 +5,7 @@ import requests
 import os
 from PIL import Image
 import tornado.ioloop
+import math
 
 from gdt.util.sync import synchronized
 from gdt.model import db_manager
@@ -74,7 +75,7 @@ class GSManager():
                 isolevel = 0
             else:
                 (mu, sigma, numgames) = rating
-                isolevel = round(mu - 3 * sigma, 2)
+                isolevel = math.floor(mu - 3 * sigma)
             self.interface.respondToClient(client, msgtype, msgid,
                                            isolevel=isolevel)
 
