@@ -14,12 +14,6 @@ dominion_env = trueskill.TrueSkill(draw_probability=0.0175, backend='scipy')
 isodominion_env = trueskill.TrueSkill(mu=25, sigma=25, beta=25, tau=25/100, draw_probability=0.05, backend='scipy')
 
 
-def pwin(rA=Rating(), rB=Rating(), env=None):
-    deltaMu = rA.mu - rB.mu
-    rsss = (rA.sigma**2 + rB.sigma**2)**(0.5)
-    return env.cdf(deltaMu/rsss)
-
-
 def rate(ra, rb, score, env):
     if score == 1:
         return trueskill.rate_1vs1(ra, rb, env=env)
