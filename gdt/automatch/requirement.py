@@ -27,6 +27,8 @@ class NumSets(Requirement):
 
     def is_match_ok(self, player, match):
         host = match.get_host()
+        if host.sets_owned is None:
+            return False
         if self.min_sets and len(host.sets_owned) < self.min_sets:
             return False
         if self.max_sets and len(host.sets_owned) > self.max_sets:
@@ -87,11 +89,10 @@ class RelativeRating(Requirement):
                 return p.rating.goko_pro_rating
             elif self.rating_system == 'casual':
                 return p.rating.goko_casual_rating
+            elif self.rating_system == 'isotropish':
+                return p.rating.isotropish_rating
             elif self.rating_system == 'unrated':
                 return p.rating.goko_casual_rating
-            else:
-                # TODO: implement using isotropish rating
-                return NotImplemented
 
         opps = set([s.player for s in match.seeks]) - set([player])
         for o in opps:
@@ -120,14 +121,13 @@ class AbsoluteRating(Requirement):
                 return p.rating.goko_casual_rating
             elif self.rating_system == 'unrated':
                 return p.rating.goko_casual_rating
-            else:
-                # TODO: implement using isotropish rating
-                return NotImplemented
+            elif self.rating_system == 'isotropish':
+                return p.rating.isotropish_rating
 
         opps = set([s.player for s in match.seeks]) - set([player])
         for o in opps:
-            if self.min_pts and (r(o) < self.min_pts):
+            if r(o) and self.min_pts and (r(o) < self.min_pts):
                 return False
-            if self.max_pts and (r(o) > self.max_pts):
+            if r(o) and self.max_pts and (r(o) > self.max_pts):
                 return False
         return True
