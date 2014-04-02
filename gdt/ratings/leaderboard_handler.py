@@ -16,16 +16,24 @@ class LeaderboardHandler(tornado.web.RequestHandler):
 
     def get(self):
 
-        # Display full or limited leaderboard
-        full = self.get_argument('full', 'False') == 'True'
-        if full:
-            ratings = db_manager.fetch_all_ratings(None, None, None)
-        else:
-            lastmonth = datetime.datetime.now() - datetime.timedelta(days=30)
-            ratings = db_manager.fetch_all_ratings(20, lastmonth, 0)
-
         # Get requested sort key
         sortkey = self.get_argument('sortkey', 'level')
+
+        # Display full or limited leaderboard
+        full = self.get_argument('full', 'False') == 'True'
+        
+        # Let WW ruin stuff
+        print('WW:')
+        print(self.get_argument('ww', 'false'))
+        if self.get_argument('ww', 'false') == 'true':
+            full = True
+            sortkey = 'mu'
+
+        if full:
+            ratings = db_manager.fetch_all_nonguest_ratings(None, None, None)
+        else:
+            lastmonth = datetime.datetime.now() - datetime.timedelta(days=30)
+            ratings = db_manager.fetch_all_nonguest_ratings(20, lastmonth, 0)
 
         # Sort players 
         if sortkey == 'level':
@@ -77,8 +85,9 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             ago_m=ago_m,
             ago_s=ago_s,
             player_ratings=prs,
+            ww=self.get_argument('ww', 'false'),
             full=full,
-            sortkey=sortkey
+            sortkey=sortkey,
         ))
         self.finish()
 

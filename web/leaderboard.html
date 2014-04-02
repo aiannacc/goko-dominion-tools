@@ -42,14 +42,15 @@
     <table class="leaderboard sortable">
 
       <tr>
+        {% if not ww or ww != 'true' %}
         <th style="text-align:center">
           <a href="?sortkey=level&full={{full}}">Level</a>
         </th>
+        {% end %}
         <th style="text-align:center">
           <a href="?sortkey=mu&full={{full}}">&mu;</a>
         </th>
-        <th>
-        </th>
+        <th></th>
         <th style="text-align:center">
           <a href="?sortkey=sigma&full={{full}}">3&sigma;</a>
         </th>
@@ -67,6 +68,7 @@
       {% set last_level = None %}
       {% for pr in player_ratings %}
         <tr class=level>
+          {% if not ww or ww != 'true' %}
           <td class=level>
               {% if pr['level'] != last_level or sortkey != "level" %}
                 {% set n=0 %}
@@ -79,7 +81,14 @@
               {% end %}
               {% set last_level = pr['level'] %}
           </td>
-          <td>{{pr['mu']}}</td>
+          {% end %}
+          {% if ww and ww == 'true' %}
+          <td class=level>
+          {% else %}
+          <td>
+          {% end %}
+            {{pr['mu']}}
+          </td>
           <td>&plusmn;</td>
           <td>{{pr['3sigma']}}</td>
           <td class=c2>
@@ -125,6 +134,8 @@
         github project that runs this server.
       </a>
     </p>
+
+    {{ww}}
 
   </body>
 </html>
