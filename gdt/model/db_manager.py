@@ -266,6 +266,22 @@ def fetch_rated_game_counts():
                       GROUP BY pname""")
     return ps()
 
+def fetch_all_nonguest_ratings(mingames, lastactive, minlevel):
+    mu_sig_num = {}
+    # TODO: Fix the Boodaloo problem more elegantly
+    ps = _con.prepare(
+        """SELECT pname, mu, sigma, numgames
+             FROM ts_rating
+            WHERE pname != 'Boodaloo'
+              AND pname != 'ottocar'
+              AND NOT guest
+              AND ($1::smallint IS NULL OR numgames >= $1)
+              AND ($2::timestamp IS NULL OR time >= $2)
+              AND ($3::smallint IS NULL OR (mu - 3*sigma) >= $3)""")
+    for (p, m, s, n) in ps(mingames, lastactive, minlevel):
+        mu_sig_num[p] = {'mu': m, 'sigma': s, 'n': n}
+    return mu_sig_num
+
 
 def fetch_all_ratings(mingames, lastactive, minlevel):
     mu_sig_num = {}
@@ -616,3 +632,11 @@ def record_login(playerId, version):
     _con.prepare("""INSERT INTO extlogin (time, playerId, version)
                          VALUES ($1, $2, $3)
                  """)(datetime.datetime.now(), playerId, version);
+
+
+def record_pro_rating(playerId, time, mu, sd):
+    print(time)
+    print(time.__class__)
+    _con.prepare("""INSERT INTO pro_rating_history (playerId, time, mu, sd)
+                    VALUES ($1, $2, $3, $4)
+                 """)(playerId, time, mu, sd)
