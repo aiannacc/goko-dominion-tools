@@ -6,6 +6,7 @@ import os
 from PIL import Image
 import tornado.ioloop
 import math
+import datetime
 
 from gdt.util.sync import synchronized
 from gdt.model import db_manager
@@ -37,21 +38,50 @@ class GSManager():
     @synchronized(lock)
     def addClient(self, client):
         self.clients.add(client)
+        user = {
+            'playerId': client.playerId,
+            'connId': id(client.conn),
+            'playerName': client.playerName,
+            'version': client.version
+        }
+        self.interface.sendToAllClients('ADD_EXTUSER', user=user)
 
     @synchronized(lock)
     def remClient(self, client):
         self.clients.remove(client)
+        user = {
+            'playerId': client.playerId,
+            'connId': id(client.conn),
+            'playerName': client.playerName,
+            'version': client.version
+        }
+        self.interface.sendToAllClients('REM_EXTUSER', user=user)
         # TODO: clean up client's remaining dependencies
 
     @synchronized(lock)
     def receiveFromClient(self, client, msgtype, msgid, message):
-        if msgtype == 'QUERY_CLIENTLIST':
-            self.interface.respondToClient(client, msgtype, msgid,
-                                           clientlist=self.clients)
+        print(msgtype, msgid, message)
 
-        elif msgtype == 'SUBMIT_BLACKLIST':
+        if msgtype == 'SUBMIT_BLACKLIST':
             db_manager.store_blacklist(client.playerId, message['blacklist'],
                                        message['merge'])
+
+        if msgtype == 'SUBMIT_PRO_RATING':
+            time = datetime.datetime.now()
+            db_manager.record_pro_rating(message['playerId'], time,
+                                         message['mu'], message['sd'])
+
+        elif msgtype == 'QUERY_EXTUSERS':
+            out = []
+            for c in self.clients:
+                out.append({
+                    'connId': id(c.conn),
+                    'playerId': c.playerId,
+                    'playerName': c.playerName,
+                    'version': c.version
+                })
+            self.interface.respondToClient(client, msgtype, msgid,
+                                           clientlist=out)
 
         elif msgtype == 'QUERY_BLACKLIST':
             blist = db_manager.fetch_blacklist(client.playerId)
@@ -70,7 +100,7 @@ class GSManager():
                                             message['playerName'])
                 rating = db_manager.get_rating(message['playerName'])
                 logging.info('Recording new playerInfo: (%s, %s)' %
-                      (message['playerId'], message['playerName']))
+                             (message['playerId'], message['playerName']))
             if rating is None:
                 isolevel = 0
             else:
@@ -132,9 +162,9 @@ class GSManager():
             else:
                 logging.debug('Avatar info found for %s %s - %s'
                               % (pid, msgid, self.avatar_table[pid]))
-                self.interface.respondToClient(client, msgtype, msgid,
-                                               playerid=pid,
-                                               available=self.avatar_table[pid])
+                self.interface.respondToClient(
+                    client, msgtype, msgid, playerid=pid,
+                    available=self.avatar_table[pid])
         else:
             logging.warn("""Received unknown message type %s from client %s
                          """ % (msgtype, client))
@@ -142,9 +172,11 @@ class GSManager():
                                            response="Unknown message type")
 
     def check_iso_levels(self):
-        (iso_new, self.iso_latest) = db_manager.get_new_ratings(self.iso_latest)
+        (iso_new, self.iso_latest) = \
+            db_manager.get_new_ratings(self.iso_latest)
         for playerId in iso_new:
             self.iso_table[playerId] = iso_new[playerId]
         if iso_new != {}:
             print(iso_new)
-            self.interface.sendToAllClients('UPDATE_ISO_LEVELS', new_levels=iso_new)
+            self.interface.sendToAllClients('UPDATE_ISO_LEVELS',
+                                            new_levels=iso_new)
