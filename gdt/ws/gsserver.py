@@ -23,13 +23,13 @@ lock = threading.RLock()
 class MainWSH(tornado.websocket.WebSocketHandler):
 
     def open(self):
-        logging.info('WS opened: %s' % id(self))
+        logging.debug('WS opened: %s' % id(self))
         req_detail = {'msgtype': 'REQUEST_CLIENT_INFO'}
         self.write_message(GSEncoder().encode(req_detail))
         logging.info('Requesting details from client: %s' % id(self))
 
     def on_close(self):
-        logging.info('Received WS on_close: %s' % id(self))
+        logging.debug('Received WS on_close: %s' % id(self))
         GSInterface.instance().handle_disconnect(self)
 
     def on_message(self, message_str):
@@ -175,6 +175,8 @@ class GSInterface():
         """ Handle client info and pings internally.  Pass all other
             client messages to GSManager. """
 
+        print(msg)
+
         # Receive client info directly
         if msg['msgtype'] == 'CLIENT_INFO':
             info = msg['message']
@@ -186,17 +188,19 @@ class GSInterface():
 
         else:
             # Verify that we have client info 
-            if conn in self.clients:
+            if conn in self.clients and self.clients[conn] is not None:
                 client = self.clients[conn]
             else:
                 logging.error("""Received message from WS Connection with no
                               registered client. Conn ID: %s""" % id(conn))
                 logging.error(msg)
+
+            # Any message verifes that you're still connected
+            client.update_lastping()
     
             # Handle pings directly
             if msg['msgtype'] == 'PING':
                 logging.debug('Received ping from %s' % client)
-                client.update_lastping()
                 logging.debug('Sending pingback to %s' % client)
                 self.respondToClient(client, 'PING', msg['msgid'])
     
