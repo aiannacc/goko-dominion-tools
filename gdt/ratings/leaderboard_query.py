@@ -21,7 +21,7 @@ class LeaderboardQuery(tornado.web.RequestHandler):
         sortkey = self.get_argument('sortkey', 'level')
         full = bool(self.get_argument('full', 'False'))
         offset = int(self.get_argument('offset', 0))
-        count = int(self.get_argument('count', 100))
+        count = int(self.get_argument('count', 10000))
 
         if full:
             ratings = db_manager.fetch_ratings(

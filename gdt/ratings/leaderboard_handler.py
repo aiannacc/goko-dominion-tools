@@ -23,7 +23,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
         full = self.get_argument('full', 'False') == 'True'
         
         offset = self.get_argument('offset', 0)
-        count = self.get_argument('count', 100)
+        count = self.get_argument('count', 10000)
 
         # Let WW ruin stuff
         if self.get_argument('ww', 'false') == 'true':
