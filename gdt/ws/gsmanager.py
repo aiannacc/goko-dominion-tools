@@ -182,11 +182,10 @@ class GSManager():
                 }
                 for key in wld_delta:
                     (x, y) = rate(r_me, r_opp, wld_delta[key]['score'], goko_env)
-                    wld_delta[key]['me']['mu'] = x[key].mu - r_me.mu
-                    wld_delta[key]['me']['sigma'] =  x[key].sigma - r_me.sigma
+                    wld_delta[key]['me']['mu'] = x.mu - r_me.mu
+                    wld_delta[key]['me']['sigma'] =  x.sigma - r_me.sigma
                     wld_delta[key]['me']['displayed'] = \
-                        (x[key].mu - 2 * x[key].sigma) \
-                        - (r_me.mu - 2 * r_me.sigma)
+                        (x.mu - 2 * x.sigma) - (r_me.mu - 2 * r_me.sigma)
                 self.interface.respondToClient(client, msgtype, msgid,
                                                wld_delta=wld_delta)
             else:

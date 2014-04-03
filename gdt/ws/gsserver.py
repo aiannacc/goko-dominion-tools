@@ -26,7 +26,7 @@ class MainWSH(tornado.websocket.WebSocketHandler):
         logging.debug('WS opened: %s' % id(self))
         req_detail = {'msgtype': 'REQUEST_CLIENT_INFO'}
         self.write_message(GSEncoder().encode(req_detail))
-        logging.info('Requesting details from client: %s' % id(self))
+        logging.debug('Requesting details from client: %s' % id(self))
 
     def on_close(self):
         logging.debug('Received WS on_close: %s' % id(self))
@@ -174,8 +174,6 @@ class GSInterface():
     def receiveFromClient(self, conn, msg):
         """ Handle client info and pings internally.  Pass all other
             client messages to GSManager. """
-
-        print(msg)
 
         # Receive client info directly
         if msg['msgtype'] == 'CLIENT_INFO':

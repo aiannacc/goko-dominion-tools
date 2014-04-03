@@ -23,6 +23,7 @@ class Match:
         self.roomid = roomid
         self.tableindex = tableindex
         self.acceptors = set()
+        self.vpcounter = None
         self.matchid = uuid.uuid4().hex
 
     # Verify that match satisfies requirements for all seeks
@@ -64,6 +65,7 @@ class Match:
                 'tableindex': self.tableindex,
                 'rating_system': self.rating_system,
                 'acceptors': list(self.acceptors),
+                'vpcounter': self.vpcounter,
                 'matchid': self.matchid}
 
     def get_pnames(self):
