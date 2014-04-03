@@ -22,22 +22,36 @@ class LeaderboardHandler(tornado.web.RequestHandler):
         # Display full or limited leaderboard
         full = self.get_argument('full', 'False') == 'True'
         
+        offset = self.get_argument('offset', 0)
+        count = self.get_argument('count', 100)
+
         # Let WW ruin stuff
-        print('WW:')
-        print(self.get_argument('ww', 'false'))
         if self.get_argument('ww', 'false') == 'true':
             full = True
             sortkey = 'mu'
 
         if full:
-            ratings = db_manager.fetch_all_nonguest_ratings(None, None, None)
+            ratings = db_manager.fetch_ratings(
+                guest=False, offset=offset, count=count, sortkey=sortkey)
         else:
             lastmonth = datetime.datetime.now() - datetime.timedelta(days=30)
-            ratings = db_manager.fetch_all_nonguest_ratings(20, lastmonth, 0)
+            ratings = db_manager.fetch_ratings(
+                min_level=0, min_games=20, active_since=lastmonth,
+                guest=False, offset=offset, count=count, sortkey=sortkey)
+
+        rlist = ratings
+        ratings = {}
+        for r in rlist:
+            ratings[r['pname']] = {
+                'level': r['level'],
+                'mu': r['mu'],
+                'sigma': r['sigma'],
+                'n': r['numgames']
+            }
 
         # Sort players 
         if sortkey == 'level':
-            key = lambda x: ratings[x]['mu'] - 3 * ratings[x]['sigma']
+            key = lambda x: ratings[x]['level']
         elif sortkey == 'mu':
             key = lambda x: ratings[x]['mu']
         elif sortkey == 'sigma':
@@ -58,7 +72,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             r['pname'] = p
             r['rank'] = rank
             r['games'] = ratings[p]['n']
-            r['level'] = int(ratings[p]['mu'] - 3 * ratings[p]['sigma'])
+            r['level'] = int(ratings[p]['level'])
             r['updown'] = ''
             r['updown_n'] = ''
             r['mu'] = "%5.2f" % ratings[p]['mu']

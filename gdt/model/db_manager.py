@@ -266,37 +266,37 @@ def fetch_rated_game_counts():
                       GROUP BY pname""")
     return ps()
 
-def fetch_all_nonguest_ratings(mingames, lastactive, minlevel):
-    mu_sig_num = {}
+
+def fetch_ratings(min_level=None, min_games=None, active_since=None,
+                  guest=True, offset=0, count=sys.maxsize, sortkey='level'):
     # TODO: Fix the Boodaloo problem more elegantly
-    ps = _con.prepare(
-        """SELECT pname, mu, sigma, numgames
+    q = """SELECT pname, (mu - 3 * sigma) as level, mu, sigma, numgames
              FROM ts_rating
             WHERE pname != 'Boodaloo'
               AND pname != 'ottocar'
-              AND NOT guest
-              AND ($1::smallint IS NULL OR numgames >= $1)
-              AND ($2::timestamp IS NULL OR time >= $2)
-              AND ($3::smallint IS NULL OR (mu - 3*sigma) >= $3)""")
-    for (p, m, s, n) in ps(mingames, lastactive, minlevel):
-        mu_sig_num[p] = {'mu': m, 'sigma': s, 'n': n}
-    return mu_sig_num
-
-
-def fetch_all_ratings(mingames, lastactive, minlevel):
-    mu_sig_num = {}
-    # TODO: Fix the Boodaloo problem more elegantly
-    ps = _con.prepare(
-        """SELECT pname, mu, sigma, numgames
-             FROM ts_rating
-            WHERE pname != 'Boodaloo'
-              AND pname != 'ottocar'
-              AND ($1::smallint IS NULL OR numgames >= $1)
-              AND ($2::timestamp IS NULL OR time >= $2)
-              AND ($3::smallint IS NULL OR (mu - 3*sigma) >= $3)""")
-    for (p, m, s, n) in ps(mingames, lastactive, minlevel):
-        mu_sig_num[p] = {'mu': m, 'sigma': s, 'n': n}
-    return mu_sig_num
+              AND ($1::int IS NULL OR (mu - 3*sigma) >= $1)
+              AND ($2::int IS NULL OR numgames >= $2)
+              AND ($3::timestamp IS NULL OR time >= $3)
+              AND ($4 OR NOT guest)
+            ORDER BY %s DESC
+            LIMIT $6
+           OFFSET $5
+        """ % (sortkey)
+    ps = _con.prepare(q)
+    out = []
+    i = 0
+    for (p, l, m, s, n) in ps(min_level, min_games, active_since, guest,
+                              offset, count):
+        i += 1
+        out.append({
+            'pname': p,
+            'mu': float(m),
+            'level': int(l),
+            'sigma': float(s),
+            'numgames': int(n),
+            'rank': i
+        })
+    return out
 
 
 def fetch_last_rated_log_time():

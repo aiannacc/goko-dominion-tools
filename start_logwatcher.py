@@ -31,6 +31,7 @@ def download_log(logfile, dayurl, log_dir):
     logging.debug('Fetching %s' % url)
     r = requests.get(url, headers=headers)
     sema.release()
+    r.encoding='utf-8'
     gzip.open(log_dir + '/' + logfile, 'wt').write(r.text)
 
 
