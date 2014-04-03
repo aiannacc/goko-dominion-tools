@@ -7,9 +7,12 @@ from PIL import Image
 import tornado.ioloop
 import math
 import datetime
+from trueskill import Rating
 
 from gdt.util.sync import synchronized
 from gdt.model import db_manager
+from gdt.ratings.gdt_trueskill import goko_env
+from gdt.ratings.gdt_trueskill import rate
 
 # For synchronization. Can be acquired multiple times by the same thread, but a
 # second thread has to wait.
@@ -165,6 +168,31 @@ class GSManager():
                 self.interface.respondToClient(
                     client, msgtype, msgid, playerid=pid,
                     available=self.avatar_table[pid])
+
+        elif msgtype == 'QUERY_ASSESSMENT':
+            if message['system'] == 'pro':
+                r_me = Rating(message['myRating']['mu'],
+                              message['myRating']['sigma'])
+                r_opp = Rating(message['hisRating']['mu'],
+                               message['hisRating']['sigma'])
+                wld_delta = {
+                    'win': { 'score': 1, 'me': {}, 'opp': {} },
+                    'draw': { 'score': 0, 'me': {}, 'opp': {} },
+                    'loss': { 'score': -1, 'me': {}, 'opp': {} }
+                }
+                for key in wld_delta:
+                    (x, y) = rate(r_me, r_opp, wld_delta[key]['score'], goko_env)
+                    wld_delta[key]['me']['mu'] = x[key].mu - r_me.mu
+                    wld_delta[key]['me']['sigma'] =  x[key].sigma - r_me.sigma
+                    wld_delta[key]['me']['displayed'] = \
+                        (x[key].mu - 2 * x[key].sigma) \
+                        - (r_me.mu - 2 * r_me.sigma)
+                self.interface.respondToClient(client, msgtype, msgid,
+                                               wld_delta=wld_delta)
+            else:
+                self.interface.respondToClient(client, msgtype, msgid,
+                                               error='Unknown rating system')
+
         else:
             logging.warn("""Received unknown message type %s from client %s
                          """ % (msgtype, client))

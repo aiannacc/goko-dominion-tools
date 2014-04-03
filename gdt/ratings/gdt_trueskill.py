@@ -12,6 +12,8 @@ from ..model import db_manager
 
 dominion_env = trueskill.TrueSkill(draw_probability=0.0175, backend='scipy')
 isodominion_env = trueskill.TrueSkill(mu=25, sigma=25, beta=25, tau=25/100, draw_probability=0.05, backend='scipy')
+goko_env = trueskill.TrueSkill(mu=5500, sigma=2250, beta=1375, tau=27.5,
+                               draw_probability=0.05, backend='scipy')
 
 
 def pwin(rA=Rating(), rB=Rating(), env=None):
