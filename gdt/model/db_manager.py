@@ -243,22 +243,29 @@ def get_last_rated_game():
                                 ORDER BY time desc LIMIT 1""")
 
 
-def search_all_2p_scores(limit, time, logfile):
+def get_2p_scores(limit, time, logfile, allow_guests=False,
+                  rating_system='pro', min_turns=0):
+    """ Returns tuples like (time, logfile, p1name, p2name, p1score), where
+        p1score can be (0, 0.5, 1).  Default is to get pro games with no
+        guest players.  Can only get games with exactly two players.  Earlier
+        games are returned first.
+    """
     ps = _con.prepare(
         """SELECT g.time, g.logfile, p1.pname as p1name, p2.pname as p2name,
-                  p2.rank - p1.rank as p1score
+                  (0.5 + 0.5 * (p2.rank - p1.rank)) as p1score
              FROM game g
              JOIN presult p1 USING(logfile)
              JOIN presult p2 USING(logfile)
             WHERE p1.pname < p2.pname
-              AND g.rating = 'pro'
               AND g.pcount = 2
-              AND NOT g.guest
               AND ($2::timestamp IS NULL OR g.time>=$2)
               AND ($3::varchar IS NULL OR g.logfile!=$3)
+              AND ($4::boolean OR $4 OR NOT g.guest)
+              AND ($5::varchar IS NULL OR g.rating=$5) 
+              AND ($6::smallint IS NULL OR p1.turns>=$6 OR p2.turns>=$6)
             ORDER BY g.time ASC
             LIMIT $1""")
-    return ps(limit, time, logfile)
+    return ps.rows(limit, time, logfile, allow_guests, rating_system, min_turns)
 
 
 def fetch_rated_game_counts():
