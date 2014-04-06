@@ -243,29 +243,46 @@ def get_last_rated_game():
                                 ORDER BY time desc LIMIT 1""")
 
 
-def get_2p_scores(limit, time, logfile, allow_guests=False,
-                  rating_system='pro', min_turns=0):
-    """ Returns tuples like (time, logfile, p1name, p2name, p1score), where
-        p1score can be (0, 0.5, 1).  Default is to get pro games with no
-        guest players.  Can only get games with exactly two players.  Earlier
-        games are returned first.
-    """
+def get_multiplayer_scores(limit, time, logfile, allow_guests=False,
+                           allow_bots=False, rating_system='pro', min_turns=0,
+                           pcount=None):
+    print(limit, time, logfile, allow_guests, allow_bots, rating_system,
+          min_turns)
     ps = _con.prepare(
-        """SELECT g.time, g.logfile, p1.pname as p1name, p2.pname as p2name,
-                  (0.5 + 0.5 * (p2.rank - p1.rank)) as p1score
+        """SELECT g.time, g.logfile, p.pname, p.rank, g.pcount
              FROM game g
-             JOIN presult p1 USING(logfile)
-             JOIN presult p2 USING(logfile)
-            WHERE p1.pname < p2.pname
-              AND g.pcount = 2
-              AND ($2::timestamp IS NULL OR g.time>=$2)
+             JOIN presult p USING(logfile)
+            WHERE ($2::timestamp IS NULL OR g.time>=$2)
               AND ($3::varchar IS NULL OR g.logfile!=$3)
-              AND ($4::boolean OR $4 OR NOT g.guest)
-              AND ($5::varchar IS NULL OR g.rating=$5) 
-              AND ($6::smallint IS NULL OR p1.turns>=$6 OR p2.turns>=$6)
+              AND ($4::boolean OR $4 OR (NOT g.guest))
+              AND ($5::boolean OR $5 OR (NOT g.bot))
+              AND ($6::varchar IS NULL OR g.rating=$6)
+              AND ($7::smallint IS NULL OR p.turns>=$7)
+              AND ($8::smallint IS NULL OR g.pcount=$8)
+              AND (g.pcount > 1)
             ORDER BY g.time ASC
             LIMIT $1""")
-    return ps.rows(limit, time, logfile, allow_guests, rating_system, min_turns)
+
+    # On rare occasions, two games will have identical time stamps.  It's more
+    # efficient to handle these manually then to have the database query sort
+    # by both time and logfile.
+    out = []
+    results = {}
+    pcounts = {}
+    last_time = None
+    for (t, l, p, r, n) in ps.rows(limit, time, logfile, allow_guests,
+                                   allow_bots, rating_system, min_turns,
+                                   pcount):
+        if l not in results:
+            results[l] = domgame.GameRanks(l, t)
+            pcounts[l] = n
+        results[l].add_player_result(p, r)
+        last_time = t
+
+    # Don't return incomplete games.  These can happen if one of the presult
+    # rows gets dropped because of the minimum number of turns, or if the
+    # LIMIT value lands in the middle of a game's set of presults.
+    return [r for r in results.values() if len(r.pnames) == pcounts[r.logfile]]
 
 
 def fetch_rated_game_counts():
@@ -634,11 +651,12 @@ def record_player_id(playerId, playerName):
     else:
         # TODO: update playerId-playerName connection
         pass
-    
+
+
 def record_login(playerId, version):
     _con.prepare("""INSERT INTO extlogin (time, playerId, version)
                          VALUES ($1, $2, $3)
-                 """)(datetime.datetime.now(), playerId, version);
+                 """)(datetime.datetime.now(), playerId, version)
 
 
 def record_pro_rating(playerId, time, mu, sd):

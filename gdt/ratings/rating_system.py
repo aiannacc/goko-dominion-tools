@@ -15,8 +15,10 @@ class RatingSystem():
     def decay(self, r, elapsed_days):
         return r
 
-    def rate(self, r_a, r_b, score):
-        """ New ratings from old ratings, game result, and days elapsed """
+    def rate2p(self, r_a, r_b, score):
+        return NotImplemented
+
+    def rate(self, ratings, ranks):
         return NotImplemented
 
     def as_scalar(self, r):
@@ -37,8 +39,11 @@ class NoiseSystem(RatingSystem):
     def new_player_rating(self):
         return 0
 
-    def rate(self, r_a, r_b, score):
-        return (0, 0)
+    def rate2p(self, r_a, r_b, score):
+        return (r_a, r_b)
+
+    def rate(self, ratings, ranks):
+        return ratings
 
     def as_scalar(self, r):
         return r
@@ -74,11 +79,19 @@ class LogisticEloSystem(RatingSystem):
     def as_scalar(self, r):
         return r
 
-    def rate(self, r_a, r_b, score):
+    def rate2p(self, r_a, r_b, score):
         e = self.predict_score(r_a, r_b)
         d = self.k * (float(score) - e)
         return (r_a + d, r_b - d)
 
+    def rate(self, ratings, ranks):
+        if len(ratings) == 2:
+            (r_a, r_b) = ratings
+            score_a = 0.5 + 0.5 * (ranks[1] - ranks[0])
+            (r_a2, r_b2) = self.rate2p(r_a, r_b, score_a)
+            return [r_a2, r_b2]
+        else:
+            return NotImplemented
 
 class TrueSkillSystem(RatingSystem):
     """ Microsoft TrueSkill as implemented by the PyPi package "trueskill",
@@ -114,34 +127,82 @@ class TrueSkillSystem(RatingSystem):
         p_b = self.win_prob(r_b, r_a)
         return (0.5) * (1 + p_a - p_b)
 
-    def rate(self, r_a, r_b, score):
+    def rate2p(self, r_a, r_b, score):
         if score == 1:
             return trueskill.rate_1vs1(r_a, r_b, env=self.env)
         elif score == 0:
-            return reversed(self.rate(r_b, r_a, 1))
+            return reversed(self.rate2p(r_b, r_a, 1))
         elif score == 0.5:
             return trueskill.rate_1vs1(r_a, r_b, env=self.env, drawn=True)
         else:
             raise 'Illegal score value: %s' % (score)
 
-# Specific systems of note
-goko = TrueSkillSystem('Goko TS', trueskill.TrueSkill(
-    mu=5500, sigma=2250, beta=1375, tau=27.5,
-    draw_probability=0.05, backend='scipy'))
+    #rating_groups = [(r1,), (r2,)]
+    #rated_rating_groups = env.rate(rating_groups, ranks=[0, 1])
+    def rate(self, ratings, ranks):
+        groups = [tuple([r]) for r in ratings]
+        groups2 = self.env.rate(groups, ranks)
+        out = []
+        for g in groups2:
+            out.append(g[0])
+        return out
 
-goko_fixed_draw = TrueSkillSystem('Goko TS', trueskill.TrueSkill(
+
+class BoundedTrueSkillSystem(TrueSkillSystem):
+
+    def __init__(self, name, trueskill_env, daily_sigma_decay=0,
+                 mu_lower_bound=0):
+        super(BoundedTrueSkillSystem, self).__init__(
+            name, trueskill_env, daily_sigma_decay=daily_sigma_decay)
+        self.mu_lower_bound = mu_lower_bound
+
+    def rate2p(self, r_a, r_b, score):
+        (r_a2, r_b2) = super(BoundedTrueSkillSystem, self).rate2p(r_a, r_b, score)
+        if r_a2.mu < self.mu_lower_bound:
+            r_a2 = trueskill.Rating(self.mu_lower_bound, r_a2.sigma)
+        if r_b2.mu < self.mu_lower_bound:
+            r_b2 = trueskill.Rating(self.mu_lower_bound, r_b2.sigma)
+        return (r_a2, r_b2)
+
+    def rate(self, ratings, ranks):
+        ratings2 = super(BoundedTrueSkillSystem, self).rate(ratings, ranks)
+        for i in range(len(ratings2)):
+            if ratings2[i].mu < self.mu_lower_bound:
+                ratings2[i] = trueskill.Rating(self.mu_lower_bound, ratings2[i].sigma)
+        return ratings2
+
+
+# Specific systems of note
+goko = BoundedTrueSkillSystem('Goko TS', trueskill.TrueSkill(
     mu=5500, sigma=2250, beta=1375, tau=27.5,
-    draw_probability=0.0175, backend='scipy'))
+    draw_probability=0.05, backend='scipy'),
+    mu_lower_bound=0)
 
 dougz = TrueSkillSystem('dougz TS', trueskill.TrueSkill(
+    mu=25, sigma=25/3, beta=25, tau=25/300,
+    draw_probability=0.05, backend='scipy'))
+
+isotropish = TrueSkillSystem('Isotropish', trueskill.TrueSkill(
     mu=25, sigma=25, beta=25, tau=25/100,
     draw_probability=0.05, backend='scipy'))
 
-dougz_decayed = TrueSkillSystem('dougz decay TS', trueskill.TrueSkill(
-    mu=25, sigma=25, beta=25, tau=25/100,
-    draw_probability=0.05, backend='scipy'),
-    daily_sigma_decay=0.01)
+default_ts = TrueSkillSystem('Default TS', trueskill.TrueSkill(backend='scipy'))
+default_elo = LogisticEloSystem('Logistic Elo')
 
-dougz_tweaked = TrueSkillSystem('dougz tweak TS', trueskill.TrueSkill(
-    mu=25, sigma=25/3, beta=25, tau=25/300,
-    draw_probability=0.0175, backend='scipy'))
+#dougz_decayed = TrueSkillSystem('dougz decay TS', trueskill.TrueSkill(
+#    mu=25, sigma=25, beta=25, tau=25/100,
+#    draw_probability=0.05, backend='scipy'),
+#    daily_sigma_decay=0.01)
+#
+#dougz_tweaked = TrueSkillSystem('dougz tweak TS', trueskill.TrueSkill(
+#    mu=25, sigma=25/3, beta=25/2, tau=25/300,
+#    draw_probability=0.0175, backend='scipy'))
+#
+#gokoscaled_default_ts = TrueSkillSystem(
+#    'default TS',
+#    trueskill.TrueSkill(mu=8250, sigma=8250/3, beta=8250/6, tau=8250/300,
+#                        draw_probability=0.05, backend='scipy'))
+#
+#goko_fixed_draw = TrueSkillSystem('Goko TS', trueskill.TrueSkill(
+#    mu=5500, sigma=2250, beta=1375, tau=27.5,
+#    draw_probability=0.0175, backend='scipy'))
