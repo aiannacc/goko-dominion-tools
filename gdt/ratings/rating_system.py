@@ -172,37 +172,42 @@ class BoundedTrueSkillSystem(TrueSkillSystem):
         return ratings2
 
 
-# Specific systems of note
-goko = BoundedTrueSkillSystem('Goko TS', trueskill.TrueSkill(
+### Specific systems of note
+
+# Goko Pro TrueSkill implementation
+goko = BoundedTrueSkillSystem('Goko Pro', trueskill.TrueSkill(
     mu=5500, sigma=2250, beta=1375, tau=27.5,
     draw_probability=0.05, backend='scipy'),
     mu_lower_bound=0)
 
-dougz = TrueSkillSystem('dougz TS', trueskill.TrueSkill(
+# Best guess (Apr 2014) for parameters used by Isotropic
+dougz_nodecay = TrueSkillSystem('dougz nodecay', trueskill.TrueSkill(
     mu=25, sigma=25/3, beta=25, tau=25/300,
     draw_probability=0.05, backend='scipy'))
 
+# Best guess (Apr 2014) for parameters used by Isotropic
+dougz = TrueSkillSystem('dougz with decay', trueskill.TrueSkill(
+    mu=25, sigma=25/3, beta=25, tau=25/300,
+    draw_probability=0.05, backend='scipy'),
+    daily_sigma_decay=0.01)
+
+# Parameters currently in use for Isotropish
 isotropish = TrueSkillSystem('Isotropish', trueskill.TrueSkill(
     mu=25, sigma=25, beta=25, tau=25/100,
     draw_probability=0.05, backend='scipy'))
 
+# Experimental improved parametrs
+iso_tweak1 = TrueSkillSystem('Isotweak1', trueskill.TrueSkill(
+    mu=25, sigma=25/3, beta=25/2, tau=25/300,
+    draw_probability=0.0175, backend='scipy'))
+
+# Microsoft's default TrueSkill parameters
 default_ts = TrueSkillSystem('Default TS', trueskill.TrueSkill(backend='scipy'))
+
+# Standard Elo, using a logistic curve with shape parameter 400
 default_elo = LogisticEloSystem('Logistic Elo')
 
-#dougz_decayed = TrueSkillSystem('dougz decay TS', trueskill.TrueSkill(
-#    mu=25, sigma=25, beta=25, tau=25/100,
-#    draw_probability=0.05, backend='scipy'),
-#    daily_sigma_decay=0.01)
-#
-#dougz_tweaked = TrueSkillSystem('dougz tweak TS', trueskill.TrueSkill(
-#    mu=25, sigma=25/3, beta=25/2, tau=25/300,
-#    draw_probability=0.0175, backend='scipy'))
-#
-#gokoscaled_default_ts = TrueSkillSystem(
-#    'default TS',
-#    trueskill.TrueSkill(mu=8250, sigma=8250/3, beta=8250/6, tau=8250/300,
-#                        draw_probability=0.05, backend='scipy'))
-#
-#goko_fixed_draw = TrueSkillSystem('Goko TS', trueskill.TrueSkill(
-#    mu=5500, sigma=2250, beta=1375, tau=27.5,
-#    draw_probability=0.0175, backend='scipy'))
+# Goko Pro using the empirically observed draw probability
+goko_fixed_draw = TrueSkillSystem('Goko TS', trueskill.TrueSkill(
+    mu=5500, sigma=2250, beta=1375, tau=27.5,
+    draw_probability=0.0175, backend='scipy'))
