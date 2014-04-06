@@ -1,4 +1,22 @@
 # Data structure for stored Dominion Games
+class GameRanks:
+    def __init__(self, logfile, time):
+        self.logfile = logfile
+        self.time = time
+        self.pnames = []
+        self.ranks = []
+
+    def add_player_result(self, pname, rank):
+        self.pnames.append(pname)
+        self.ranks.append(rank)
+
+    def __str__(self):
+        out = '%s %s' % (self.logfile, self.time)
+        for i in range(len(self.pnames)):
+            out += '\n%d - %s' % (self.ranks[i], self.pnames[i])
+        return out
+
+
 class GameResult:
     def __init__(self, supply, gains, rets, rating, shelters, guest, bot,
                  pCount, colony, presults, adventure):
