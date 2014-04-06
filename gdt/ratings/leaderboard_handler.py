@@ -2,6 +2,7 @@
 
 import datetime
 import pytz
+import sys
 
 import tornado.web
 import tornado.template
@@ -23,7 +24,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
         full = self.get_argument('full', 'False') == 'True'
         
         offset = self.get_argument('offset', 0)
-        count = self.get_argument('count', 10000)
+        count = self.get_argument('count', sys.maxsize)
 
         # Let WW ruin stuff
         if self.get_argument('ww', 'false') == 'true':
@@ -39,45 +40,18 @@ class LeaderboardHandler(tornado.web.RequestHandler):
                 min_level=0, min_games=20, active_since=lastmonth,
                 guest=False, offset=offset, count=count, sortkey=sortkey)
 
-        rlist = ratings
-        ratings = {}
-        for r in rlist:
-            ratings[r['pname']] = {
-                'level': r['level'],
-                'mu': r['mu'],
-                'sigma': r['sigma'],
-                'n': r['numgames']
-            }
-
-        # Sort players 
-        if sortkey == 'level':
-            key = lambda x: ratings[x]['level']
-        elif sortkey == 'mu':
-            key = lambda x: ratings[x]['mu']
-        elif sortkey == 'sigma':
-            key = lambda x: ratings[x]['sigma']
-        elif sortkey == 'numgames':
-            key = lambda x: ratings[x]['n']
-        elif sortkey == 'pname':
-            key = lambda x: x
-        else:
-            raise "Unknown sort key"
-        pnames = reversed(sorted(ratings, key=key))
-
         # Generate each player's row
         prs = []
         rank = 1
-        for p in pnames:
-            r = ratings[p]
-            r['pname'] = p
+        for r in ratings:
             r['rank'] = rank
-            r['games'] = ratings[p]['n']
-            r['level'] = int(ratings[p]['level'])
+            r['games'] = r['numgames']
+            r['level'] = int(r['level'])
             r['updown'] = ''
             r['updown_n'] = ''
-            r['mu'] = "%5.2f" % ratings[p]['mu']
-            r['3sigma'] = "%4.2f" % (3*ratings[p]['sigma'])
-            r['sigma'] = "%4.2f" % ratings[p]['sigma']
+            r['mu'] = "%5.2f" % r['mu']
+            r['3sigma'] = "%4.2f" % (3*r['sigma'])
+            r['sigma'] = "%4.2f" % (r['sigma'])
             prs.append(r)
             rank = rank + 1
 

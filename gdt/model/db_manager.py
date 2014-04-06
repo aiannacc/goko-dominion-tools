@@ -293,6 +293,7 @@ def fetch_rated_game_counts():
 
 def fetch_ratings(min_level=None, min_games=None, active_since=None,
                   guest=True, offset=0, count=sys.maxsize, sortkey='level'):
+    print(min_level, min_games, active_since, guest, offset, count, sortkey)
     # TODO: Fix the Boodaloo problem more elegantly
     q = """SELECT pname, (mu - 3 * sigma) as level, mu, sigma, numgames
              FROM ts_rating
@@ -315,7 +316,7 @@ def fetch_ratings(min_level=None, min_games=None, active_since=None,
         out.append({
             'pname': p,
             'mu': float(m),
-            'level': int(l),
+            'level': float(l),
             'sigma': float(s),
             'numgames': int(n),
             'rank': i
