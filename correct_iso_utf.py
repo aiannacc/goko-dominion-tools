@@ -13,6 +13,12 @@ def correct_pnames(old, new):
                        SET pname=$1
                      WHERE pname=$2""")(new, old)
 
+
+# Find and fix player names that were incorrected decoded as ISO-8859-1 when
+# they were actually UTF-8
+# TODO: Recalculate the leaderboard using the corrected player names
+# TODO: Fix or re-download the log files themselves
+# NOTE: There are still some player names that are garbled.  I don't know why.
 if __name__ == '__main__':
     for (row) in _con.prepare("""
                 SELECT DISTINCT(pname)
