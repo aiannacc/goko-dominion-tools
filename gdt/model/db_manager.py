@@ -246,8 +246,6 @@ def get_last_rated_game():
 def get_multiplayer_scores(limit, time, logfile, allow_guests=False,
                            allow_bots=False, rating_system='pro', min_turns=0,
                            pcount=None):
-    print(limit, time, logfile, allow_guests, allow_bots, rating_system,
-          min_turns)
     ps = _con.prepare(
         """SELECT g.time, g.logfile, p.pname, p.rank, g.pcount
              FROM game g
@@ -293,7 +291,6 @@ def fetch_rated_game_counts():
 
 def fetch_ratings(min_level=None, min_games=None, active_since=None,
                   guest=True, offset=0, count=sys.maxsize, sortkey='level'):
-    print(min_level, min_games, active_since, guest, offset, count, sortkey)
     # TODO: Fix the Boodaloo problem more elegantly
     q = """SELECT pname, (mu - 3 * sigma) as level, mu, sigma, numgames
              FROM ts_rating
@@ -661,8 +658,6 @@ def record_login(playerId, version):
 
 
 def record_pro_rating(playerId, time, mu, sd):
-    print(time)
-    print(time.__class__)
     _con.prepare("""INSERT INTO pro_rating_history (playerId, time, mu, sd)
                     VALUES ($1, $2, $3, $4)
                  """)(playerId, time, mu, sd)
