@@ -63,16 +63,24 @@ class GSManager():
 
     @synchronized(lock)
     def receiveFromClient(self, client, msgtype, msgid, message):
-        print(msgtype, msgid, message)
+        logging.debug(msgtype, msgid, message)
 
         if msgtype == 'SUBMIT_BLACKLIST':
             db_manager.store_blacklist(client.playerId, message['blacklist'],
                                        message['merge'])
 
-        if msgtype == 'SUBMIT_PRO_RATING':
+        elif msgtype == 'SUBMIT_PRO_RATING':
             time = datetime.datetime.now()
             db_manager.record_pro_rating(message['playerId'], time,
                                          message['mu'], message['sd'])
+
+        elif msgtype == 'SUBMIT_PRO_RATINGS':
+            time = datetime.datetime.now()
+            for i in range(len(message['playerIds'])):
+                playerId = message['playerIds'][i]
+                mu = message['ratings'][i]['mean']
+                sigma = message['ratings'][i]['SD']
+                db_manager.record_pro_rating(playerId, time, mu, sigma)
 
         elif msgtype == 'QUERY_EXTUSERS':
             out = []
@@ -155,7 +163,7 @@ class GSManager():
                     try:
                         os.remove(pid)
                     except OSError as e:
-                        print("Error: %s - %s." % (e.filename, e.strerror))
+                        logging.error("Error: %s - %s." % (e.filename, e.strerror))
 
                     db_manager.save_avatar_info(pid, True)
                 else:
@@ -204,6 +212,5 @@ class GSManager():
         for playerId in iso_new:
             self.iso_table[playerId] = iso_new[playerId]
         if iso_new != {}:
-            print(iso_new)
             self.interface.sendToAllClients('UPDATE_ISO_LEVELS',
                                             new_levels=iso_new)
