@@ -4,6 +4,7 @@ import trueskill
 
 from trueskill import Rating
 from gdt.ratings.rating_system import TrueSkillSystem
+from gdt.ratings.rating_system import LogisticEloSystem
 
 
 # A distance metric between two ratings
@@ -13,23 +14,23 @@ def distance(r1, r2):
 
 # Distance between predicted and actual updated rating,
 # as a function of rating system parameters (beta, tau, dp)
-def update_error(x, rA1, rA2, rB1, rB2, scoreA):
+def ts_update_error(x, rA1, rA2, rB1, rB2, scoreA):
     (beta, tau, dp) = x
     env = trueskill.TrueSkill(beta=beta, tau=tau,
                               draw_probability=dp,
                               backend='mpmath')
-    tss = TrueSkillSystem(env)
-    (rAp, rBp) = tss.rate(rA1, rB1, scoreA)
+    tss = TrueSkillSystem('trueskill', env)
+    (rAp, rBp) = tss.rate2p(rA1, rB1, scoreA)
     err = math.sqrt(distance(rAp, rA2)**2 + distance(rBp, rB2)**2)
     return err
 
 
 # Distance between predicted and actual updated rating,
 # as a function of new player rating (mu_0, sigma_0)
-def init_error(args, beta, tau, dp, rA2, rB1, rB2, scoreA):
+def ts_init_error(args, beta, tau, dp, rA2, rB1, rB2, scoreA):
     (mu_0, sigma_0) = args
     rA1 = trueskill.Rating(mu_0, sigma_0)
-    return update_error((beta, tau, dp), rA1, rA2, rB1, rB2, scoreA)
+    return ts_update_error((beta, tau, dp), rA1, rA2, rB1, rB2, scoreA)
 
 
 if __name__ == '__main__':
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     print('Estimating TS parameters (beta, tau, draw_prob) using Game 1...')
     # Determine beta, tau, and draw_probability
     starting_guesses = (1300, 30, .05)
-    opt = scipy.optimize.minimize(update_error, x0=starting_guesses,
+    opt = scipy.optimize.minimize(ts_update_error, x0=starting_guesses,
                                   args=(rA1, rA2, rB1, rB2, scoreA),
                                   tol=0.0000000001)
     print('Error minimization finished.')
@@ -64,10 +65,10 @@ if __name__ == '__main__':
     rB2 = Rating(6801.097762744435, 263.14332861731685)
 
     print()
-    print('Estimating TS init rating (mu0, sigma0) using Game 3...')
+    print('Estimating TS init rating (mu0, sigma0) using Game 2...')
     starting_guesses = (8250, 2750)
     args = (beta, tau, dp, rA2, rB1, rB2, scoreA)
-    opt = scipy.optimize.minimize(init_error, x0=starting_guesses,
+    opt = scipy.optimize.minimize(ts_init_error, x0=starting_guesses,
                                   args=args, tol=.000000001)
     print('Error minimization finished.')
     print('Residual Error: %6.4f ' % (opt.fun))
@@ -86,7 +87,7 @@ if __name__ == '__main__':
                                    beta=beta, tau=tau,
                                    draw_probability=dp,
                                    backend='mpmath')
-    goko_tss = TrueSkillSystem(goko_env)
+    goko_tss = TrueSkillSystem('Goko', goko_env)
 
     # Game data for two experienced players with similar ratings
     # Initial ratings
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     rA2 = Rating(6822.354187108161, 262.6577478580567)
     rB2 = Rating(7074.076798465825, 266.6845904766116)
 
-    (rAx, rBx) = goko_tss.rate(rA1, rB1, scoreA)
+    (rAx, rBx) = goko_tss.rate2p(rA1, rB1, scoreA)
     error = distance(rA2, rAx)**2 + distance(rB2, rBx)**2
     print('Initial ratings:')
     print(' A: %7.2f +/- %5.2f' % (rA1.mu, rA1.sigma))
