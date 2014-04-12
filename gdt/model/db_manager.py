@@ -385,8 +385,8 @@ def insert_card_url(card, url):
     _con.prepare("""INSERT INTO card_url VALUES ($1, $2)""")(card, url)
 
 
-def insert_parsefail(failedlog):
-    print('TODO: Record that parsing failed for log: %s' + failedlog)
+def insert_parsefail(time, logfile):
+    _con.prepare("""INSERT INTO parsefail VALUES ($1, $2)""")(time, logfile)
 
 
 def inserts(games):
