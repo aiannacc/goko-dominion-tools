@@ -250,6 +250,46 @@ def get_last_rated_game():
                                 ORDER BY time desc LIMIT 1""")
 
 
+def get_last_rated_game2(system):
+    r = _con.prepare("""SELECT time, logfile
+                             FROM ts_rating2
+                            WHERE system=$1
+                            ORDER BY time desc
+                            LIMIT 1""")(system)
+    return r[0]
+
+
+def get_cached_multiplayer_scores(limit, time, logfile, allow_guests=False,
+                                  allow_bots=False, min_turns=0, pcount=None):
+    ps = _con.prepare(
+        """SELECT time, logfile, pcount,
+                  pname1, rank1,
+                  pname2, rank2,
+                  pname3, rank3,
+                  pname4, rank4,
+                  pname5, rank5,
+                  pname6, rank6
+             FROM game_result
+            WHERE ($2::timestamp IS NULL OR time>=$2)
+              AND ($3::varchar IS NULL OR logfile!=$3)
+              AND ($4 OR NOT guest)
+              AND ($5 OR NOT bot)
+              AND (min_turns >= $6)
+            ORDER BY time ASC
+            LIMIT $1
+        """)
+    out = []
+    for (time, logfile, count, n1, r1, n2, r2, n3, r3, n4, r4, n5, r5, n6, r6)\
+            in ps(limit, time, logfile, allow_guests, allow_bots, min_turns):
+        r = domgame.GameRanks(logfile, time)
+        pnames = [n1, n2, n3, n4, n5, n6]
+        pranks = [r1, r2, r3, r4, r5, r6]
+        for i in range(count):
+            r.add_player_result(pnames[i], pranks[i])
+        out.append(r)
+    return out
+
+
 def search_all_2p_scores(limit, time, logfile):
     ps = _con.prepare(
         """SELECT g.time, g.logfile, p1.pname as p1name, p2.pname as p2name,
@@ -714,7 +754,6 @@ def fetch_blacklist_common(percentage):
     add_blacklistees(percentage, 'noplay', common)
     add_blacklistees(percentage, 'nomatch', common)
     add_blacklistees(percentage, 'censor', common)
-    print(common)
     return common
 
 
@@ -760,10 +799,10 @@ def record_login(playerId, version):
 
 
 def record_pro_rating(playerid, mu, sigma, displayed):
-    print('Recording pro rating')
-    print(playerid, mu, sigma, displayed)
-    print(playerid.__class__, mu.__class__, sigma.__class__,
-          displayed.__class__)
+    logging.info('Recording pro rating')
+    logging.info(playerid, mu, sigma, displayed)
+    logging.info(playerid.__class__, mu.__class__, sigma.__class__,
+                 displayed.__class__)
     qcheck = """SELECT 1 FROM goko_pro_rating
                  WHERE playerid=$1"""
     qupdate = """UPDATE goko_pro_rating
