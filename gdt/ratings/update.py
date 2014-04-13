@@ -9,9 +9,11 @@ from gdt.ratings.history import RatingHistory
 import gdt.ratings.rating_system
 
 
+logger = logging.getLogger(__name__)
+
 def record_ratings(rating_history, system):
     rh = rating_history
-    print('Recording %d changed ratings' % len(rh.updated))
+    logger.info('Recording %d changed ratings' % len(rh.updated))
     for pname in rh.updated:
         db_manager.record_ts_rating(system, pname, rh.rating[pname],
                                     rh.numgames[pname],
@@ -44,7 +46,7 @@ def rate_games_since(last_time, last_logfile, rhistories,
     more_results = True
     i = 0
     while more_results and i < max_games:
-        print('Fetching game results from database')
+        logger.debug('Fetching game results from database')
         if use_gameresult_cache:
             pcount = (2 if only_2p_games else None)
             results = db_manager.get_cached_multiplayer_scores(
@@ -58,22 +60,21 @@ def rate_games_since(last_time, last_logfile, rhistories,
                 allow_guests=allow_guests, allow_bots=allow_bots,
                 include_unknown_rs=include_unknown_rs, min_turns=min_turns,
                 pcount=(2 if only_2p_games else None))
-        print('Got %d games to rate' % len(results))
+        logger.debug('Got %d games to rate' % len(results))
         more_results = False
         for gr in results:
-            i += 1
-            if i % 100 == 0:
-                print('Rated %d games' % i)
-            if i > max_games:
+            if i >= max_games:
                 break
-
             for rh in rhistories:
-
                 old_ratings = rh.get_pregame_ratings(gr)
                 rh.add_game(gr)
                 new_ratings = rh.get_pregame_ratings(gr)
-
             last_time = gr.time
-
             last_logfile = gr.logfile
             more_results = True
+
+            i += 1
+            if i % 1000 == 0:
+                logger.debug('Rated %d games so far.' % i)
+
+    logger.info('Rated %d games in total.' % i)
