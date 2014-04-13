@@ -1,107 +1,73 @@
 import sys
 import datetime
-import gdt.ratings.rating_system
-from gdt.ratings.update import rate_games_since
-from gdt.model import db_manager
-from gdt.ratings.history import RatingHistory
+import logging
+import trueskill
+import time
+
+import gdt.ratings.update as x
+import gdt.ratings.rating_system as rs
+from gdt.ratings.rating_system import isotropish_variant
 from gdt.model.domgame import GameRanks
+from gdt.ratings.history import RatingHistory
+from gdt.ratings.history import RatingAnalysis
 
-from gdt.ratings.rating_system import dougz
-from gdt.ratings.rating_system import isotropish
-from gdt.ratings.rating_system import goko
-from gdt.ratings.rating_system import default_ts
-from gdt.ratings.rating_system import default_elo
+logging.basicConfig(level=logging.INFO)
 
-chunk_size = 1000
+isotropish = RatingAnalysis(rs.isotropish)
+isotweak = RatingAnalysis(rs.iso_tweak1)
+dougz = RatingAnalysis(rs.dougz)
+dougz_nd = RatingAnalysis(rs.dougz_nodecay)
+dougz_od = RatingAnalysis(rs.dougz_only_decay)
+elo = RatingAnalysis(rs.default_elo)
+default_ts = RatingAnalysis(rs.default_ts)
 
+gokohb = RatingAnalysis(rs.gokohb)
+goko = RatingAnalysis(rs.goko)
+goko2b = RatingAnalysis(rs.goko2b)
+goko4b = RatingAnalysis(rs.goko4b)
+goko8b = RatingAnalysis(rs.goko8b)
 
-def compare_systems(rhistories, allow_guests, allow_bots, rating_system,
-                    min_turns, max_games=None, only_2p_games=True):
-    global chunk_size
-    n = 0
-    if max_games is None:
-        max_games = sys.maxsize
-    last_time = last_logfile = None
-    more_results = True
-    while more_results and n < max_games:
-        if only_2p_games:
-            results = db_manager.get_multiplayer_scores(
-                chunk_size, last_time, last_logfile, allow_guests=allow_guests,
-                allow_bots=allow_bots, rating_system=rating_system,
-                min_turns=min_turns, pcount=2)
-        else:
-            results = db_manager.get_multiplayer_scores(
-                chunk_size, last_time, last_logfile, allow_guests=allow_guests,
-                allow_bots=allow_bots, rating_system=rating_system,
-                min_turns=min_turns)
-        more_results = False
-        i = 0
-        for r in results:
-            i += 1
-            n += 1
-            more_results = True
-            for rh in rhistories:
-                rh.add_game(r)
-            last_time = r.time
-            last_logfile = r.logfile
-        print('Processed %d games in this chunk' % (i))
+isotropish_50b = RatingAnalysis(
+    isotropish_variant('50% beta', beta_multiplier=0.50))
+isotropish_150b = RatingAnalysis(
+    isotropish_variant('150% beta', beta_multiplier=1.50))
+isotropish_200b = RatingAnalysis(
+    isotropish_variant('200% beta', beta_multiplier=2.00))
+isobetavars = [isotropish_50b, isotropish, isotropish_150b, isotropish_200b]
 
-    print('Processed %d games total' % (n))
-    return(rhistories)
+(lf, t) = (None, None)
+for i in range(2000):
+    print(i, datetime.datetime.now())
+    time.sleep(.5)
+    print('Next')
 
+    x.rate_games_since(t, lf, isobetavars,
+                       #chunk_size=sys.maxsize, max_games=sys.maxsize,
+                       chunk_size=100000, max_games=50000,
+                       allow_guests=False, include_unknown_rs=False,
+                       only_2p_games=True, min_turns=1)
+    #x.record_ratings(isotropish, 'elo')
+    #x.record_ratings(isotropish, 'isotropish_analysis')
+    #x.record_ratings(isotweak, 'isotweak_analysis')
+    (lf, t) = isotropish.get_latest_game()
 
-def write_comparison(systems, allow_guests, allow_bots, max_games,
-                     rating_system, min_turns, only_2p_games,
-                     print_ratings):
-    rhistories = [RatingHistory(s, skip_player=0) for s in systems]
-    print('%s-player, %s mode, %s guests, %s bots, %s, %s min turns'
-          % ('2' if only_2p_games else 'Multi',
-             rating_system,
-             'Allow' if allow_guests else 'No',
-             'Allow' if allow_bots else 'No',
-             ('%d games' % max_games) if max_games else 'All games',
-             min_turns if min_turns else 'No'))
-    out = compare_systems(rhistories, allow_guests=allow_guests,
-                          allow_bots=allow_bots, max_games=max_games,
-                          rating_system=rating_system, min_turns=min_turns)
-    for rh in out:
-        print(rh)
-        if (print_ratings):
-            for r in reversed(sorted(rh.rating.items(), key=lambda x: x[1])):
-                print(r)
+    #x.rate_games_since(t, lf, [gokohb, goko, goko2b, goko4b, goko8b],
+    #                   #chunk_size=sys.maxsize, max_games=sys.maxsize,
+    #                   chunk_size=100000, max_games=50000,
+    #                   allow_guests=True, include_unknown_rs=False,
+    #                   only_2p_games=False, min_turns=0)
 
+    #(lf, t) = goko.get_latest_game()
+    #x.record_ratings(gokohb, 'gokohb')
+    #x.record_ratings(goko, 'goko')
+    #x.record_ratings(goko2b, 'goko2b')
+    #x.record_ratings(goko4b, 'goko4b')
+    #x.record_ratings(goko8b, 'goko8b')
 
-if __name__ == '__main__':
-    systems = [dougz, isotropish, goko, default_ts, default_elo]
+    #x.record_ratings(dougz, 'dougz_analysis')
+    #x.record_ratings(dougz_od, 'dougz_od_analysis')
 
-    if len(sys.argv) == 3:
-        max_games = int(sys.argv[2])
-    else:
-        max_games = None
+    print('Last game time %s' % t)
 
-    if len(sys.argv) == 1 or len(sys.argv) > 3:
-        print('Arguments: [mode] [num_games]')
-        print('Ex: python compare_system.py 2 4000')
-        sys.exit(-1)
-
-    if sys.argv[1] == '1':
-        write_comparison(systems, True, True, max_games, 'pro', 0, True, False)
-
-    elif sys.argv[1] == '2':
-        # 1+ turns
-        write_comparison(systems, True, True, max_games, 'pro', 1, True, False)
-
-    elif sys.argv[1] == '3':
-        # No guests, 1+ turns
-        write_comparison(systems, False, True, max_games,
-                         'pro', 1, True, False)
-
-    elif sys.argv[1] == '4':
-        # No guests, no bots, 1+ turns
-        write_comparison(systems, False, False, max_games,
-                         'pro', 1, True, False)
-
-    elif sys.argv[1] == '5':
-        # Use multiplayer games for rating.  Use only 2-p games for stats
-        write_comparison(systems, True, True, max_games,
-                         'pro', 0, False, False)
+    for ra in isobetavars:
+        print(ra.print_analysis())
