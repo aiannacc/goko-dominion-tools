@@ -9,6 +9,7 @@ import logging
 import copy
 import math
 
+import trueskill
 import postgresql
 
 from . import domgame
@@ -275,12 +276,15 @@ def get_cached_multiplayer_scores(limit, time, logfile, allow_guests=False,
               AND ($4 OR NOT guest)
               AND ($5 OR NOT bot)
               AND (min_turns >= $6)
+              AND ($7::int IS NULL OR pcount=$7)
             ORDER BY time ASC
             LIMIT $1
         """)
     out = []
-    for (time, logfile, count, n1, r1, n2, r2, n3, r3, n4, r4, n5, r5, n6, r6)\
-            in ps(limit, time, logfile, allow_guests, allow_bots, min_turns):
+    for row in ps(limit, time, logfile, allow_guests,
+                  allow_bots, min_turns, pcount):
+        (time, logfile, count, n1, r1, n2,
+         r2, n3, r3, n4, r4, n5, r5, n6, r6) = row
         r = domgame.GameRanks(logfile, time)
         pnames = [n1, n2, n3, n4, n5, n6]
         pranks = [r1, r2, r3, r4, r5, r6]
@@ -814,6 +818,19 @@ def record_pro_rating(playerid, mu, sigma, displayed):
         _con.prepare(qupdate)(playerid, mu, sigma, displayed)
     else:
         _con.prepare(qinsert)(playerid, mu, sigma, displayed)
+
+def fetch_ts2_rating(player_name, system_dbname):
+    r = _con.prepare(
+        """SELECT mu, sigma
+             FROM ts_rating2
+            WHERE pname = $1
+              AND system = $2
+        """)(player_name, system_dbname)
+    if len(r) == 0:
+        return None
+    else:
+        (mu, sigma) = r[0]
+        return trueskill.Rating(float(mu), float(sigma))
 
 
 def fetch_pro_rating(player_id):
