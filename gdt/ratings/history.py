@@ -1,58 +1,128 @@
 import math
+import sys
 
+
+# TODO: Implement some unit tests
 
 class RatingHistory():
-    def __init__(self, system, skip_total=0, skip_player=0):
-        """ system should be an instance of RatingSystem """
-        self.system = system
-        self.skip_player = skip_player
-        self.skip_total = skip_total
-
-        self.rating = {}
-        self.last_change = {}
-        self.last_gametime = {}
-        self.numgames = {}
-
-        self.total_upsets = 0
-        self.total_called = 0
-        self.total_drawn = 0
-
-        self.total_deviance = 0
+    def __init__(self, system):
+        self.system = system      # e.g. isotropish, gokopro
         self.total_gamecount = 0
-        self.total_gamecount_qualified = 0
+        # Player info
+        self.rating = {}
+        self.numgames = {}
+        self.last_gametime = {}
+        self.last_logfile = {}
 
-    #def add_game(self, pname_a, pname_b, score_a, gametime=None):
-    def add_game(self, game_ranks, gametime=None):
-        # Initialize ratings if necessary
+        self.games = []
+
+    def get_latest_game(self):
+        last_logfile = None
+        last_time = None
+        for pname in self.last_gametime:
+            t = self.last_gametime[pname]
+            lf = self.last_logfile[pname]
+            if last_time is None or last_time < t:
+                last_time = t
+                last_logfile = lf
+        return (last_logfile, last_time)
+
+    def set_player(self, pname, rating, numgames, last_gametime, last_logfile):
+        self.rating[pname] = rating
+        self.numgames[pname] = numgames
+        self.last_gametime[pname] = last_gametime
+        self.last_logfile[pname] = last_logfile
+
+    def get_pregame_ratings(self, game_ranks):
+        # Fetch ratings without uncertainty decay
+        ratings = {}
         for pname in game_ranks.pnames:
+            # Initialize rating if necessary
             if pname not in self.rating:
                 self.rating[pname] = self.system.new_player_rating()
                 self.last_gametime[pname] = None
+                self.last_logfile[pname] = None
                 self.numgames[pname] = 0
+            # Fetch current rating
+            ratings[pname] = self.rating[pname]
 
-        # Fetch current ratings
-        ratings = {}
+        # Apply continuous uncertainty decay to ratings
         for pname in game_ranks.pnames:
-            ratings[pname] = self.rating[pname] 
+            if self.last_gametime[pname] is not None:
+                elapsed = game_ranks.time - self.last_gametime[pname]
+                elapsed = elapsed.days + elapsed.seconds / (24 * 3600)
+                ratings[pname] = self.system.decay(ratings[pname], elapsed)
 
-        # Apply uncertainty decay to current ratings
-        elapsed = {}
-        if gametime is not None:
-            for pname in game_ranks.pnames:
-                if self.last_gametime[pname] is not None:
-                    elapsed = gametime - self.last_gametime[pname]
-                    elapsed = elapsed.days + elapsed.seconds / (24 * 3600)
-                    ratings[pname] = self.system.decay(ratings[pname], elapsed)
-                self.last_gametime[pname] = gametime
+        return ratings
+
+    def add_game(self, game_ranks):
+        ratings = self.get_pregame_ratings(game_ranks)
+
+        rating_list = []
+        rank_list = []
+        for i in range(len(game_ranks.pnames)):
+            rating_list.append(ratings[game_ranks.pnames[i]])
+            rank_list.append(game_ranks.ranks[i])
 
         # Calculate new ratings
-        ratings_values2 = self.system.rate(ratings.values(), game_ranks.ranks)
-        ratings2 = {}
-        for i in range(len(game_ranks.pnames)):
-            ratings2[game_ranks.pnames[i]] = ratings_values2[i]
+        ratings_list2 = self.system.rate(rating_list, game_ranks.ranks)
 
-        # Track system's predication accuracy, using only games in which
-        # both players have "established" ratings (minimum number of games)
+        for i in range(len(game_ranks.pnames)):
+            pname = game_ranks.pnames[i]
+
+            # Update ratings
+            self.rating[game_ranks.pnames[i]] = ratings_list2[i]
+
+            # Update other player info
+            self.last_logfile[pname] = game_ranks.logfile
+            self.last_gametime[pname] = game_ranks.time
+            self.numgames[pname] += 1
+
+        self.games.append(game_ranks)
+
+    def print_ratings(self):
+        for items in reversed(sorted(self.rating.items(), key=lambda x:x[1])):
+            print('%-40s %5.2f +/- %5.2f' % (items[0], items[1].mu,
+                                             (3 * items[1].sigma)))
+
+
+class RatingAnalysis(RatingHistory):
+    def __init__(self, system, skip_total=0, skip_player=0):
+        """ For calculating measures of rating quality.  Should skip the first
+            however many games total and/or per player before beginning to
+            calculate summary statistics.
+        """
+        super(RatingAnalysis, self).__init__(system)
+
+        # Minimum rated games per player before calculateing statistics
+        self.skip_player = skip_player
+
+        # Minimum total rated games before calculating statistics
+        self.skip_total = skip_total
+
+        # How many games have contributed to statistics
+        self.total_gamecount_qualified = 0
+
+        # Correct/incorrect predictions of decisive results in qualified games
+        self.total_called = 0
+        self.total_upsets = 0
+        self.total_drawn = 0
+
+        # Negative log likelihood for qualified games (base-10)
+        self.total_deviance = 0
+
+    def add_game(self, game_ranks):
+
+        # Save pre-game ratings
+        ratings = self.get_pregame_ratings(game_ranks)
+
+        # Calculate post-game ratings
+        super(RatingAnalysis, self).add_game(game_ranks)
+        ratings2 = self.get_pregame_ratings(game_ranks)
+
+        # Adjust prediction accuracy statistics.
+        # Consider only 2-player games, and only after the minimum number of
+        # games have been rated.
         if (self.total_gamecount >= self.skip_total
                 and len(game_ranks.pnames) == 2
                 and self.numgames[game_ranks.pnames[0]] >= self.skip_player
@@ -86,16 +156,12 @@ class RatingHistory():
             # Number of games to use for averages
             self.total_gamecount_qualified += 1
 
-        # Update ratings
-        for pname in game_ranks.pnames:
-            self.rating[pname] = ratings2[pname]
-
         # Track number of games processed
         for pname in game_ranks.pnames:
             self.numgames[pname] += 1
         self.total_gamecount += 1
 
-    def __str__(self):
+    def print_analysis(self):
         if self.total_gamecount_qualified == 0:
             return '%s - Empty' % (self.system.name)
         else:
@@ -103,8 +169,8 @@ class RatingHistory():
             uprate = 100 * self.total_upsets / self.total_gamecount_qualified
             carate = 100 * self.total_called / self.total_gamecount_qualified
             dwrate = 100 * self.total_drawn / self.total_gamecount_qualified
-            deviance = 100 * self.total_deviance\
+            deviance = self.total_deviance\
                 / self.total_gamecount_qualified
             accuracy = 100 * carate / (carate + uprate)
-            return (("%s - Accuracy: %6.2f%%, Deviance: %6.2f") %
+            return (("%s - Accuracy: %6.2f%%, Deviance: %6.4f") %
                     (self.system.name, accuracy, deviance))
