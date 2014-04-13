@@ -48,7 +48,13 @@ def search_daily_log_filenames(day):
     start = start + datetime.timedelta(hours=-1)
     end = day + datetime.timedelta(days=1)
     sql = """SELECT logfile FROM game g WHERE g.time between $1 and $2"""
-    return [r[0] for r in _con.prepare(sql)(start, end)]
+    out = []
+    for r in _con.prepare(sql)(start, end):
+        out.append(r[0])
+    sql = """SELECT logfile FROM parsefail WHERE time between $1 and $2"""
+    for r in _con.prepare(sql)(start, end):
+        out.append(r[0])
+    return out
 
 
 def search_log_filenames(p):
@@ -385,8 +391,9 @@ def insert_card_url(card, url):
     _con.prepare("""INSERT INTO card_url VALUES ($1, $2)""")(card, url)
 
 
-def insert_parsefail(time, logfile):
-    _con.prepare("""INSERT INTO parsefail VALUES ($1, $2)""")(time, logfile)
+def insert_parsefail(time, logfile, error):
+    _con.prepare("""INSERT INTO parsefail VALUES ($1, $2, $3)
+                 """)(time, logfile, error)
 
 
 def inserts(games):
