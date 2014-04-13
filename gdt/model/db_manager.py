@@ -5,6 +5,7 @@ import re
 import time
 import socket
 import datetime
+import logging
 import copy
 import math
 
@@ -267,26 +268,122 @@ def search_all_2p_scores(limit, time, logfile):
     return ps(limit, time, logfile)
 
 
+def get_multiplayer_scores(limit, time, logfile, allow_guests=False,
+                           allow_bots=False, rating_system='pro',
+                           include_unknown_rs=False, min_turns=0,
+                           pcount=None):
+    ps = _con.prepare(
+        """SELECT g.time, g.logfile, p.pname, p.rank, g.pcount
+             FROM game g
+             JOIN presult p USING(logfile)
+            WHERE ($2::timestamp IS NULL OR g.time>=$2)
+              AND ($3::varchar IS NULL OR g.logfile!=$3)
+              AND ($4::boolean OR $4 OR (NOT g.guest))
+              AND ($5::boolean OR $5 OR (NOT g.bot))
+              AND (($6::varchar IS NULL OR g.rating=$6)
+                   OR ($7 AND g.rating IS NULL))
+              AND ($8::smallint IS NULL OR p.turns>=$8)
+              AND ($9::smallint IS NULL OR g.pcount=$9)
+              AND (g.pcount > 1)
+            ORDER BY g.time ASC
+            LIMIT $1""")
+
+    # On rare occasions, two games will have identical time stamps.  It's more
+    # efficient to handle these manually then to have the database query sort
+    # by both time and logfile.
+    out = []
+    results = {}
+    pcounts = {}
+    last_time = None
+    for (t, l, p, r, n) in ps.rows(limit, time, logfile, allow_guests,
+                                   allow_bots, rating_system,
+                                   include_unknown_rs, min_turns, pcount):
+        if l not in results:
+            results[l] = domgame.GameRanks(l, t)
+            pcounts[l] = n
+            out.append(results[l])
+        results[l].add_player_result(p, r)
+        last_time = t
+
+    # Don't return incomplete games.  These can happen if one of the presult
+    # rows gets dropped because of the minimum number of turns, or if the
+    # LIMIT value lands in the middle of a game's set of presults.
+    return [r for r in out if len(r.pnames) == pcounts[r.logfile]]
+
+
 def fetch_rated_game_counts():
     ps = _con.prepare("""SELECT pname, COUNT(pname) FROM ts_rating_history
                       GROUP BY pname""")
     return ps()
 
 
-def fetch_all_ratings(mingames, lastactive, minlevel):
-    mu_sig_num = {}
+def fetch_ratings2(system, min_level=None, min_games=None, active_since=None,
+                   guest=True, offset=0, count=sys.maxsize, sortkey='level'):
     # TODO: Fix the Boodaloo problem more elegantly
-    ps = _con.prepare(
-        """SELECT pname, mu, sigma, numgames
+    q = """SELECT pname, (mu - 3 * sigma) as level,
+                  mu, sigma, numgames, time, logfile
+             FROM ts_rating2
+            WHERE pname != 'Boodaloo'
+              AND pname != 'ottocar'
+              AND ($1::int IS NULL OR (mu - 3*sigma) >= $1)
+              AND ($2::int IS NULL OR numgames >= $2)
+              AND ($3::timestamp IS NULL OR time >= $3)
+              AND ($4 OR guest IS NULL OR NOT guest)
+              AND system = $5
+            ORDER BY %s DESC
+            LIMIT $7
+           OFFSET $6
+        """ % (sortkey)
+    ps = _con.prepare(q)
+    out = []
+    i = 0
+    for (p, l, m, s, n, t, lf) in ps(min_level, min_games, active_since, guest,
+                                     system, offset, count):
+        i += 1
+        out.append({
+            'pname': p,
+            'mu': float(m),
+            'level': float(l),
+            'sigma': float(s),
+            'numgames': int(n),
+            'rank': i,
+            'last_gametime': t,
+            'last_logfile': lf
+        })
+    return out
+
+
+def fetch_ratings(min_level=None, min_games=None, active_since=None,
+                  guest=True, offset=0, count=sys.maxsize, sortkey='level'):
+    # TODO: Fix the Boodaloo problem more elegantly
+    q = """SELECT pname, (mu - 3 * sigma) as level, mu, sigma, numgames
              FROM ts_rating
             WHERE pname != 'Boodaloo'
               AND pname != 'ottocar'
-              AND ($1::smallint IS NULL OR numgames >= $1)
-              AND ($2::timestamp IS NULL OR time >= $2)
-              AND ($3::smallint IS NULL OR (mu - 3*sigma) >= $3)""")
-    for (p, m, s, n) in ps(mingames, lastactive, minlevel):
-        mu_sig_num[p] = {'mu': m, 'sigma': s, 'n': n}
-    return mu_sig_num
+              AND ($1::int IS NULL OR (mu - 3*sigma) >= $1)
+              AND ($2::int IS NULL OR numgames >= $2)
+              AND ($3::timestamp IS NULL OR time >= $3)
+              AND ($4 OR guest IS NULL OR NOT guest)
+            ORDER BY %s DESC
+            LIMIT $6
+           OFFSET $5
+        """ % (sortkey)
+    ps = _con.prepare(q)
+    out = []
+    i = 0
+
+    for (p, l, m, s, n) in ps(min_level, min_games, active_since, guest,
+                              offset, count):
+        i += 1
+        out.append({
+            'pname': p,
+            'mu': float(m),
+            'level': float(l),
+            'sigma': float(s),
+            'numgames': int(n),
+            'rank': i
+        })
+    return out
 
 
 def fetch_last_rated_log_time():
@@ -596,15 +693,51 @@ def store_blacklist(playerid, newlist, merge):
 
 
 def fetch_blacklist_common(percentage):
-    # TODO: Implement
-    return {
-        'BLACKLIST_COMMONNAME':
-        {
-            'noplay': True,
-            'nomatch': False,
-            'censor': False
-        }
-    }
+    def add_blacklistees(percentage, bltype, out):
+        rs = _con.prepare("""SELECT blackname, count(*)
+                               FROM blacklist
+                              WHERE %s
+                              GROUP by blackname
+                              ORDER BY count DESC""" % (bltype))()
+        i = 0
+        for (pname, count) in rs:
+            if ((i/len(rs) <= percentage/100 and count > 1)
+                    or (count == 1 and percentage == 100)):
+                if pname not in out:
+                    out[pname] = {'noplay': False,
+                                  'nomatch': False,
+                                  'censor': False}
+                out[pname][bltype] = True
+            i += 1
+
+    common = {}
+    add_blacklistees(percentage, 'noplay', common)
+    add_blacklistees(percentage, 'nomatch', common)
+    add_blacklistees(percentage, 'censor', common)
+    print(common)
+    return common
+
+
+def record_ts_rating(system, pname, rating, numgames,
+                     last_gametime, last_logfile):
+    level = rating.mu - 3 * rating.sigma
+    guest = pname.lower().find('guest') == 0
+
+    if _con.query.first('SELECT 1 FROM ts_rating2 '
+                        ' WHERE pname=$1 AND system=$2', pname, system):
+        _con.prepare("""UPDATE ts_rating2
+                           SET time=$1, logfile=$2, mu=$4, sigma=$5,
+                               numgames=$6, level_m3s=$7, guest=$8
+                         WHERE pname=$3 AND system=$9
+                     """)(last_gametime, last_logfile, pname, rating.mu,
+                          rating.sigma, numgames, level, guest, system)
+    else:
+        _con.prepare("""INSERT INTO ts_rating2
+                               (time, logfile, pname, mu, sigma, numgames,
+                                level_m3s, guest, system)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                     """)(last_gametime, last_logfile, pname, rating.mu,
+                          rating.sigma, numgames, level, guest, system)
 
 
 def record_player_id(playerId, playerName):
@@ -618,8 +751,44 @@ def record_player_id(playerId, playerName):
     else:
         # TODO: update playerId-playerName connection
         pass
-    
+
+
 def record_login(playerId, version):
     _con.prepare("""INSERT INTO extlogin (time, playerId, version)
                          VALUES ($1, $2, $3)
-                 """)(datetime.datetime.now(), playerId, version);
+                 """)(datetime.datetime.now(), playerId, version)
+
+
+def record_pro_rating(playerid, mu, sigma, displayed):
+    print('Recording pro rating')
+    print(playerid, mu, sigma, displayed)
+    print(playerid.__class__, mu.__class__, sigma.__class__,
+          displayed.__class__)
+    qcheck = """SELECT 1 FROM goko_pro_rating
+                 WHERE playerid=$1"""
+    qupdate = """UPDATE goko_pro_rating
+                    SET mu=$2, sigma=$3, displayed=$4
+                  WHERE playerid=$1"""
+    qinsert = """INSERT INTO goko_pro_rating (playerid, mu, sigma, displayed)
+                 VALUES ($1, $2, $3, $4)"""
+    if _con.query.first(qcheck, playerid):
+        _con.prepare(qupdate)(playerid, mu, sigma, displayed)
+    else:
+        _con.prepare(qinsert)(playerid, mu, sigma, displayed)
+
+
+def fetch_pro_rating(player_id):
+    return _con.prepare(
+        """SELECT r.mu, r.sigma, r.displayed
+             FROM goko_pro_rating r
+             JOIN playerinfo i USING(playerid)
+            WHERE i.playerid=$1
+        """)(player_id)[0]
+
+
+def fetch_all_pro_ratings():
+    return _con.prepare(
+        """SELECT r.playerid, i.playername, r.mu, r.sigma, r.displayed
+             FROM goko_pro_rating r
+             JOIN playerinfo i USING(playerid)
+        """)()

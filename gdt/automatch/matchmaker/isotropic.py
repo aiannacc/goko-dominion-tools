@@ -114,13 +114,21 @@ class IsotropicMatchmaker(Matchmaker):
                     match = Match(players, rsys, None)
                     match = IsotropicMatchmaker.choose_host(match)
 
-                    # Assign the game to Outpost
-                    # TODO: choose this dynamically?
                     if match is not None:
+                        # Assign the game to Outpost
+                        # TODO: choose this dynamically?
                         match.roomname = 'Outpost'
 
-                    # Save match and remove seeking players
-                    if (match):
+                        # Assign VPON/VPOFF setting.  Note that all must agree,
+                        # so we can use any of the non-None values in the seeks.
+                        match.vpcounter = None
+                        for s in match.seeks:
+                            for r in s.requirements:
+                                if r.__class__.__name__ == 'VPCounter':
+                                    if r.vpcounter is not None:
+                                        match.vpcounter = r.vpcounter
+
+                        # Save match and remove seeking players
                         logging.info('Found match: ')
                         logging.info(match.to_dict())
                         matches.append(match)

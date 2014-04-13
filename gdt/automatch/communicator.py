@@ -198,6 +198,7 @@ class AutomatchCommunicator():
                    'PING': self._ping,
                    'SUBMIT_SEEK': self._submit_seek,
                    'CANCEL_SEEK': self._cancel_seek,
+                   'SUBMIT_CHAT': self._submit_chat,
                    'ACCEPT_OFFER': self._accept_offer,
                    'DECLINE_OFFER': self._decline_offer,
                    'UNACCEPT_OFFER': self._unaccept_offer,
@@ -294,6 +295,11 @@ class AutomatchCommunicator():
                                   'OFFER_MATCH', offer=match)
 
     @synchronized(lock)
+    def _submit_chat(self, pname, msg):
+        """ Forward a player's offer accept to the AutomatchManager. """
+        self.manager.submit_chat(pname, msg['matchid'], msg['text'])
+
+    @synchronized(lock)
     def _accept_offer(self, pname, msg):
         """ Forward a player's offer accept to the AutomatchManager. """
         self.manager.accept_offer(pname, msg['matchid'])
@@ -318,6 +324,12 @@ class AutomatchCommunicator():
     ######################
     # Game communication #
     ######################
+
+    @synchronized(lock)
+    def announce_chat(self, game, pname, text):
+        """ Server tells players about a chat message. """
+        self._send_message_to_all(game.get_pnames(),
+                                  'ANNOUNCE_CHAT', speaker=pname, text=text)
 
     @synchronized(lock)
     def announce_game(self, game):

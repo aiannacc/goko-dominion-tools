@@ -112,6 +112,14 @@ class AutomatchManager():
         self._rem_seek(seekid, 'Seek canceled by player %s' % pname)
 
     @synchronized(lock)
+    def submit_chat(self, pname, matchid, text):
+        print('Received chat', pname, text, matchid)
+        o = self.offers.get(matchid, None)
+        if o:
+            print(o)
+            self.comm.announce_chat(o, pname, text);
+
+    @synchronized(lock)
     def accept_offer(self, pname, matchid):
         """ Add player name to the set of players that have accepted the match
         offer. If all involved players have accepted, announce game. """

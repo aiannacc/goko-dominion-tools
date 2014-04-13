@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html">
+    <meta charset="UTF-8">
+    <title>Isotropish Leaderboard</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+    <script src="leaderboard.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+  </head>
+  <body ng-app='leaderboardApp' ng-controller='leaderboardController'>
+
+    <div id='links'></div>
+
+    <h2>Isotropish Leaderboard for Online Dominion</h2>
+    <p>
+    <a href="#description">Description and Implementation Details</a>
+    <p>
+    <p class=date>Last game recorded {{ago}} ago</p>
+
+    <!-- Todo preserve sortkey-->
+    <p class=date>Displaying complete leaderboard <a href='?full=False'>Partial leaderboard</a> </p>
+    <p class=date>Displaying partial leaderboard (<a href='#fullpartial'>?</a>) <a href='?full=True'>Full leaderboard</a> </p>
+
+    <hr>
+
+    <table class="leaderboard sortable" id="leaderboard" >
+      <tr>
+        <th style="text-align:center">
+          <a ng-ref="aheaders['level']">Level</a>
+        </th>
+        <th style="text-align:center">
+          <a ng-ref="aheaders['mu']">&mu;</a>
+        </th>
+        <th>
+        </th>
+        <th style="text-align:center">
+          <a ng-ref="aheaders['sigma3']">3&sigma;</a>
+        </th>
+        <th style="text-align:center">
+          Rank
+        </th>
+        <th style="text-align:center">
+          Games
+        </th>
+        <th>
+          Username
+        </th>
+      </tr>
+
+      <tr class=level ng-repeat='r in rows'>
+        <td class=level>{{r['level']}}</td>
+        <td>{{r['mu']}}</td>
+        <td>&plusmn;</td>
+        <td style="text-align:right">{{r['sigma3']}}</td>
+        <td class=c2>{{r['rank']}}</td>
+        <td style="text-align:right">{{r['numgames']}}</td>
+        <td>{{r['pname']}}</td><!--UP: &#x25bc; DOWN: &#x25b2;-->
+      </tr>
+    </table>
+
+    <a id="description">
+    <h3>Description:</h3>
+    <p>
+      The Isotropish rating system is an implementation of
+      <a href="http://research.microsoft.com/en-us/projects/trueskill/">
+        Microsoft's TrueSkill rating system.
+      </a><br>
+      <ul>
+        <li>
+          <a href="https://github.com/aiannacc/Goko-Salvager/wiki/Rating-Systems">
+            Simple comparison of Isotropish vs. Goko Pro
+          </a> 
+        </li>
+        <li>
+        <a href="http://forum.dominionstrategy.com/index.php?topic=8900.0">
+            DominionStrategy forum discussion of Isotropish
+          </a>
+        </li>
+      </ul>
+      Source code is available in the 
+      <a href="https://github.com/aiannacc/goko-dominion-tools">
+        github project that runs this server.
+      </a>
+    </p>
+
+    <a id="description">
+    <h3>Display Modes:</h3>
+    <ul>
+      <li>Full: display all 5000+ players</li>
+      <li>Partial: players with 20+ games, 0+ level, and games played in the last months</li>
+    </ul>
+
+  </body>
+</html>

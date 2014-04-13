@@ -23,6 +23,7 @@ class Match:
         self.roomid = roomid
         self.tableindex = tableindex
         self.acceptors = set()
+        self.vpcounter = None
         self.matchid = uuid.uuid4().hex
 
     # Verify that match satisfies requirements for all seeks
@@ -64,6 +65,7 @@ class Match:
                 'tableindex': self.tableindex,
                 'rating_system': self.rating_system,
                 'acceptors': list(self.acceptors),
+                'vpcounter': self.vpcounter,
                 'matchid': self.matchid}
 
     def get_pnames(self):
@@ -134,18 +136,23 @@ class Player:
 # and possibly an unofficial iso-style TrueSkill or other rating system
 # provided by the CouncilRoom or drunkensailor server.
 class Rating:
-    def __init__(self, goko_casual_rating, goko_pro_rating):
+    def __init__(self, goko_casual_rating, goko_pro_rating, isotropish_rating):
         self.goko_casual_rating = goko_casual_rating
         self.goko_pro_rating = goko_pro_rating
+        self.isotropish_rating = isotropish_rating
 
     @staticmethod
     def from_dict(d):
-        return Rating(d['goko_casual_rating'], d['goko_pro_rating'])
+        ir = None
+        if 'isotropish_rating' in d:
+            ir = d['isotropish_rating']
+        return Rating(d['goko_casual_rating'], d['goko_pro_rating'], ir)
 
     def to_dict(self):
         d = {}
         d['goko_casual_rating'] = self.goko_casual_rating
         d['goko_pro_rating'] = self.goko_pro_rating
+        d['isotropish_rating'] = self.isotropish_rating
         return d
 
 

@@ -15,8 +15,11 @@ from gdt.model import db_manager
 from gdt.ws.gsserver import MainWSH
 from gdt.automatch.communicator import AutomatchWSH
 from gdt.ratings.leaderboard_handler import LeaderboardHandler
+from gdt.ratings.leaderboard_query import LeaderboardQuery
 from gdt.logsearch.logsearch_handler import SearchHandler
 from gdt.kingviz.kingviz_handler import KingdomHandler
+
+from gdt.ratings.assess import GokoProRatingQuery
 
 
 class ComprehensiveApplication(tornado.web.Application):
@@ -25,6 +28,8 @@ class ComprehensiveApplication(tornado.web.Application):
             (r"/", SearchHandler),
             (r"/logsearch", SearchHandler),
             (r"/logsearch/", SearchHandler),
+            (r"/query/leaderboard", LeaderboardQuery),
+            (r"/query/gokoproratingquery", GokoProRatingQuery),
             (r"/kingdom", KingdomHandler),
             (r"/kingdom/", KingdomHandler),
             (r"/kingdomvisualize", KingdomHandler),

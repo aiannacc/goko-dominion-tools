@@ -2,6 +2,7 @@
 
 import datetime
 import pytz
+import sys
 
 import tornado.web
 import tornado.template
@@ -16,46 +17,41 @@ class LeaderboardHandler(tornado.web.RequestHandler):
 
     def get(self):
 
-        # Display full or limited leaderboard
-        full = self.get_argument('full', 'False') == 'True'
-        if full:
-            ratings = db_manager.fetch_all_ratings(None, None, None)
-        else:
-            lastmonth = datetime.datetime.now() - datetime.timedelta(days=30)
-            ratings = db_manager.fetch_all_ratings(20, lastmonth, 0)
-
         # Get requested sort key
         sortkey = self.get_argument('sortkey', 'level')
 
-        # Sort players 
-        if sortkey == 'level':
-            key = lambda x: ratings[x]['mu'] - 3 * ratings[x]['sigma']
-        elif sortkey == 'mu':
-            key = lambda x: ratings[x]['mu']
-        elif sortkey == 'sigma':
-            key = lambda x: ratings[x]['sigma']
-        elif sortkey == 'numgames':
-            key = lambda x: ratings[x]['n']
-        elif sortkey == 'pname':
-            key = lambda x: x
+        # Display full or limited leaderboard
+        full = self.get_argument('full', 'False') == 'True'
+
+        offset = self.get_argument('offset', 0)
+        count = self.get_argument('count', sys.maxsize)
+
+        # Let WW ruin stuff
+        if self.get_argument('ww', 'false') == 'true':
+            full = True
+            sortkey = 'mu'
+
+        if full:
+            ratings = db_manager.fetch_ratings(
+                guest=False, offset=offset, count=count, sortkey=sortkey)
         else:
-            raise "Unknown sort key"
-        pnames = reversed(sorted(ratings, key=key))
+            lastmonth = datetime.datetime.now() - datetime.timedelta(days=30)
+            ratings = db_manager.fetch_ratings(
+                min_level=0, min_games=20, active_since=lastmonth,
+                guest=False, offset=offset, count=count, sortkey=sortkey)
 
         # Generate each player's row
         prs = []
         rank = 1
-        for p in pnames:
-            r = ratings[p]
-            r['pname'] = p
+        for r in ratings:
             r['rank'] = rank
-            r['games'] = ratings[p]['n']
-            r['level'] = int(ratings[p]['mu'] - 3 * ratings[p]['sigma'])
+            r['games'] = r['numgames']
+            r['level'] = int(r['level'])
             r['updown'] = ''
             r['updown_n'] = ''
-            r['mu'] = "%5.2f" % ratings[p]['mu']
-            r['3sigma'] = "%4.2f" % (3*ratings[p]['sigma'])
-            r['sigma'] = "%4.2f" % ratings[p]['sigma']
+            r['mu'] = "%5.2f" % r['mu']
+            r['3sigma'] = "%4.2f" % (3*r['sigma'])
+            r['sigma'] = "%4.2f" % (r['sigma'])
             prs.append(r)
             rank = rank + 1
 
@@ -77,8 +73,9 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             ago_m=ago_m,
             ago_s=ago_s,
             player_ratings=prs,
+            ww=self.get_argument('ww', 'false'),
             full=full,
-            sortkey=sortkey
+            sortkey=sortkey,
         ))
         self.finish()
 

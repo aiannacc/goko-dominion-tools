@@ -38,13 +38,19 @@ class KingdomHandler(tornado.web.RequestHandler):
             htmlcode = None
 
         loader = tornado.template.Loader(".")
-        self.write(loader.load("web/kingviz.html")
-                         .generate(title='Kingdom Image Builder',
-                                   logurl=logurl,
-                                   width=width,
-                                   bbcode=bbcode,
-                                   htmlcode=htmlcode,
-                                   err=err))
+
+        loader = tornado.template.Loader(".")
+        print(self.get_argument('raw', default=False))
+        if (self.get_argument('raw', default=False)):
+            loaded = loader.load("web/kingviz_raw.html")
+        else:
+            loaded = loader.load("web/kingviz.html")
+        self.write(loaded.generate(title='Kingdom Image Builder',
+                                    logurl=logurl,
+                                    width=width,
+                                    bbcode=bbcode,
+                                    htmlcode=htmlcode,
+                                    err=err))
         self.finish()
 
     def write_error(self, status_code, **kwargs):
