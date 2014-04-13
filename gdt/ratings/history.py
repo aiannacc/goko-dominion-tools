@@ -90,13 +90,32 @@ class RatingHistory():
         self.games.append(game_ranks)
 
     def print_ratings(self):
-        for items in reversed(sorted(self.rating.items(), key=lambda x:x[1])):
+        for items in reversed(sorted(self.rating.items(), key=lambda x: x[1])):
             print('%-40s %5.2f +/- %5.2f' % (items[0], items[1].mu,
                                              (3 * items[1].sigma)))
 
 
+class WinBin():
+    def __init__(self, min_pct, max_pct):
+        self.pct_range = [min_pct, max_pct]
+        self.wins = 0
+        self.losses = 0
+        self.draws = 0
+
+    def observed_winrate(self):
+        total = self.wins + self.draws + self.losses
+        if total > 0:
+            return (self.wins + 0.5 * self.draws) / total
+        else:
+            return float('NaN')
+
+    def predicted_winrate(self):
+        return (self.pct_range[0] + self.pct_range[1]) / 2
+
+
 class RatingAnalysis(RatingHistory):
-    def __init__(self, system, skip_total=0, skip_player=0):
+    def __init__(self, system, skip_total=0, skip_player=0,
+                 num_winrate_bins=100):
         """ For calculating measures of rating quality.  Should skip the first
             however many games total and/or per player before beginning to
             calculate summary statistics.
@@ -108,6 +127,13 @@ class RatingAnalysis(RatingHistory):
 
         # Minimum total rated games before calculating statistics
         self.skip_total = skip_total
+
+        # Accuracy binned by win rate prediction
+        self.winbin = []
+        for i in range(num_winrate_bins):
+            minp = i * 1 / num_winrate_bins
+            maxp = (i + 1) * 1 / num_winrate_bins
+            self.winbin.append(WinBin(minp, maxp))
 
         # How many games have contributed to statistics
         self.total_gamecount_qualified = 0
@@ -155,6 +181,18 @@ class RatingAnalysis(RatingHistory):
             else:
                 self.total_upsets += 1
 
+            # Wins and losses binned by win probability
+            idx = int(pscore_a * len(self.winbin))
+            wb = self.winbin[idx]
+            if score_a == 0.5:
+                wb.draws += 1
+            elif score_a == 1:
+                wb.wins += 1
+            elif score_a == 0:
+                wb.losses += 1
+            else:
+                raise ('Illegal value for score_a: %4.2f' % score_a)
+
             # Negative base-10 log likelihood (ala Glickman)
             # Bounded at 1% and 99% (ala Deloitte/FIDE competition)
             y = float(score_a)
@@ -169,6 +207,15 @@ class RatingAnalysis(RatingHistory):
         for pname in game_ranks.pnames:
             self.numgames[pname] += 1
         self.total_gamecount += 1
+
+    def print_winbins(self):
+        for i in range(len(self.winbin)):
+            wb = self.winbin[i]
+            total = wb.wins + wb.draws + wb.losses
+            print('%s,%s,%s' %
+                  ('%6.4f' % wb.predicted_winrate(),
+                   '%6.4f' % wb.observed_winrate() if total > 0 else '',
+                   total if total > 0 else ''))
 
     def print_analysis(self):
         if self.total_gamecount_qualified == 0:
