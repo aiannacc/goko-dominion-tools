@@ -11,7 +11,8 @@ from ..model import db_manager
 
 
 dominion_env = trueskill.TrueSkill(draw_probability=0.0175, backend='scipy')
-isodominion_env = trueskill.TrueSkill(mu=25, sigma=25, beta=25, tau=25/100, draw_probability=0.05, backend='scipy')
+isodominion_env = trueskill.TrueSkill(mu=25, sigma=25, beta=25, tau=25/100,
+                                      draw_probability=0.05, backend='scipy')
 goko_env = trueskill.TrueSkill(mu=5500, sigma=2250, beta=1375, tau=27.5,
                                draw_probability=0.05, backend='scipy')
 
@@ -29,6 +30,7 @@ def rate(ra, rb, score, env):
         return reversed(trueskill.rate_1vs1(rb, ra, env=env))
     else:
         return trueskill.rate_1vs1(ra, rb, env=env, drawn=True)
+
 
 def generate_ratings(limit, last_time, last_logfile, env):
     history = []
@@ -81,7 +83,8 @@ def record_ratings(limit, last_time, last_logfile, env):
     """Starting with the first game after <last_logfile>, process the next
        <count> games, updating and caching players' ratings"""
 
-    (history, ratings, counts) = generate_ratings(limit, last_time, last_logfile, env)
+    (history, ratings, counts) = generate_ratings(limit, last_time,
+                                                  last_logfile, env)
     db_manager.insert_ratings(history)
     return len(history)
 
