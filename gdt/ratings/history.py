@@ -8,13 +8,19 @@ class RatingHistory():
     def __init__(self, system):
         self.system = system      # e.g. isotropish, gokopro
         self.total_gamecount = 0
+
         # Player info
         self.rating = {}
         self.numgames = {}
         self.last_gametime = {}
         self.last_logfile = {}
 
+        self.updated = set()
+
         self.games = []
+
+    def clear_updated(self):
+        self.updated = set()
 
     def get_latest_game(self):
         last_logfile = None
@@ -77,6 +83,9 @@ class RatingHistory():
             self.last_logfile[pname] = game_ranks.logfile
             self.last_gametime[pname] = game_ranks.time
             self.numgames[pname] += 1
+
+            # Note that the rating has changed
+            self.updated.add(pname)
 
         self.games.append(game_ranks)
 
