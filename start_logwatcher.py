@@ -242,10 +242,10 @@ if __name__ == '__main__':
         logger.info('Now watching for new logs to be posted to MF logserver.')
         logger.info('Games played before 12:00 AM today will not be handled.')
 
-        rsys_dbname = 'isotropish'
-        rhist = ru.get_rating_history_stub(rs.isotropish, rsys_dbname)
-        logger.info('Rating games using %s' % rhist.system.name)
-
+        rhists = {}
+        rhists['goko'] = ru.get_rating_history_stub(rs.goko, 'goko')
+        rhists['isotropish'] = ru.get_rating_history_stub(rs.isotropish,
+                                                        'isotropish')
         next_day = datetime.datetime.now()
         while True:
             # This ensures that we don't miss the very last logs posted before
@@ -267,8 +267,11 @@ if __name__ == '__main__':
                 logger.error(sys.exc_info()[1])
                 logger.error(sys.exc_info()[2])
                 pass
-            rate_new_games(rhist)
-            ru.record_ratings(rhist, 'isotropish')
+
+            for sysname in rhists:
+                print(sysname)
+                rate_new_games(rhists[sysname])
+                ru.record_ratings(rhists[sysname], sysname)
 
             logger.info('Found %d new logs. Checking again in 5 seconds.'
                         % parsecount)
