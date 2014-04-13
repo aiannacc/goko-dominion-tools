@@ -32,12 +32,13 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             sortkey = 'mu'
 
         if full:
-            ratings = db_manager.fetch_ratings(
-                guest=False, offset=offset, count=count, sortkey=sortkey)
+            ratings = db_manager.fetch_ratings2(
+                'isotropish', guest=False, offset=offset,
+                count=count, sortkey=sortkey)
         else:
             lastmonth = datetime.datetime.now() - datetime.timedelta(days=30)
-            ratings = db_manager.fetch_ratings(
-                min_level=0, min_games=20, active_since=lastmonth,
+            ratings = db_manager.fetch_ratings2(
+                'isotropish', min_level=0, min_games=20, active_since=lastmonth,
                 guest=False, offset=offset, count=count, sortkey=sortkey)
 
         # Generate each player's row
@@ -56,7 +57,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             rank = rank + 1
 
         # When ratings were last updated
-        last_log_time_u = db_manager.fetch_last_rated_log_time()
+        last_log_time_u = db_manager.get_last_rated_game2('isotropish')[0]
         last_log_time = pytz.timezone('US/Pacific').localize(last_log_time_u)
         last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
         ago = (datetime.datetime.now() - last_log_time_u).total_seconds()
