@@ -9,7 +9,8 @@ import tornado.web
 import tornado.template
 
 from ..model import db_manager
-from gdt.ratings.rating_system import goko as goko
+from gdt.ratings.rating_system import goko
+from gdt.ratings.rating_system import isotropish
 
 
 class GokoProRatingQuery(tornado.web.RequestHandler):
@@ -48,6 +49,44 @@ class GokoProRatingQuery(tornado.web.RequestHandler):
                 'sigma': s,
                 'displayed': d
             })
+
+        elif (query_type == 'probabilities'):
+            player_id_A = self.get_argument('player_id_A')
+            (m, s, d_a) = db_manager.fetch_pro_rating(player_id_A)
+            r_a = trueskill.Rating(m, s)
+
+            player_id_B = self.get_argument('player_id_B')
+            (m, s, d_b) = db_manager.fetch_pro_rating(player_id_B)
+            r_b = trueskill.Rating(m, s)
+
+            pgwin = goko.win_prob(r_a, r_b)
+            pgloss = goko.win_prob(r_b, r_a)
+            pgdraw = 1 - pgwin - pgloss
+
+            player_name_A = self.get_argument('player_name_A')
+            r_a = db_manager.fetch_ts2_rating(player_name_A, 'isotropish')
+
+            player_name_B = self.get_argument('player_name_B')
+            r_b = db_manager.fetch_ts2_rating(player_name_B, 'isotropish')
+
+            piwin = isotropish.win_prob(r_a, r_b)
+            piloss = isotropish.win_prob(r_b, r_a)
+            pidraw = 1 - piwin - piloss
+
+            p = {
+                'isotropish': {
+                    'p1win': piwin,
+                    'draw': pidraw,
+                    'p1loss': piloss
+                },
+                'goko': {
+                    'p1win': pgwin,
+                    'draw': pgdraw,
+                    'p1loss': pgloss 
+                }
+            };
+            print(p)
+            self.write({'probs': p})
 
         elif (query_type == 'assess'):
             player_id_A = self.get_argument('player_id_A')

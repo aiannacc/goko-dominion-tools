@@ -10,7 +10,6 @@
     var names = [];
     var ids = {};
     var showAssessment = function (player_id1, player_id2) {
-        console.log(player_id1, player_id2);
         var url = '/query/gokoproratingquery?query_type=assess'
                 + '&player_id_A=' + player_id1
                 + '&player_id_B=' + player_id2;
@@ -20,6 +19,32 @@
             p['P1 Wins'] = r.a_win;
             p.Draw = r.a_draw;
             p['P1 Loses'] = r.a_loss;
+            window.sss.$digest();
+        });
+    };
+
+    var showProbabilities = function (player_id1, player_id2, pname1, pname2) {
+        console.log(player_id1, player_id2);
+        var url = '/query/gokoproratingquery?query_type=probabilities'
+                + '&player_id_A=' + player_id1
+                + '&player_id_B=' + player_id2
+                + '&player_name_A=' + pname1
+                + '&player_name_B=' + pname2;
+        GDT.doGet(url).then(function (resp) {
+            var r = JSON.parse(resp).probs;
+            var p = window.sss.probs = {};
+            console.log(r);
+            window.resp = r;
+            p.isotropish = {
+                p1win: r.isotropish.p1win,
+                draw: r.isotropish.draw,
+                p1loss: r.isotropish.p1loss
+            };
+            p.goko = {
+                p1win: r.goko.p1win,
+                draw: r.goko.draw,
+                p1loss: r.goko.p1loss
+            };
             window.sss.$digest();
         });
     };
@@ -54,7 +79,10 @@
             x.p1 = window.namesToIds[$('#p1name').val()];
             x.p2 = window.namesToIds[$('#p2name').val()];
             x[sn] = pid;
+            var pname1 = window.idsToNames[x.p1];
+            var pname2 = window.idsToNames[x.p2];
             showAssessment(x.p1, x.p2);
+            showProbabilities(x.p1, x.p2, pname1, pname2);
         }
     };
 

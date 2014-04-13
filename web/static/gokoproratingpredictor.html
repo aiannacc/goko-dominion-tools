@@ -18,6 +18,9 @@
 
     <script src="/static/doget.js"></script>
     <script src="/static/assess.js"></script>
+    <style>
+      .odds { text-align: right }
+    </style>
  </head>
 
   <body ng-app="ratingApp" ng-controller="RatingCtrl">
@@ -52,21 +55,29 @@
           <td></td>
           <td>&Delta;P1</td>
           <td>&Delta;P2</td>
+          <td ng-show='probs' class='odds'>Odds (Goko)</td>
+          <td ng-show='probs' class='odds'>Odds (Iso)</td>
         </tr>
         <tr>
           <td>Win</td>
           <td>({{predictions['P1 Wins'].r_a.delta >= 0 ? '+' : ''}}{{predictions['P1 Wins'].r_a.delta}})</td>
           <td>({{predictions['P1 Wins'].r_b.delta >= 0 ? '+' : ''}}{{predictions['P1 Wins'].r_b.delta}})</td>
+          <td ng-show='probs' class='odds'>{{100 * probs.goko.p1win | number:2}}&#37;</td>
+          <td ng-show='probs' class='odds'>{{100 * probs.isotropish.p1win | number:2}}&#37;</td>
         </tr>
         <tr>
           <td>Draw</td>
           <td>({{predictions['Draw'].r_a.delta >= 0 ? '+' : ''}}{{predictions['Draw'].r_a.delta}})</td>
           <td>({{predictions['Draw'].r_b.delta >= 0 ? '+' : ''}}{{predictions['Draw'].r_b.delta}})</td>
+          <td ng-show='probs' class='odds'>{{100 * probs.goko.draw | number:2}}&#37;</td>
+          <td ng-show='probs' class='odds'>{{100 * probs.isotropish.draw | number:2}}&#37;</td>
         </tr>
         <tr>
           <td>Loss</td>
           <td>({{predictions['P1 Loses'].r_a.delta >= 0 ? '+' : ''}}{{predictions['P1 Loses'].r_a.delta}})</td>
           <td>({{predictions['P1 Loses'].r_b.delta >= 0 ? '+' : ''}}{{predictions['P1 Loses'].r_b.delta}})</td>
+          <td ng-show='probs' class='odds'>{{100 * probs.goko.p1loss | number:2}}&#37;</td>
+          <td ng-show='probs' class='odds'>{{100 * probs.isotropish.p1loss | number:2}}&#37;</td>
         </tr>
       </table>
     </div>

@@ -17,6 +17,8 @@ class LeaderboardHandler(tornado.web.RequestHandler):
 
     def get(self):
 
+        system_dbname = self.get_argument('system', 'isotropish')
+
         # Get requested sort key
         sortkey = self.get_argument('sortkey', 'level')
 
@@ -33,12 +35,12 @@ class LeaderboardHandler(tornado.web.RequestHandler):
 
         if full:
             ratings = db_manager.fetch_ratings2(
-                'isotropish', guest=False, offset=offset,
+                system_dbname, guest=False, offset=offset,
                 count=count, sortkey=sortkey)
         else:
             lastmonth = datetime.datetime.now() - datetime.timedelta(days=30)
             ratings = db_manager.fetch_ratings2(
-                'isotropish', min_level=0, min_games=20, active_since=lastmonth,
+                system_dbname, min_level=0, min_games=20, active_since=lastmonth,
                 guest=False, offset=offset, count=count, sortkey=sortkey)
 
         # Generate each player's row
