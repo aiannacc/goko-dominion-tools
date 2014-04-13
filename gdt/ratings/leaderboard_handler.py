@@ -22,7 +22,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
 
         # Display full or limited leaderboard
         full = self.get_argument('full', 'False') == 'True'
-        
+
         offset = self.get_argument('offset', 0)
         count = self.get_argument('count', sys.maxsize)
 
