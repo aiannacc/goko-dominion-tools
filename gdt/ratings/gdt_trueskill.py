@@ -17,12 +17,6 @@ goko_env = trueskill.TrueSkill(mu=5500, sigma=2250, beta=1375, tau=27.5,
                                draw_probability=0.05, backend='scipy')
 
 
-def pwin(rA=Rating(), rB=Rating(), env=None):
-    deltaMu = rA.mu - rB.mu
-    rsss = (rA.sigma**2 + rB.sigma**2)**(0.5)
-    return env.cdf(deltaMu/rsss)
-
-
 def rate(ra, rb, score, env):
     if score == 1:
         return trueskill.rate_1vs1(ra, rb, env=env)
