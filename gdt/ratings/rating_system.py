@@ -2,6 +2,7 @@ import math
 import random
 import trueskill
 
+# TODO: Implement some unit tests
 
 # An abstract 2-player rating system
 # TODO: cache results for faster repeat lookups?
@@ -93,6 +94,7 @@ class LogisticEloSystem(RatingSystem):
         else:
             return NotImplemented
 
+
 class TrueSkillSystem(RatingSystem):
     """ Microsoft TrueSkill as implemented by the PyPi package "trueskill",
         available at trueskill.org
@@ -141,6 +143,9 @@ class TrueSkillSystem(RatingSystem):
     #rated_rating_groups = env.rate(rating_groups, ranks=[0, 1])
     def rate(self, ratings, ranks):
         groups = [tuple([r]) for r in ratings]
+        #ranks = [0, 0 if drawn else 1]
+        #teams = env.rate([(rating1,), (rating2,)], ranks, min_delta=min_delta)
+        #teams = self.env.rate(groups, ranks)
         groups2 = self.env.rate(groups, ranks)
         out = []
         for g in groups2:
@@ -157,7 +162,8 @@ class BoundedTrueSkillSystem(TrueSkillSystem):
         self.mu_lower_bound = mu_lower_bound
 
     def rate2p(self, r_a, r_b, score):
-        (r_a2, r_b2) = super(BoundedTrueSkillSystem, self).rate2p(r_a, r_b, score)
+        (r_a2, r_b2)\
+            = super(BoundedTrueSkillSystem, self).rate2p(r_a, r_b, score)
         if r_a2.mu < self.mu_lower_bound:
             r_a2 = trueskill.Rating(self.mu_lower_bound, r_a2.sigma)
         if r_b2.mu < self.mu_lower_bound:
@@ -168,26 +174,53 @@ class BoundedTrueSkillSystem(TrueSkillSystem):
         ratings2 = super(BoundedTrueSkillSystem, self).rate(ratings, ranks)
         for i in range(len(ratings2)):
             if ratings2[i].mu < self.mu_lower_bound:
-                ratings2[i] = trueskill.Rating(self.mu_lower_bound, ratings2[i].sigma)
+                ratings2[i] = trueskill.Rating(self.mu_lower_bound,
+                                               ratings2[i].sigma)
         return ratings2
 
 
 ### Specific systems of note
 
 # Goko Pro TrueSkill implementation
+gokohb = BoundedTrueSkillSystem('Goko Pro - Half Beta', trueskill.TrueSkill(
+    mu=5500, sigma=2250, beta=0.5*1375, tau=27.5,
+    draw_probability=0.05, backend='scipy'),
+    mu_lower_bound=0, daily_sigma_decay=0.01)
+
 goko = BoundedTrueSkillSystem('Goko Pro', trueskill.TrueSkill(
     mu=5500, sigma=2250, beta=1375, tau=27.5,
     draw_probability=0.05, backend='scipy'),
-    mu_lower_bound=0)
+    mu_lower_bound=0, daily_sigma_decay=0.01)
 
-# Best guess (Apr 2014) for parameters used by Isotropic
-dougz_nodecay = TrueSkillSystem('dougz nodecay', trueskill.TrueSkill(
-    mu=25, sigma=25/3, beta=25, tau=25/300,
-    draw_probability=0.05, backend='scipy'))
+goko2b = BoundedTrueSkillSystem('Goko Pro - 2x Beta', trueskill.TrueSkill(
+    mu=5500, sigma=2250, beta=2*1375, tau=27.5,
+    draw_probability=0.05, backend='scipy'),
+    mu_lower_bound=0, daily_sigma_decay=0.01)
+
+goko4b = BoundedTrueSkillSystem('Goko Pro - 4x Beta', trueskill.TrueSkill(
+    mu=5500, sigma=2250, beta=4*1375, tau=27.5,
+    draw_probability=0.05, backend='scipy'),
+    mu_lower_bound=0, daily_sigma_decay=0.01)
+
+goko8b = BoundedTrueSkillSystem('Goko Pro - 8x Beta', trueskill.TrueSkill(
+    mu=5500, sigma=2250, beta=8*1375, tau=27.5,
+    draw_probability=0.05, backend='scipy'),
+    mu_lower_bound=0, daily_sigma_decay=0.01)
 
 # Best guess (Apr 2014) for parameters used by Isotropic
 dougz = TrueSkillSystem('dougz with decay', trueskill.TrueSkill(
     mu=25, sigma=25/3, beta=25, tau=25/300,
+    draw_probability=0.05, backend='scipy'),
+    daily_sigma_decay=0.01)
+
+# Best guess (Apr 2014) for parameters used by Isotropic, excluding decay
+dougz_nodecay = TrueSkillSystem('dougz nodecay', trueskill.TrueSkill(
+    mu=25, sigma=25/3, beta=25, tau=25/300,
+    draw_probability=0.05, backend='scipy'))
+
+# Holger/WW suggestion
+dougz_only_decay = TrueSkillSystem('dougz no-tau; decay', trueskill.TrueSkill(
+    mu=25, sigma=25/3, beta=25, tau=0,
     draw_probability=0.05, backend='scipy'),
     daily_sigma_decay=0.01)
 
@@ -196,13 +229,23 @@ isotropish = TrueSkillSystem('Isotropish', trueskill.TrueSkill(
     mu=25, sigma=25, beta=25, tau=25/100,
     draw_probability=0.05, backend='scipy'))
 
+# Isotropish experimenting with different betas
+#
+def isotropish_variant(name, beta_multiplier=1):
+    return TrueSkillSystem('Isotropish %s' % name, trueskill.TrueSkill(
+        mu=25, sigma=25, beta=25*beta_multiplier, tau=25/100,
+        draw_probability=0.05, backend='scipy'))
+
+#
+#
 # Experimental improved parametrs
 iso_tweak1 = TrueSkillSystem('Isotweak1', trueskill.TrueSkill(
     mu=25, sigma=25/3, beta=25/2, tau=25/300,
     draw_probability=0.0175, backend='scipy'))
 
 # Microsoft's default TrueSkill parameters
-default_ts = TrueSkillSystem('Default TS', trueskill.TrueSkill(backend='scipy'))
+default_ts = TrueSkillSystem('Default TS',
+                             trueskill.TrueSkill(backend='scipy'))
 
 # Standard Elo, using a logistic curve with shape parameter 400
 default_elo = LogisticEloSystem('Logistic Elo')
