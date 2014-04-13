@@ -2,6 +2,7 @@ import math
 import random
 import trueskill
 
+
 # TODO: Implement some unit tests
 
 # An abstract 2-player rating system
@@ -92,7 +93,29 @@ class LogisticEloSystem(RatingSystem):
             (r_a2, r_b2) = self.rate2p(r_a, r_b, score_a)
             return [r_a2, r_b2]
         else:
-            return NotImplemented
+            raise '3+ player games not implemented for Elo'
+
+
+class NoisyEloSystem(LogisticEloSystem):
+    def __init__(self, name, scale=400, k=15, noise_factor=0.1):
+        """ Common defaults are scale = 400, k = 15 """
+        super(NoisyEloSystem, self).__init__(name, scale=scale, k=k)
+        self.noise_factor = noise_factor
+
+    def rate2p(self, r_a, r_b, score):
+        (r_a2, r_b2) = super(NoisyEloSystem, self).rate2p(r_a, r_b, score)
+        rand_a = 2*self.noise_factor*(random.random()-0.5) * (r_a2 - r_a)
+        rand_b = 2*self.noise_factor*(random.random()-0.5) * (r_b2 - r_b)
+        return (r_a2 + rand_a, r_b2 + rand_b)
+
+    def rate(self, ratings, ranks):
+        if len(ratings) == 2:
+            (r_a, r_b) = ratings
+            score_a = 0.5 + 0.5 * (ranks[1] - ranks[0])
+            (r_a2, r_b2) = self.rate2p(r_a, r_b, score_a)
+            return [r_a2, r_b2]
+        else:
+            return ratings
 
 
 class TrueSkillSystem(RatingSystem):
@@ -139,18 +162,40 @@ class TrueSkillSystem(RatingSystem):
         else:
             raise 'Illegal score value: %s' % (score)
 
-    #rating_groups = [(r1,), (r2,)]
-    #rated_rating_groups = env.rate(rating_groups, ranks=[0, 1])
     def rate(self, ratings, ranks):
         groups = [tuple([r]) for r in ratings]
-        #ranks = [0, 0 if drawn else 1]
-        #teams = env.rate([(rating1,), (rating2,)], ranks, min_delta=min_delta)
-        #teams = self.env.rate(groups, ranks)
         groups2 = self.env.rate(groups, ranks)
         out = []
         for g in groups2:
             out.append(g[0])
         return out
+
+
+class NoisyTrueSkillSystem(TrueSkillSystem):
+    def __init__(self, name, trueskill_env, daily_sigma_decay=0,
+                 noise_factor=0):
+        super(NoisyTrueSkillSystem, self).__init__(
+            name, trueskill_env, daily_sigma_decay=daily_sigma_decay)
+        self.noise_factor = noise_factor
+
+    def rate2p(self, r_a, r_b, score):
+        (r_a2, r_b2) = super(NoisyTrueSkillSystem, self).rate2p(r_a, r_b, score)
+        rand_a = 2*self.noise_factor*(random.random()-0.5) * (r_a2.mu - r_a.mu)
+        rand_b = 2*self.noise_factor*(random.random()-0.5) * (r_b2.mu - r_b.mu)
+        r_a2 = trueskill.Rating(r_a2.mu + rand_a, r_a2.sigma)
+        r_b2 = trueskill.Rating(r_b2.mu + rand_b, r_b2.sigma)
+        return (r_a2, r_b2)
+
+    def rate(self, ratings, ranks):
+        ratings2 = super(NoisyTrueSkillSystem, self).rate(ratings, ranks)
+        for i in range(len(ratings2)):
+            r = ratings[i]
+            r2 = ratings2[i]
+            z = random.random()         # Uniform from [0,1)
+            c = self.noise_factor
+            rand = 2 * c * (z - 0.5) * (r2.mu - r.mu)
+            ratings2[i] = trueskill.Rating(r2.mu + rand, r2.sigma)
+        return ratings2
 
 
 class BoundedTrueSkillSystem(TrueSkillSystem):
@@ -218,7 +263,7 @@ dougz_nodecay = TrueSkillSystem('dougz nodecay', trueskill.TrueSkill(
     mu=25, sigma=25/3, beta=25, tau=25/300,
     draw_probability=0.05, backend='scipy'))
 
-# Holger/WW suggestion
+# Holger/WW suggestion (Isotropic with no per-game uncertainty increas)
 dougz_only_decay = TrueSkillSystem('dougz no-tau; decay', trueskill.TrueSkill(
     mu=25, sigma=25/3, beta=25, tau=0,
     draw_probability=0.05, backend='scipy'),
@@ -229,15 +274,9 @@ isotropish = TrueSkillSystem('Isotropish', trueskill.TrueSkill(
     mu=25, sigma=25, beta=25, tau=25/100,
     draw_probability=0.05, backend='scipy'))
 
-# Isotropish experimenting with different betas
-#
-def isotropish_variant(name, beta_multiplier=1):
-    return TrueSkillSystem('Isotropish %s' % name, trueskill.TrueSkill(
-        mu=25, sigma=25, beta=25*beta_multiplier, tau=25/100,
-        draw_probability=0.05, backend='scipy'))
+# Standard Elo, using a logistic curve with shape parameter 400
+default_elo = LogisticEloSystem('Logistic Elo')
 
-#
-#
 # Experimental improved parametrs
 iso_tweak1 = TrueSkillSystem('Isotweak1', trueskill.TrueSkill(
     mu=25, sigma=25/3, beta=25/2, tau=25/300,
@@ -247,10 +286,29 @@ iso_tweak1 = TrueSkillSystem('Isotweak1', trueskill.TrueSkill(
 default_ts = TrueSkillSystem('Default TS',
                              trueskill.TrueSkill(backend='scipy'))
 
-# Standard Elo, using a logistic curve with shape parameter 400
-default_elo = LogisticEloSystem('Logistic Elo')
-
 # Goko Pro using the empirically observed draw probability
 goko_fixed_draw = TrueSkillSystem('Goko TS', trueskill.TrueSkill(
     mu=5500, sigma=2250, beta=1375, tau=27.5,
     draw_probability=0.0175, backend='scipy'))
+
+
+def isotropish_variant(name, beta_multiplier=1, noise_factor=0):
+    return NoisyTrueSkillSystem('Isotropish %s' % name, trueskill.TrueSkill(
+        mu=25, sigma=25, beta=25*beta_multiplier, tau=25/100,
+        draw_probability=0.05, backend='scipy'), noise_factor=noise_factor)
+
+
+def elo_variant(name, noise_factor=0):
+    return NoisyEloSystem('Elo %s' % name, noise_factor=noise_factor)
+
+
+def goko_variant(name, beta_factor=1, tau_factor=1,
+                 draw_prob=0.05, decay=0.01):
+    return BoundedTrueSkillSystem('Goko %s' % name, trueskill.TrueSkill(
+        mu=5500, sigma=2250,
+        beta=beta_factor*1375,
+        tau=tau_factor*27.5,
+        draw_probability=draw_prob,
+        backend='scipy'),
+        mu_lower_bound=0,
+        daily_sigma_decay=decay)
