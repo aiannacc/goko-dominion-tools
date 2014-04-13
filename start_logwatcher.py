@@ -15,40 +15,48 @@ import requests
 from gdt.logparse import gokoparse
 from gdt.model import db_manager
 
-#logging.basicConfig(level=logging.WARN)
+from gdt.ratings.history import RatingHistory
+import gdt.ratings.rating_system as rs
+import gdt.ratings.update as ru
 
-logger = logging.getLogger('logwatcher')
-logger.setLevel(logging.INFO)
-
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-
-
+# Constants
+LOGLEVEL = logging.INFO
 LINK_REGEX = re.compile('href="(log\S*txt)"')
 FILE_REGEX = re.compile("log\.(.*)\.(.*)\.txt")
+#LOG_DIR = '/dominion/logs'                 # For linode server
+LOG_DIR = '/mnt/raid/media/dominion/logs'   # For iron server
 
-LOG_DIR = '/dominion/logs'
+# Logging
+logger = logging.getLogger('logwatcher')
+logger.setLevel(LOGLEVEL)
+ch = logging.StreamHandler()
+ch.setLevel(LOGLEVEL)
+ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(ch)
 
-# Download up to 200 logs simultaneously
-dlsema = threading.BoundedSemaphore(value=200)
+# Request up to 100 logs simultaneously
+dlsema = threading.BoundedSemaphore(value=100)
 
 # Parse with up to 6 threads
 parsesema = threading.BoundedSemaphore(value=6)
+
 
 # Download a log and save it to file
 def download_log(logfile, dayurl, log_dir):
     headers = {'Accept-Encoding': 'gzip, deflate'}
     url = dayurl + '/' + logfile
     logger.debug('Fetching %s' % url)
-    r = requests.get(url, headers=headers)
-    r.encoding='utf-8'
-    dlsema.release()
-    gzip.open(log_dir + '/' + logfile, 'wt').write(r.text)
+    try:
+        r = requests.get(url, headers=headers)
+        r.encoding = 'utf-8'
+        dlsema.release()
+        gzip.open(log_dir + '/' + logfile, 'wt').write(r.text)
+        logger.debug('Wrote log from %s' % url)
+        return True
+    except requests.exceptions.ConnectionError:
+        # These are MaxRetryErrors
+        dlsema.release()
+        return False
 
 
 def download_new_logs(date):
@@ -60,7 +68,7 @@ def download_new_logs(date):
     remote_logs = LINK_REGEX.findall(r.text)
 
     # Determine which logs haven't already been downloaded
-    log_dir = '/dominion/logs/%s' % datestr
+    log_dir = '%s/%s' % (LOG_DIR, datestr)
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     local_logs = os.listdir(log_dir)
@@ -74,11 +82,12 @@ def download_new_logs(date):
     for lf in not_downloaded:
         i += 1
         dlsema.acquire()
-        t = threading.Thread(target=download_log, 
+        t = threading.Thread(target=download_log,
                              kwargs={'logfile': lf, 'dayurl': dayurl,
                                      'log_dir': log_dir})
         threads.append(t)
         t.start()
+        # TODO: retry when download_log fails and return False
 
     # Wait for downloading to finish
     for t in threads:
@@ -119,7 +128,7 @@ def parse_log(logfile):
 def parse_new_logs(date):
 
     # Determine which logs we have downloaded but not yet parsed
-    log_dir = '/dominion/logs/%s' % date.strftime('%Y%m%d')
+    log_dir = '%s/%s' % (LOG_DIR, date.strftime('%Y%m%d'))
     local_logs = os.listdir(log_dir)
     dblogs = db_manager.search_daily_log_filenames(date)
     not_parsed = set(local_logs) - set(dblogs)
@@ -176,22 +185,41 @@ def parse_new_logs(date):
     for f in failed:
         logger.warn('Failed to parse: %s in %s' % (failed[f][0].__name__, f))
         for line in traceback.format_tb(failed[f][2]):
-            logging.warn(line)
+            logger.warn(line)
         time = failed_logtime[f]
         db_manager.insert_parsefail(time, f, failed[logfile])
 
     return total_inserted
 
+
+def rate_new_games(rhistory,
+                   allow_guests=True, allow_bots=True,
+                   min_turns=0, only_2p=False):
+    (l, t) = rhistory.get_latest_game()
+    logger.debug('Last rated game: %s, %s' % (t, l))
+
+    # TODO: Remove max games parameter?
+    max_games = 1000
+    ru.rate_games_since(t, l, [rhistory],
+                        allow_guests=allow_guests, allow_bots=allow_bots,
+                        min_turns=min_turns, only_2p_games=only_2p,
+                        use_gameresult_cache=False, gokomode='pro',
+                        chunk_size=sys.maxsize, max_games=max_games)
+
+    logger.debug('Rated games through: %s, %s' % rhistory.get_latest_game())
+    logger.debug('Last rated game: %s, %s' % (t, l))
+
+
 if __name__ == '__main__':
     if len(sys.argv) == 3:
         start_dir = sys.argv[1]
         if sys.argv[2] == 'd':
-            logger.info('Downloading and parsing logs starting on %s' %
-                        (sys.argv[1]))
+            logger.info('Downloading/parsing logs starting on %s.  Not rating.'
+                        % sys.argv[1])
             date = datetime.datetime.strptime(sys.argv[1], '%Y%m%d')
             while date < datetime.datetime.now():
-                logger.info('Downloading logs for %s' %
-                            (date.strftime('%Y-%m-%d')))
+                logger.info('Downloading logs for %s'
+                            % (date.strftime('%Y-%m-%d')))
                 download_new_logs(date)
                 parse_new_logs(date)
                 date += datetime.timedelta(days=1)
@@ -200,27 +228,35 @@ if __name__ == '__main__':
 
     elif len(sys.argv) == 2:
         start_dir = sys.argv[1]
-        logger.info('Parsing ALL previous downloaded logs after %s.  This may take a while.' + sys.argv[1])
-        for log_dir in sorted(os.listdir('/dominion/logs')):
+        logger.info('Parsing ALL previous downloaded logs after %s. '
+                    + 'This may take a while.' + sys.argv[1])
+        for log_dir in sorted(os.listdir(LOG_DIR)):
             if log_dir > start_dir:
                 if re.match('\d{8}', log_dir):
                     log_day = datetime.datetime.strptime(log_dir, '%Y%m%d')
-                    logger.info('Parsing logs from %s' % log_day.strftime('%Y-%m-%d'))
+                    logger.info('Parsing logs from %s'
+                                % log_day.strftime('%Y-%m-%d'))
                     parse_new_logs(log_day)
 
     else:
-        logger.warn('Now watching for new logs to be posted to the Goko log server.')
-        logger.warn('Note: Games played before 12:00 AM today will not be handled.\n')
+        logger.info('Now watching for new logs to be posted to MF logserver.')
+        logger.info('Games played before 12:00 AM today will not be handled.')
+
+        rsys_dbname = 'isotropish'
+        rhist = ru.get_rating_history_stub(rs.isotropish, rsys_dbname)
+        logger.info('Rating games using %s' % rhist.system.name)
 
         next_day = datetime.datetime.now()
         while True:
             # This ensures that we don't miss the very last logs posted before
             # the date ticks over at midnight.  We're guaranteed to search for
             # "yesterday's" logs at least once "today."
-            # NOTE we can still lose logs if the local system's time gets ahead
-            # of Goko's server time.  Might be better to have a 10 minute
+            #
+            # NOTE we can still lose logs if the local system's time is ahead
+            # of Goko's server time.  It might be better to have a 10 minute
             # window (12:00-12:10AM) in which we search for both yesterday's
             # and today's logs.
+            #
             next_day = datetime.datetime.now()
             parsecount = 0
             try:
@@ -231,5 +267,9 @@ if __name__ == '__main__':
                 logger.error(sys.exc_info()[1])
                 logger.error(sys.exc_info()[2])
                 pass
-            logger.info('Found %d new logs. Checking again in 5 seconds.' % parsecount)
+            rate_new_games(rhist)
+            ru.record_ratings(rhist, 'isotropish')
+
+            logger.info('Found %d new logs. Checking again in 5 seconds.'
+                        % parsecount)
             time.sleep(5)
