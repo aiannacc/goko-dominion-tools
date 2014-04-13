@@ -21,6 +21,7 @@ select g.time, g.logfile, g.pcount, g.guest, g.bot,
   join presult p5 using(logfile)
   join presult p6 using(logfile)
  where g.pcount=6
+   and g.rating='pro'
    and p1.pname>p2.pname
    and p2.pname>p3.pname
    and p3.pname>p4.pname
@@ -50,6 +51,7 @@ select g.time, g.logfile, g.pcount, g.guest, g.bot,
   join presult p4 using(logfile)
   join presult p5 using(logfile)
  where g.pcount=5
+   and g.rating='pro'
    and p1.pname>p2.pname
    and p2.pname>p3.pname
    and p3.pname>p4.pname
@@ -77,6 +79,7 @@ select g.time, g.logfile, g.pcount, g.guest, g.bot,
   join presult p3 using(logfile)
   join presult p4 using(logfile)
  where g.pcount=4
+   and g.rating='pro'
    and p1.pname>p2.pname
    and p2.pname>p3.pname
    and p3.pname>p4.pname
@@ -102,6 +105,7 @@ select g.time, g.logfile, g.pcount, g.guest, g.bot,
   join presult p2 using(logfile)
   join presult p3 using(logfile)
  where g.pcount=3
+   and g.rating='pro'
    and p1.pname>p2.pname
    and p2.pname>p3.pname
 );
@@ -125,5 +129,6 @@ select g.time, g.logfile, g.pcount, g.guest, g.bot,
   join presult p1 using(logfile)
   join presult p2 using(logfile)
  where g.pcount=2
+   and g.rating='pro'
    and p1.pname>p2.pname
 );
