@@ -142,7 +142,6 @@ def parse_new_logs(date):
         logging.warn('Failed to parse: %s in %s' % (failed[f][0].__name__, f))
         for line in traceback.format_tb(failed[f][2]):
             logging.warn(line)
-        #TODO: record failures
         db_manager.insert_parsefail(f)
 
     return total_inserted
