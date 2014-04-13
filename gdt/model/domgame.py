@@ -16,6 +16,10 @@ class GameRanks:
             out += '\n%d - %s' % (self.ranks[i], self.pnames[i])
         return out
 
+    def __repr__(self):
+        return self.__str__()
+        
+
 
 class GameResult:
     def __init__(self, supply, gains, rets, rating, shelters, guest, bot,
