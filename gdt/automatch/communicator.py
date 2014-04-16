@@ -30,7 +30,7 @@ class AutomatchWSH(tornado.websocket.WebSocketHandler):
             # TODO: close websocket
             pass
         else:
-            logging.warn('Connected: pname=%s, wsh=%s' % (pname, self))
+            logging.debug('Connected: pname=%s, wsh=%s' % (pname, self))
             AutomatchCommunicator.instance()._connect(self, pname)
             AutomatchCommunicator.instance().update_server_view()
             # TODO handle this somewhere more sensible
@@ -89,10 +89,9 @@ class AutomatchCommunicator():
             pname = self.pname.pop(wsh, None)
             self.wsh.pop(pname, None)
 
-            logging.warn('Closing expired connection')
-            logging.warn(now - lt)
-            logging.warn(wsh)
-            logging.warn(pname)
+            # TODO: Make this stop happening needlessly
+            logging.debug('Closing expired connection')
+            logging.debug(now - lt, wsh, pname)
 
             try:
                 wsh.close()
@@ -129,10 +128,10 @@ class AutomatchCommunicator():
             if msgtype == 'CONFIRM_RECEIPT':
                 logging.debug(msg)
             else:
-                logging.info(msg)
+                logging.debug(msg)
                 self.update_server_view()
         else:
-            logging.debug("Couldn't find websocket for %s to send message: %s")
+            logging.warn("Couldn't find websocket for %s to send message: %s")
 
     @synchronized(lock)
     def _send_message_to_all(self, pnames, msgtype, **kwargs):
