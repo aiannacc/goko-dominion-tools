@@ -156,7 +156,7 @@ class TrueSkillSystem(RatingSystem):
         if score == 1:
             return trueskill.rate_1vs1(r_a, r_b, env=self.env)
         elif score == 0:
-            return reversed(self.rate2p(r_b, r_a, 1))
+            return list(reversed(self.rate2p(r_b, r_a, 1)))
         elif score == 0.5:
             return trueskill.rate_1vs1(r_a, r_b, env=self.env, drawn=True)
         else:
@@ -292,10 +292,15 @@ goko_fixed_draw = TrueSkillSystem('Goko TS', trueskill.TrueSkill(
     draw_probability=0.0175, backend='scipy'))
 
 
-def isotropish_variant(name, beta_multiplier=1, noise_factor=0):
+def isotropish_variant(name, beta_multiplier=1, sigma_multiplier=1,
+                       tau_multiplier=1, noise_factor=0, draw_prob=0.05):
     return NoisyTrueSkillSystem('Isotropish %s' % name, trueskill.TrueSkill(
-        mu=25, sigma=25, beta=25*beta_multiplier, tau=25/100,
-        draw_probability=0.05, backend='scipy'), noise_factor=noise_factor)
+        mu=25,
+        sigma=sigma_multiplier*25,
+        beta=25*beta_multiplier,
+        tau=tau_multiplier*sigma_multiplier*25/100,
+        draw_probability=draw_prob,
+        backend='scipy'), noise_factor=noise_factor)
 
 
 def elo_variant(name, noise_factor=0):
