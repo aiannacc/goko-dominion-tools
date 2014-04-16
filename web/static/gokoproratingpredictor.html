@@ -20,6 +20,7 @@
     <script src="/static/assess.js"></script>
     <style>
       .odds { text-align: right }
+      .record { text-align: right }
     </style>
  </head>
 
@@ -34,6 +35,7 @@
           Current Rating:
         </td>
       </tr>
+      <!-- TODO: clean up with ng-repeat -->
       <tr>
         <td>Player 1:</td>
         <td><input id="p1name" ng-model="p1.name"></td>
@@ -46,6 +48,14 @@
         <td>{{p2.displayed}}</td>
         <td ng-show='p2.mu'>({{p2.mu}} &plusmn; {{p2.sigma}})</td>
       </tr>
+      <tr>
+        <td/>
+        <td/>
+        <td/>
+        <td>
+          <button ng-show="probs" ng-disabled="!predictions" onclick="refresh()">Refresh</button>
+        <td/>
+      </tr>
     </table>
 
     <h3 ng-show='predictions'>Predictions:</h3>
@@ -57,13 +67,19 @@
           <td>&Delta;P2</td>
           <td ng-show='probs' class='odds'>Odds (Goko)</td>
           <td ng-show='probs' class='odds'>Odds (Iso)</td>
+          <td ng-show='record'>Record</td>
+          <td ng-show='record'></td>
         </tr>
+        <!-- TODO: clean up with ng-repeat -->
         <tr>
           <td>Win</td>
+          <!-- TODO: clean up with a JS method -->
           <td>({{predictions['P1 Wins'].r_a.delta >= 0 ? '+' : ''}}{{predictions['P1 Wins'].r_a.delta}})</td>
           <td>({{predictions['P1 Wins'].r_b.delta >= 0 ? '+' : ''}}{{predictions['P1 Wins'].r_b.delta}})</td>
           <td ng-show='probs' class='odds'>{{100 * probs.goko.p1win | number:2}}&#37;</td>
           <td ng-show='probs' class='odds'>{{100 * probs.isotropish.p1win | number:2}}&#37;</td>
+          <td ng-show='record' class='record'>{{record.wins}}</td>
+          <td ng-show='record' class='record'>({{record.winpct | number:0}}&#37;)</td>
         </tr>
         <tr>
           <td>Draw</td>
@@ -71,6 +87,8 @@
           <td>({{predictions['Draw'].r_b.delta >= 0 ? '+' : ''}}{{predictions['Draw'].r_b.delta}})</td>
           <td ng-show='probs' class='odds'>{{100 * probs.goko.draw | number:2}}&#37;</td>
           <td ng-show='probs' class='odds'>{{100 * probs.isotropish.draw | number:2}}&#37;</td>
+          <td ng-show='record' class='record'>{{record.draws}}</td>
+          <td ng-show='record' class='record'>({{record.drawpct | number:0}}&#37;)</td>
         </tr>
         <tr>
           <td>Loss</td>
@@ -78,6 +96,8 @@
           <td>({{predictions['P1 Loses'].r_b.delta >= 0 ? '+' : ''}}{{predictions['P1 Loses'].r_b.delta}})</td>
           <td ng-show='probs' class='odds'>{{100 * probs.goko.p1loss | number:2}}&#37;</td>
           <td ng-show='probs' class='odds'>{{100 * probs.isotropish.p1loss | number:2}}&#37;</td>
+          <td ng-show='record' class='record'>{{record.losses}}</td>
+          <td ng-show='record' class='record'>({{record.losspct | number:0}}&#37;)</td>
         </tr>
       </table>
     </div>

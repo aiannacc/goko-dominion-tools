@@ -35,14 +35,11 @@ class GokoProRatingQuery(tornado.web.RequestHandler):
 
         if (query_type == 'rating_list'):
             ratings = db_manager.fetch_all_pro_ratings()
-            for r in ratings:
-                print(r)
             self.write({'ratings': ratings})
 
         elif (query_type == 'player_rating'):
             player_id = self.get_argument('player_id')
             r = db_manager.fetch_pro_rating(player_id)
-            print(r)
             (m, s, d) = r
             self.write({
                 'mu': m,
@@ -85,17 +82,19 @@ class GokoProRatingQuery(tornado.web.RequestHandler):
                     'p1loss': pgloss 
                 }
             };
-            print(p)
             self.write({'probs': p})
+
+        elif (query_type == 'record'):
+            pnameA = self.get_argument('player_name_A')
+            pnameB = self.get_argument('player_name_B')
+            self.write(db_manager.get_heads_up_record(pnameA, pnameB))
 
         elif (query_type == 'assess'):
             player_id_A = self.get_argument('player_id_A')
-            print('A: %s' % player_id_A);
             (m, s, d_a) = db_manager.fetch_pro_rating(player_id_A)
             r_a = trueskill.Rating(m, s)
 
             player_id_B = self.get_argument('player_id_B')
-            print('B: %s' % player_id_B);
             (m, s, d_b) = db_manager.fetch_pro_rating(player_id_B)
             r_b = trueskill.Rating(m, s)
 

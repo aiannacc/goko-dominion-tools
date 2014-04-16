@@ -34,6 +34,34 @@ def prepare(conn, sql, d):
     return (conn.prepare(sql), params)
 
 
+def get_heads_up_record(pname1, pname2):
+    rows = _con.prepare(
+        """SELECT (0.5 + 0.5 * (p2.rank - p1.rank)) AS score, count(*)
+             FROM presult p1
+             JOIN presult p2 USING(logfile)
+            WHERE p1.pname=$1
+                  AND p2.pname=$2
+            GROUP BY score
+        """)(pname1, pname2)
+    draws = 0
+    wins = 0
+    losses = 0
+    for r in rows:
+        if float(r[0]) == 0.0:
+            losses = r[1]
+        elif float(r[0]) == 0.5:
+            draws = r[1]
+        elif float(r[0]) == 1.0:
+            wins = r[1]
+        else:
+            raise 'Impossible score value: %4.2f' % r[1]
+    return {
+        'wins': wins,
+        'draws': draws,
+        'losses': losses
+    }
+
+
 def search_game_results(search):
     return fetch_game_results(search_log_filenames(search))
 
@@ -246,9 +274,12 @@ def search_scores(search):
     return ps(logfiles)
 
 
-def get_last_rated_game():
-    return _con.query.first("""SELECT time, logfile FROM ts_rating
-                                ORDER BY time desc LIMIT 1""")
+def get_last_rated_game(system='isotropish'):
+    return _con.prepare("""SELECT time, logfile
+                             FROM ts_rating2
+                            WHERE system=$2
+                            ORDER BY time desc
+                            LIMIT 1""")(system)[0]
 
 
 def get_last_rated_game2(system):
@@ -398,16 +429,18 @@ def fetch_ratings2(system, min_level=None, min_games=None, active_since=None,
 
 
 def fetch_ratings(min_level=None, min_games=None, active_since=None,
-                  guest=True, offset=0, count=sys.maxsize, sortkey='level'):
+                  guest=True, offset=0, count=sys.maxsize, sortkey='level',
+                  system='isotropish'):
     # TODO: Fix the Boodaloo problem more elegantly
     q = """SELECT pname, (mu - 3 * sigma) as level, mu, sigma, numgames
-             FROM ts_rating
+             FROM ts_rating2
             WHERE pname != 'Boodaloo'
               AND pname != 'ottocar'
               AND ($1::int IS NULL OR (mu - 3*sigma) >= $1)
               AND ($2::int IS NULL OR numgames >= $2)
               AND ($3::timestamp IS NULL OR time >= $3)
               AND ($4 OR guest IS NULL OR NOT guest)
+              AND (system=$7)
             ORDER BY %s DESC
             LIMIT $6
            OFFSET $5
@@ -417,7 +450,7 @@ def fetch_ratings(min_level=None, min_games=None, active_since=None,
     i = 0
 
     for (p, l, m, s, n) in ps(min_level, min_games, active_since, guest,
-                              offset, count):
+                              offset, count, system):
         i += 1
         out.append({
             'pname': p,
@@ -430,16 +463,19 @@ def fetch_ratings(min_level=None, min_games=None, active_since=None,
     return out
 
 
-def fetch_last_rated_log_time():
-    return _con.query.first("""SELECT max(time) from ts_rating""")
+def fetch_last_rated_log_time(system='isotropish'):
+    return _con.prepare("""SELECT max(time) 
+                             FROM ts_rating2
+                            WHERE system=$1""")(system)[0]
 
 
-def get_all_ratings_by_id():
+def get_all_ratings_by_id(system='isotropish'):
     qrows = _con.prepare("""SELECT r.time, i.playerid,
                                    r.mu - 3 * r.sigma as level
-                              FROM ts_rating r
+                              FROM ts_rating2 r
                               JOIN playerinfo i
-                                ON r.pname = i.playername""")()
+                                ON r.pname = i.playername
+                             WHERE r.system=$1""")(system)
     out = {}
     last_time = None
     for (time, playerid, level) in qrows:
@@ -450,13 +486,15 @@ def get_all_ratings_by_id():
     return (out, last_time)
 
 
-def get_new_ratings(since_time):
+def get_new_ratings(since_time, system='isotropish'):
     qrows = _con.prepare("""SELECT r.time, i.playerid,
                                    r.mu - 3 * r.sigma as level
-                              FROM ts_rating r
+                              FROM ts_rating2 r
                               JOIN playerinfo i
                                 ON r.pname = i.playername
-                             WHERE r.time > $1""")(since_time)
+                             WHERE r.time > $1
+                               AND r.system = $2
+                         """)(since_time, system)
     out = {}
     last_time = since_time
     for (time, playerid, level) in qrows:
@@ -465,26 +503,28 @@ def get_new_ratings(since_time):
     return (out, last_time)
 
 
-def get_rating_by_id(playerId):
+def get_rating_by_id(playerId, system='isotropish'):
     ps = _con.prepare("""SELECT r.mu, r.sigma, r.numgames
-                            FROM ts_rating r
+                            FROM ts_rating2 r
                             JOIN playerinfo i
                               ON r.pname = i.playerName
                            WHERE i.playerId=$1
+                             AND r.system=$2
                            ORDER BY time DESC""")
-    msn = ps.first(playerId)
+    msn = ps.first(playerId, system)
     if msn:
         return (float(msn[0]), float(msn[1]), msn[2])
     else:
         return msn
 
 
-def get_rating(pname):
+def get_rating(pname, system='isotropish'):
     ps = _con.prepare("""SELECT mu, sigma, numgames
-                            FROM ts_rating
+                            FROM ts_rating2
                            WHERE pname=$1
+                             AND system=$2
                            ORDER BY time DESC""")
-    msn = ps.first(pname)
+    msn = ps.first(pname, system)
     if msn:
         return (float(msn[0]), float(msn[1]), msn[2])
     else:
@@ -623,52 +663,14 @@ def get_ts_rating_history(limit):
                             LIMIT $1""")(limit)
 
 
-def get_game_count(pname):
+def get_game_count(pname, system='isotropish'):
     x = _con.prepare("""SELECT numgames
-                          FROM ts_rating
-                         WHERE pname = $1""")(pname)
+                          FROM ts_rating2
+                         WHERE pname = $1
+                           AND system=$2
+                     """)(pname, system)
     n = x[0][0] if len(x) > 0 else 0
     return n
-
-
-def insert_ratings(rating_history):
-    h_rows = []
-    r_rows = {}
-
-    for r in rating_history:
-        # Store last rating for each player
-        r_rows[r['pname']] = (r['time'], r['logfile'], r['pname'],
-                              r['new_rating'].mu, r['new_rating'].sigma,
-                              r['numgames'])
-
-        # Store rating history entry
-        h_rows.append((r['time'], r['logfile'], r['pname'],
-                       r['old_rating'].mu, r['old_rating'].sigma,
-                       r['old_opp_rating'].mu, r['old_opp_rating'].sigma,
-                       r['new_rating'].mu, r['new_rating'].sigma))
-
-    # Insert or update rating
-    ps = _con.prepare("""UPDATE ts_rating
-                            SET time=$1, logfile=$2, mu=$4, sigma=$5,
-                                numgames=$6
-                          WHERE pname=$3""").load_rows(r_rows.values())
-    for pname in r_rows:
-        ps = _con.prepare("SELECT 1 FROM ts_rating WHERE pname=$1")
-        if not ps(pname):
-            try:
-                ps = _con.prepare("""
-                    INSERT INTO ts_rating
-                           (time, logfile, pname, mu, sigma, numgames)
-                    VALUES ($1,$2,$3,$4,$5,$6)""")(*r_rows[pname])
-            except:
-                raise
-
-    # Insert rating histories
-    ps = _con.prepare("""INSERT INTO ts_rating_history
-                                (time, logfile, pname, old_mu, old_sigma,
-                                 old_opp_mu, old_opp_sigma, new_mu, new_sigma)
-                         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)""")
-    ps.load_rows(h_rows)
 
 
 def insert_leaderboard(rating_tuples):
@@ -803,10 +805,6 @@ def record_login(playerId, version):
 
 
 def record_pro_rating(playerid, mu, sigma, displayed):
-    logging.info('Recording pro rating')
-    logging.info(playerid, mu, sigma, displayed)
-    logging.info(playerid.__class__, mu.__class__, sigma.__class__,
-                 displayed.__class__)
     qcheck = """SELECT 1 FROM goko_pro_rating
                  WHERE playerid=$1"""
     qupdate = """UPDATE goko_pro_rating
