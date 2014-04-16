@@ -11,6 +11,9 @@ __pycache__
 # VIM swap files
 .*.swp
 
+*.csv
+*.out
+
 nohup.out
 updategamecount.sh
 web/static/extension.html
