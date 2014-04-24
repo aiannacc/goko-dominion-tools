@@ -542,7 +542,7 @@ function format(x) {
 		    });
 		    newLogPlayers++;
 		}
-		for (k = 0; k < players.length; k++) if (line.search(players[k] + ' - ') == 0) {
+		for (k = 0; k < players.length; k++) if (line.indexOf(players[k] + ' - ') == 0) {
 		    updateDeck(k, line.substring(players[k].length + 3));
 		    tmp += '<td class="c1 p'+(k+1)+'">'+players[k]+'</td>';
 		    tmp += '<td>'+colorize(line.substring(players[k].length + 3))+'</td>';
