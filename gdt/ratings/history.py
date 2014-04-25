@@ -5,7 +5,7 @@ import sys
 # TODO: Implement some unit tests
 
 class RatingHistory():
-    def __init__(self, system):
+    def __init__(self, system, keep_games=False):
         self.system = system      # e.g. isotropish, gokopro
         self.total_gamecount = 0
 
@@ -18,6 +18,7 @@ class RatingHistory():
         self.updated = set()
 
         self.games = []
+        self.keep_games = keep_games
 
     def clear_updated(self):
         self.updated = set()
@@ -87,7 +88,8 @@ class RatingHistory():
             # Note that the rating has changed
             self.updated.add(pname)
 
-        self.games.append(game_ranks)
+        if self.keep_games:
+            self.games.append(game_ranks)
 
     def print_ratings(self):
         for items in reversed(sorted(self.rating.items(), key=lambda x: x[1])):
