@@ -31,6 +31,13 @@ background-color: lightgray;
 border: 2px solid gray; 
 border-radius: 5px;
 }
+h1 a:link {
+text-decoration: none;
+color: black;
+}
+h1 a:hover {
+text-decoration: underline;
+}
 *.p3 {
 background-color: lightgreen;
 border-color: green; 
@@ -495,7 +502,7 @@ function format(x) {
 		possessed = p[3] != undefined;
 		if (i) graphdata.labels.push(p[2]);
 	    }
-	    tmp += '<a name="'+ha+'"></a><h1 class="p'+c+'">'+h+'</h1>';
+	    tmp += '<a name="'+ha+'"></a><h1 class="p'+c+'"><a href="'+ha+'">'+h+'</a></h1>';
 	    if (i>0) {
 		var tmp2 = '<table class="sum">';
 		for (var j = 0; j < players.length; j++) {
@@ -595,6 +602,10 @@ xhr.onreadystatechange= function() {
     if (this.status!==200) return;
     document.getElementById('y').innerHTML='<h1>Parsing</h1>';
     format(this.responseText);
+    if (window.location.hash) {
+	// scroll to anchor now that it's been created
+	window.location = window.location;
+    }
 };
 document.getElementById('y').innerHTML='<h1>Loading</h1>';
 xhr.send();
