@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Isotropish Leaderboard</title>
+    <meta http-equiv="Content-Type" content="text/html">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  </head>
+  <body>
+
+    <a href='/logsearch'>Log Search</a> | 
+    <a href='/kingdomvisualize'>Kingdom Visualizer</a> |
+    <a href='/leaderboard/'>Leaderboard</a> |
+    <a href='/static/dominiate/play.html'>Dominiate Simulator</a> |
+    <a href='https://github.com/aiannacc/Goko-Salvager/wiki'>Goko Salvager Extension</a>
+
+    <br>
+
+    <h2>Isotropish Leaderboard (for Goko Online Dominion)</h2>
+
+    <p>
+
+    <a href="#description">
+      Description and Implementation Details
+    </a>
+
+    <p>
+
+    <p class=date>Last recorded game finished {{ago_m}} min, {{ago_s}} seconds ago</p>
+
+    {% if full %}
+    <p class=date>Displaying all players. <a href={{"?full=False&sortkey=" + sortkey}}>Partial leaderboard</a> </p>
+    {% else %}
+    <p class=date>Displaying only players with 20+ games, 0+ level, and games played in the last
+    month. <a href={{"?full=True&sortkey=" + sortkey}}>Full leaderboard</a> </p>
+    {% end %}
+
+    <hr>
+
+    {% if player_ratings %}
+    <table class="leaderboard sortable">
+
+      <tr>
+        {% if not ww or ww != 'true' %}
+        <th style="text-align:center">
+          <a href="?sortkey=level&full={{full}}">Level</a>
+        </th>
+        {% end %}
+        <th style="text-align:center">
+          <a href="?sortkey=mu&full={{full}}">&mu;</a>
+        </th>
+        <th></th>
+        <th style="text-align:center">
+          <a href="?sortkey=sigma&full={{full}}">3&sigma;</a>
+        </th>
+        <th style="text-align:center">
+          <a href="?sortkey=level&full={{full}}">Rank</a>
+        </th>
+        <th style="text-align:center">
+          <a href="?sortkey=numgames&full={{full}}">Games</a>
+        </th>
+        <th>
+          <a href="?sortkey=pname&full={{full}}">Goko Username</a>
+        </th>
+      </tr>
+
+      {% set last_level = None %}
+      {% for pr in player_ratings %}
+        <tr class=level>
+          {% if not ww or ww != 'true' %}
+          <td class=level>
+              {% if pr['level'] != last_level or sortkey != "level" %}
+                {% set n=0 %}
+                Level {{pr['level']}}
+              {% else %}
+                {% set n = n + 1 %}
+                {% if n%5==0 %}
+                  <div style="color:#999999;"> Level {{pr['level']}}</div>
+                {% end %}
+              {% end %}
+              {% set last_level = pr['level'] %}
+          </td>
+          {% end %}
+          {% if ww and ww == 'true' %}
+          <td class=level>
+          {% else %}
+          <td>
+          {% end %}
+            {{pr['mu']}}
+          </td>
+          <td>&plusmn;</td>
+          <td>{{pr['3sigma']}}</td>
+          <td class=c2>
+            {{pr['rank']}}
+            <!--span class=up>
+              <span class=sm>
+                <{{pr['updown']}}>
+                UP: &#x25bc;>
+                DOWN: &#x25b2;>
+              </span>
+              <{{pr['updown_n']}}>
+            </span-->
+          </td>
+          <td style="text-align:right">{{pr['games']}}</td>
+          <td>{{pr['pname']}}</td>
+        </tr>
+      {% end %}
+
+    </table>
+    {% end %}
+
+    <a id="description">
+    <p>
+      The Isotropish rating system is an unmodified implementation of
+      <a href="http://research.microsoft.com/en-us/projects/trueskill/">
+        Microsoft's TrueSkill rating system.
+      </a><br>
+      Its ratings are less volatile than those of MakingFun/Goko Pro rating
+      system, and it only rates 2-player games played between non-guest users.
+      <ul>
+        <li>
+          <a href="https://github.com/aiannacc/Goko-Salvager/wiki/Rating-Systems">
+            Basic comparison of Isotropish vs Pro
+          </a> 
+        </li>
+        <li>
+        <a href="http://forum.dominionstrategy.com/index.php?topic=8900.0">
+            DominionStrategy forum discussion of Isotropish
+          </a>
+        </li>
+      </ul>
+      Source code is available in the 
+      <a href="https://github.com/aiannacc/goko-dominion-tools">
+        github project that runs this server.
+      </a>
+    </p>
+
+  </body>
+</html>
