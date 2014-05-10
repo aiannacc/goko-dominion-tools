@@ -53,7 +53,8 @@ class NumPlayers(Requirement):
         self.max_players = max_players
 
     def is_match_ok(self, player, match):
-        return self.min_players <= len(match.seeks) <= self.max_players
+        return (int(self.min_players) <= len(match.seeks)
+                <= int(self.max_players))
 
 
 class HostName(Requirement):
@@ -98,6 +99,8 @@ class RelativeRating(Requirement):
 
         opps = set([s.player for s in match.seeks]) - set([player])
         for o in opps:
+            if r(o) is None:
+                return False
             if self.pts_lower and (r(o) < r(player) - self.pts_lower):
                 return False
             if self.pts_higher and (r(o) > r(player) + self.pts_higher):
@@ -129,6 +132,8 @@ class AbsoluteRating(Requirement):
 
         opps = set([s.player for s in match.seeks]) - set([player])
         for o in opps:
+            if r(o) is None:
+                return False
             if r(o) and self.min_pts and (r(o) < self.min_pts):
                 return False
             if r(o) and self.max_pts and (r(o) > self.max_pts):
