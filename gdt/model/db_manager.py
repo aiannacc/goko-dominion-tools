@@ -98,7 +98,7 @@ def search_log_filenames(p):
 
     # Cards in the supply list --> s1, s2, etc
     for i in range(0, 11):
-        p['s%d' % i] = (p['supply'][i]
+        p['s%d' % i] = ('(^|, )%s($|, )' % p['supply'][i]
                         if 'supply' in p and len(p['supply']) > i
                         else None)
     del p['supply']
