@@ -9,9 +9,14 @@ import tornado.web
 import tornado.template
 
 from ..model import db_manager
-from gdt.ratings.rating_system import goko
-from gdt.ratings.rating_system import isotropish
+import gdt.ratings.rating_system3 as rs
 
+goko = rs.TrueSkillSystem('Goko', mu=5500, sigma=2250, beta=1375,
+                          tau=27.5, draw_probability=0.05, k=2,
+                          daily_sigma_decay=0.01)
+
+isotropish = rs.TrueSkillSystem('Isotropish', mu=25, sigma=25, beta=25,
+                                tau=0.25, draw_probability=0.05, k=3)
 
 class GokoProRatingQuery(tornado.web.RequestHandler):
     def new_goko_rating(self, r_a, d_a, r_b, score_a):

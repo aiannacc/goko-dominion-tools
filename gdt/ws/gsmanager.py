@@ -14,7 +14,10 @@ from gdt.model import db_manager
 from gdt.ratings.gdt_trueskill import goko_env
 from gdt.ratings.gdt_trueskill import rate
 
-from gdt.ratings.rating_system import isotropish
+import gdt.ratings.rating_system3 as rs
+
+isotropish = rs.TrueSkillSystem('Isotropish', mu=25, sigma=25, beta=25,
+                                tau=0.25, draw_probability=0.05, k=3)
 
 # For synchronization. Can be acquired multiple times by the same thread, but a
 # second thread has to wait.
@@ -49,7 +52,8 @@ class GSManager():
             'playerName': client.playerName,
             'version': client.version
         }
-        self.interface.sendToAllClients('ADD_EXTUSER', user=user)
+        # TODO: reenable
+        #self.interface.sendToAllClients('ADD_EXTUSER', user=user)
 
     @synchronized(lock)
     def remClient(self, client):
@@ -60,7 +64,8 @@ class GSManager():
             'playerName': client.playerName,
             'version': client.version
         }
-        self.interface.sendToAllClients('REM_EXTUSER', user=user)
+        # TODO: reenable
+        #self.interface.sendToAllClients('REM_EXTUSER', user=user)
         # TODO: clean up client's remaining dependencies
 
     @synchronized(lock)

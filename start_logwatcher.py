@@ -16,15 +16,18 @@ from gdt.logparse import gokoparse
 from gdt.model import db_manager
 
 from gdt.ratings.history import RatingHistory
-import gdt.ratings.rating_system as rs
+import gdt.ratings.rating_system3 as rs
 import gdt.ratings.update as ru
 
+
 # Constants
-LOGLEVEL = logging.INFO
+LOGLEVEL = logging.DEBUG
 LINK_REGEX = re.compile('href="(log\S*txt)"')
 FILE_REGEX = re.compile("log\.(.*)\.(.*)\.txt")
 #LOG_DIR = '/dominion/logs'                 # For linode server
-LOG_DIR = '/mnt/raid/media/dominion/logs'   # For iron server
+LOG_DIR = '/mnt/ssd128/domlogs/'            # For iron server
+
+RATING_SYSTEM_NAME = 'isotropish'
 
 # Logging
 logger = logging.getLogger('logwatcher')
@@ -199,12 +202,13 @@ def rate_new_games(rhistory,
     logger.debug('Last rated game: %s, %s' % (t, l))
 
     # TODO: Remove max games parameter?
-    max_games = 1000
+    #max_games = 1000
+    max_games = 100000
     ru.rate_games_since(t, l, [rhistory],
                         allow_guests=allow_guests, allow_bots=allow_bots,
                         min_turns=min_turns, only_2p_games=only_2p,
                         use_gameresult_cache=False, gokomode='pro',
-                        chunk_size=sys.maxsize, max_games=max_games)
+                        chunk_size=max_games/3, max_games=max_games)
 
     logger.debug('Rated games through: %s, %s' % rhistory.get_latest_game())
     logger.debug('Last rated game: %s, %s' % (t, l))
@@ -242,10 +246,11 @@ if __name__ == '__main__':
         logger.info('Now watching for new logs to be posted to MF logserver.')
         logger.info('Games played before 12:00 AM today will not be handled.')
 
-        rhists = {}
-        rhists['goko'] = ru.get_rating_history_stub(rs.goko, 'goko')
-        rhists['isotropish'] = ru.get_rating_history_stub(rs.isotropish,
-                                                        'isotropish')
+        rsys = rs.TrueSkillSystem(RATING_SYSTEM_NAME, mu=25, sigma=25,
+                                  beta=25, tau=0.25,
+                                  draw_probability=0.05, k=3) 
+
+        rhist = ru.get_rating_history_stub(rsys, RATING_SYSTEM_NAME)
         next_day = datetime.datetime.now()
         while True:
             # This ensures that we don't miss the very last logs posted before
@@ -268,11 +273,12 @@ if __name__ == '__main__':
                 logger.error(sys.exc_info()[2])
                 pass
 
-            for sysname in rhists:
-                print(sysname)
-                rate_new_games(rhists[sysname])
-                ru.record_ratings(rhists[sysname], sysname)
+            logger.info('Rating new games')
+            rate_new_games(rhist, allow_guests=False, min_turns=2, only_2p=True)
+            logger.info('Finished.  Recording new ratings')
+            ru.record_ratings(rhist, RATING_SYSTEM_NAME)
+            logger.info('Finished.')
 
             logger.info('Found %d new logs. Checking again in 5 seconds.'
                         % parsecount)
-            time.sleep(5)
+            time.sleep(2)

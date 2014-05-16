@@ -29,6 +29,16 @@ class RatingSystem():
     def new_player_rating(self):
         return NotImplemented
 
+    # Generate a pseudo-random game result based on the given skill levels
+    def random_result(self, s1, s2):
+        x = random.random()
+        if x < self.win_prob(s1, s2):
+            return 1
+        elif x < (1 - self.win_prob(s2, s1)):
+            return 0.5
+        else:
+            return 0
+    
 
 class NoiseSystem(RatingSystem):
     """ Predict game results randomly """
@@ -117,13 +127,21 @@ class NoisyEloSystem(LogisticEloSystem):
         else:
             return ratings
 
+class RatingDeviationSystem(RatingSystem):
+    """ Systems where mu and sigma are both tracked and rating is displayed to
+        players as level = mu - k * sigma.
+    """
+    def __init__(self, name, k=3, **kwargs):
+        super(TrueSkillSystem, self).__init__(name, **kwargs)
+        self.sigma_factor = k
 
-class TrueSkillSystem(RatingSystem):
+
+class TrueSkillSystem(RatingDeviationSystem):
     """ Microsoft TrueSkill as implemented by the PyPi package "trueskill",
         available at trueskill.org
     """
-    def __init__(self, name, trueskill_env, daily_sigma_decay=0):
-        super(TrueSkillSystem, self).__init__(name)
+    def __init__(self, name, trueskill_env, daily_sigma_decay=0, **kwargs):
+        super(RatingDeviationSystem, self).__init__(name, **kwargs)
         self.env = trueskill_env
         self.daily_sigma_decay = daily_sigma_decay
         self.draw_margin = trueskill.calc_draw_margin(
@@ -170,6 +188,9 @@ class TrueSkillSystem(RatingSystem):
             out.append(g[0])
         return out
 
+    def level(self, rating):
+        return rating.mu - self.k * rating.sigma
+
 
 class NoisyTrueSkillSystem(TrueSkillSystem):
     def __init__(self, name, trueskill_env, daily_sigma_decay=0,
@@ -201,9 +222,9 @@ class NoisyTrueSkillSystem(TrueSkillSystem):
 class BoundedTrueSkillSystem(TrueSkillSystem):
 
     def __init__(self, name, trueskill_env, daily_sigma_decay=0,
-                 mu_lower_bound=0):
+                 mu_lower_bound=0, k=3):
         super(BoundedTrueSkillSystem, self).__init__(
-            name, trueskill_env, daily_sigma_decay=daily_sigma_decay)
+            name, trueskill_env, daily_sigma_decay=daily_sigma_decay, k=k)
         self.mu_lower_bound = mu_lower_bound
 
     def rate2p(self, r_a, r_b, score):

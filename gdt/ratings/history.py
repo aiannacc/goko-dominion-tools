@@ -114,6 +114,9 @@ class WinBin():
     def predicted_winrate(self):
         return (self.pct_range[0] + self.pct_range[1]) / 2
 
+    def obs_count(self):
+        return self.wins + self.losses + self.draws
+
 
 class RatingAnalysis(RatingHistory):
     def __init__(self, system, skip_total=0, skip_player=0,
@@ -144,6 +147,14 @@ class RatingAnalysis(RatingHistory):
         self.total_called = 0
         self.total_upsets = 0
         self.total_drawn = 0
+
+        # Correct/incorrect "predictions" of decisive results in qualified
+        # games, based on the rating presented to the user.
+        # Applies only to systems with rating deviations (e.g. TS) in which
+        # a scalar uncertainty-adjusted rating is displayed.
+        self.total_called_by_level = 0
+        self.total_upsets_by_level = 0
+        self.total_drawn_by_level = 0
 
         # Negative log likelihood for qualified games (base-10)
         self.total_deviance = 0
@@ -183,7 +194,21 @@ class RatingAnalysis(RatingHistory):
             else:
                 self.total_upsets += 1
 
-            # Wins and losses binned by win probability
+            # "Upsets" as perceived by users: games win by the player with
+            # lower uncertainty-adjusted displayed rating.
+            pscore_a = self.system.predict_score(r_a, r_b)
+
+
+            # Simple upset measure.  Player with higher win probability is
+            # expected to win.  Draws are ignored.
+            if score_a == 0.5:
+                self.total_drawn += 1
+            elif round(pscore_a) == score_a:
+                self.total_called += 1
+            else:
+                self.total_upsets += 1
+
+            # Wins and losses binned by predicted score
             idx = int(pscore_a * len(self.winbin))
             wb = self.winbin[idx]
             if score_a == 0.5:
@@ -210,6 +235,21 @@ class RatingAnalysis(RatingHistory):
             self.numgames[pname] += 1
         self.total_gamecount += 1
 
+    def prediction_error(self):
+        if self.total_gamecount_qualified == 0:
+            return None
+        else:
+            upsets = self.total_upsets
+            called = self.total_called
+            return upsets / (called + upsets)
+
+    # Calculate mean deviance
+    def deviance(self):
+        if self.total_gamecount_qualified == 0:
+            return None
+        else:
+            return self.total_deviance / self.total_gamecount_qualified
+
     def print_winbins(self):
         for i in range(len(self.winbin)):
             wb = self.winbin[i]
@@ -223,12 +263,7 @@ class RatingAnalysis(RatingHistory):
         if self.total_gamecount_qualified == 0:
             return '%s - Empty' % (self.system.name)
         else:
-            # TODO: Implement "swinginess" as mean reversion
-            uprate = 100 * self.total_upsets / self.total_gamecount_qualified
-            carate = 100 * self.total_called / self.total_gamecount_qualified
-            dwrate = 100 * self.total_drawn / self.total_gamecount_qualified
-            deviance = self.total_deviance\
-                / self.total_gamecount_qualified
-            accuracy = 100 * carate / (carate + uprate)
-            return (("%s - Accuracy: %6.2f%%, Deviance: %6.4f") %
-                    (self.system.name, accuracy, deviance))
+            pe = self.prediction_error()
+            deviance = self.deviance()
+            return (("%s - PE: %6.2f%%, Deviance: %6.4f") %
+                    (self.system.name, pe, deviance))

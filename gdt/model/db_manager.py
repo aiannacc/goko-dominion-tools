@@ -291,8 +291,8 @@ def get_last_rated_game2(system):
     return r[0]
 
 
-def get_cached_multiplayer_scores(limit, time, logfile, allow_guests=False,
-                                  allow_bots=False, min_turns=0, pcount=None):
+def get_cached_gameresults(limit, time, logfile, allow_guests=False,
+                           allow_bots=False, min_turns=0, pcount=None):
     ps = _con.prepare(
         """SELECT time, logfile, pcount,
                   pname1, rank1,
@@ -370,6 +370,7 @@ def get_multiplayer_scores(limit, time, logfile, allow_guests=False,
     results = {}
     pcounts = {}
     last_time = None
+    print(limit, time, logfile, allow_guests, allow_bots, rating_system, include_unknown_rs, min_turns, pcount)
     for (t, l, p, r, n) in ps.rows(limit, time, logfile, allow_guests,
                                    allow_bots, rating_system,
                                    include_unknown_rs, min_turns, pcount):

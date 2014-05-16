@@ -6,10 +6,9 @@ import time
 
 from gdt.model import db_manager
 from gdt.ratings.history import RatingHistory
-import gdt.ratings.rating_system
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logwatcher')
 
 def record_ratings(rating_history, system):
     rh = rating_history
@@ -47,6 +46,10 @@ def rate_games_since(last_time, last_logfile, rhistories,
     i = 0
     while more_results and i < max_games:
         logger.debug('Fetching game results from database')
+        #for x in [last_time, last_logfile, rhistories, allow_guests,
+        #          allow_bots, min_turns, only_2p_games, chunk_size, max_games,
+        #          use_gameresult_cache, gokomode, include_unknown_rs]:
+        #    logger.debug(x)
         if use_gameresult_cache:
             pcount = (2 if only_2p_games else None)
             results = db_manager.get_cached_multiplayer_scores(
@@ -63,6 +66,10 @@ def rate_games_since(last_time, last_logfile, rhistories,
         logger.debug('Got %d games to rate' % len(results))
         more_results = False
         for gr in results:
+            # Manual name change for user 'Burning Skull'
+            for j in range(len(gr.pnames)):
+                if gr.pnames[j] == 'burning_scull':
+                    gr.pnames[j] = 'Burning Skull'
             if i >= max_games:
                 break
             for rh in rhistories:
