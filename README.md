@@ -9,27 +9,27 @@ Features:
 - Log Search
 - Kingdom Visualizer
 - Trueskill Leaderboard
-
-Work in Progress:
-
 - Automatch browser extension
+- Log Prettifier (credit to nutki for original version)
+- Avatar uploading (credit to nutki for original version)
 
 Contributions are welcome.
 
-### Installation (out of date)
+### Installation
 
 You'll need Python v3.3.2+ and the following PyPi packages:
 
 - beautifulsoup4 (4.2.1)
 - bidict (0.1.1)
 - numpy (1.7.1)
+- scipy (0.12.0)
 - py-postgresql (1.1.0)
 - pytz (2013b)
-- scipy (0.12.0)
 - tornado (3.1)
 - trueskill (0.4.1)
+- Pillow (2.4.0)
 
-You can either connect to a remote database of parsed games or create your own. To create your own, you'll also need PostgreSQL. The log download and parsing script requires a \*NIX environment with bash, perl, zcat, split, and wget.
+You can either connect remotely to my database of parsed games or create your own. To create and maintain your own, you'll also need PostgreSQL and a \*NIX environment with bash, perl, zcat, split, and wget.
 
 ### Database Setup
 
@@ -51,13 +51,13 @@ Download and parse logs from the Goko log archive:
 
     $ bash update_logdb.sh <logdir> <codebase> <dates>
 
-where `<logdir>` is the local directory where you want to store unparsed logs, `<codebase>` is this project's root, and `<dates>` are formatted like YYYYMMDD. You'll have to run this for each day. The import process is IO-bound on a modern machine. An SSD drive helps a lot. As of July 2013, the full database is about 100G.
+where `<logdir>` is the local directory where you want to store unparsed logs, `<codebase>` is this project's root, and `<dates>` are formatted like YYYYMMDD. You'll have to run this for each day. The import process is IO-bound on a modern machine. An SSD drive helps a lot. As of May 2014, the full database is about 60G.
 
 
-### Server setup (out of date)
+### Server setup
 
 Start the server:
 
-    $ python ./start_server.py <port>
+    $ python ./start_servers.py
 
-Go to http://localhost:<port> to use the logsearch, kingdom visualizer, and leaderboard. The automatch server runs on the same port but has no UI.
+Go to http://localhost to use the logsearch, kingdom visualizer, and leaderboard. The automatch server runs on ports 443 and 8889, but has no web browser UI.
