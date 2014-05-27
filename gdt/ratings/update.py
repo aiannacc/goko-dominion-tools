@@ -70,6 +70,8 @@ def rate_games_since(last_time, last_logfile, rhistories,
             for j in range(len(gr.pnames)):
                 if gr.pnames[j] == 'burning_scull':
                     gr.pnames[j] = 'Burning Skull'
+                if gr.pnames[j] == 'hugovj':
+                    gr.pnames[j] = 'Hugovj'
             if i >= max_games:
                 break
             for rh in rhistories:
