@@ -22,8 +22,8 @@ class Requirement():
 
 class NumSets(Requirement):
     def __init__(self, min_sets=None, max_sets=None):
-        self.min_sets = min_sets
-        self.max_sets = max_sets
+        self.min_sets = int(min_sets) if min_sets is not None else None
+        self.max_sets = int(max_sets) if max_sets is not None else None
 
     def is_match_ok(self, player, match):
         host = match.get_host()
@@ -49,8 +49,8 @@ class AllCards(NumSets):
 class NumPlayers(Requirement):
 
     def __init__(self, min_players=None, max_players=None):
-        self.min_players = min_players
-        self.max_players = max_players
+        self.min_players = int(min_players) if min_players is not None else None
+        self.max_players = int(max_players) if max_players is not None else None
 
     def is_match_ok(self, player, match):
         return (int(self.min_players) <= len(match.seeks)
@@ -79,8 +79,8 @@ class RelativeRating(Requirement):
 
     def __init__(self, rating_system=None, pts_lower=None, pts_higher=None):
         self.rating_system = rating_system
-        self.pts_lower = pts_lower
-        self.pts_higher = pts_higher
+        self.pts_lower = float(pts_lower) if pts_lower is not None else None
+        self.pts_higher = float(pts_higher) if pts_higher is not None else None
 
     def is_match_ok(self, player, match):
         assert self.rating_system in \
@@ -112,8 +112,8 @@ class AbsoluteRating(Requirement):
 
     def __init__(self, rating_system=None, min_pts=None, max_pts=None):
         self.rating_system = rating_system
-        self.min_pts = min_pts
-        self.max_pts = max_pts
+        self.min_pts = float(min_pts) if min_pts is not None else None
+        self.max_pts = float(max_pts) if max_pts is not None else None
 
     def is_match_ok(self, player, match):
         assert self.rating_system in \
