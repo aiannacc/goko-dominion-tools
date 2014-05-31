@@ -37,8 +37,8 @@ ch.setLevel(LOGLEVEL)
 ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logger.addHandler(ch)
 
-# Request up to 100 logs simultaneously
-dlsema = threading.BoundedSemaphore(value=100)
+# Request up to 40 logs simultaneously
+dlsema = threading.BoundedSemaphore(value=40)
 
 # Parse with up to 6 threads
 parsesema = threading.BoundedSemaphore(value=6)
