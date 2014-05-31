@@ -50,7 +50,7 @@ def download_log(logfile, dayurl, log_dir):
     url = dayurl + '/' + logfile
     logger.debug('Fetching %s' % url)
     try:
-        r = requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers, timeout=30)
         r.encoding = 'utf-8'
         dlsema.release()
         gzip.open(log_dir + '/' + logfile, 'wt').write(r.text)
@@ -67,7 +67,7 @@ def download_new_logs(date):
     datestr = date.strftime('%Y%m%d')
     #dayurl = 'http://dominionlogs.goko.com/%s' % datestr
     dayurl = 'http://logs.prod.dominion.makingfun.com/%s' % datestr
-    r = requests.get(dayurl)
+    r = requests.get(dayurl, timeout=30)
     remote_logs = LINK_REGEX.findall(r.text)
 
     # Determine which logs haven't already been downloaded
