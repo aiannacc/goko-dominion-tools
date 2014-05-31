@@ -46,7 +46,10 @@ class IsotropicMatchmaker(Matchmaker):
         def acc_N_rs(seek):
             for r in seek.requirements:
                 if isinstance(r, NumPlayers):
-                    if not (r.min_players <= N <= r.max_players):
+                    # NOTE: This casting should absolutely not be necessary here!
+                    #       But I keep getting errors that min_players or
+                    #       max_players is a string...
+                    if not (int(r.min_players) <= N <= int(r.max_players)):
                         return False
                 if isinstance(r, RatingSystem):
                     if r.rating_system != rsys:
