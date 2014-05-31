@@ -152,8 +152,11 @@ class VPCounter(Requirement):
         else:
             for s in match.seeks:
                 for r in s.requirements:
-                    if r.__class__.__name__ == 'VPCounter' \
-                            and r.vpcounter is not None:
-                        if (r.vpcounter != self.vpcounter):
-                            return False
+                    if r.__class__.__name__ == 'VPCounter':
+                        # NOTE: Requests with an empty vpcounter field
+                        #       shouldn't be allowed, but the client is
+                        #       generating them anyway.
+                        if 'vpcounter' in dir(r):
+                            if (r.vpcounter != self.vpcounter):
+                                return False
         return True
