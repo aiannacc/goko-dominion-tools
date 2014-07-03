@@ -24,9 +24,9 @@ import gdt.ratings.update as ru
 LOGLEVEL = logging.DEBUG
 LINK_REGEX = re.compile('href="(log\S*txt)"')
 FILE_REGEX = re.compile("log\.(.*)\.(.*)\.txt")
-#LOG_DIR = '/dominion/logs'                 # For linode server
-LOG_DIR = '/mnt/ssd128/domlogs/'            # For iron server
+LOG_DIR = '/gokologs'                 # For linode server
 
+#RATING_SYSTEM_NAME = 'iso_regen'
 RATING_SYSTEM_NAME = 'isotropish'
 
 # Logging
@@ -279,6 +279,6 @@ if __name__ == '__main__':
             ru.record_ratings(rhist, RATING_SYSTEM_NAME)
             logger.info('Finished.')
 
-            logger.info('Found %d new logs. Checking again in 5 seconds.'
+            logger.info('Found %d new logs. Checking again in 60 seconds.'
                         % parsecount)
-            time.sleep(2)
+            time.sleep(60)
