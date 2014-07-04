@@ -25,6 +25,7 @@ LOGLEVEL = logging.DEBUG
 LINK_REGEX = re.compile('href="(log\S*txt)"')
 FILE_REGEX = re.compile("log\.(.*)\.(.*)\.txt")
 LOG_DIR = '/gokologs'                 # For linode server
+#LOG_DIR = '/mnt/raid/media/dominion/logs'  # For home server
 
 #RATING_SYSTEM_NAME = 'iso_regen'
 RATING_SYSTEM_NAME = 'isotropish'
@@ -37,12 +38,15 @@ ch.setLevel(LOGLEVEL)
 ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logger.addHandler(ch)
 
-# Request up to 40 logs simultaneously
-dlsema = threading.BoundedSemaphore(value=40)
+# Make requests single-threaded
+dlsema = threading.BoundedSemaphore(value=1)
 
 # Parse with up to 6 threads
 parsesema = threading.BoundedSemaphore(value=6)
 
+s = requests.Session()
+#help(s)
+#print(s.__attrs__)
 
 # Download a log and save it to file
 def download_log(logfile, dayurl, log_dir):
@@ -50,7 +54,7 @@ def download_log(logfile, dayurl, log_dir):
     url = dayurl + '/' + logfile
     logger.debug('Fetching %s' % url)
     try:
-        r = requests.get(url, headers=headers, timeout=30)
+        r = s.get(url, headers=headers, timeout=60, stream=False)
         r.encoding = 'utf-8'
         dlsema.release()
         gzip.open(log_dir + '/' + logfile, 'wt').write(r.text)
