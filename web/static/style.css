@@ -7,6 +7,8 @@ b { font-weight: bold; color: #000; }
 .date { font-size: 70.7%; color: #393; }
 */
 
+p { word-break: break-all; white-space: normal; }
+
 .left   {text-align:left;}
 .center {text-align:center;}
 .right  {text-align:right;}

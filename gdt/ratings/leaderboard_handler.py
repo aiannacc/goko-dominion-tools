@@ -60,11 +60,27 @@ class LeaderboardHandler(tornado.web.RequestHandler):
 
         # When ratings were last updated
         last_log_time_u = db_manager.get_last_rated_game2('isotropish')[0]
-        last_log_time = pytz.timezone('US/Pacific').localize(last_log_time_u)
-        last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
-        ago = (datetime.datetime.now() - last_log_time_u).total_seconds()
-        ago_m = int(ago / 60)
-        ago_s = int(ago % 60)
+        if last_log_time_u is not None:
+            last_log_time = pytz.timezone('US/Pacific').localize(last_log_time_u)
+            last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
+            ago = (datetime.datetime.now() - last_log_time_u).total_seconds()
+            ago_d = int(ago / 60 / 60 / 24)
+            ago_h = int(ago / 60 / 60)
+            ago_m = int(ago / 60)
+            ago_s = int(ago % 60)
+            if ago_m < 60:
+                ago_full = 'Last recorded game finished %d min, %d sec ago' % (ago_m, ago_s)
+            elif ago_h < 24:
+                ago_full = ('Last recorded game finished %d hr, %d min ago.  Either the Goko/MF '
+                + 'server is down or something is wrong on my end.') % (ago_h, ago_m)
+            else:
+                ago_full = ('Last recorded game finished %d days ago.  Either my server is '
+                + 'busted or I\'m regenerating the leaderboard right now.') % (ago_d)
+        else:
+            last_log_time_str = None
+            ago_m = None
+            ago_s = None
+            ago_full = ''
 
         # Build page from template
         loader = tornado.template.Loader(".")
@@ -75,6 +91,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             date_updated=last_log_time_str,
             ago_m=ago_m,
             ago_s=ago_s,
+            ago_full=ago_full,
             player_ratings=prs,
             ww=self.get_argument('ww', 'false'),
             full=full,

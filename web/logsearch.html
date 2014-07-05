@@ -3,13 +3,13 @@
   <head>
     <title>{{ title }}</title>
     <meta http-equiv="Content-Type" content="text/html";charset="UTF-8">
-	  <link rel="stylesheet" href="/static/themes/base/jquery.ui.all.css">
+	<link rel="stylesheet" href="/static/themes/base/jquery.ui.all.css">
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <script src="/static/jquery-1.9.1.js"></script>
     <script src="/static/ui/jquery-ui.js"></script>
-	  <script src="/static/ui/jquery.ui.core.js"></script>
-	  <script src="/static/ui/jquery.ui.widget.js"></script>
-	  <script src="/static/ui/jquery.ui.datepicker.js"></script>
+	  <!--script src="/static/ui/jquery.ui.core.js"></script-->
+	  <!--script src="/static/ui/jquery.ui.widget.js"></script-->
+	  <!--script src="/static/ui/jquery.ui.datepicker.js"></script-->
     <script>
       $(document).ready(function(){
         // Restore the previous search paramaters. This is so hideous.
@@ -76,6 +76,13 @@
     <br>
 
     <h2>Goko Log Search</h2>
+
+    <p>
+    <b> NOTE: New games stopped being recorded on June 29, when MakingFun cut off my access to their log server.  I downloaded a few more days manually, but I can't keep doing that indefinitely.  </b>
+    </p>
+    <p>
+    It's not clear whether MF blocked me on accident or on purpose, but the log search isn't going to work right until someone from their development team removes the from on my IP.  See <a href='http://forum.makingfun.com/showthread.php?4896-gokosalvager-com-can-no-longer-access-MakingFun-s-Dominion-log-server'>my post</a> on the MakingFun forums for details, and please reply, Thanks, or Like my post if you want to encourage them to deal with this in a timely manner.
+    </p>
 
     <form id="searchform" action="/logsearch" method="get">
       <table>

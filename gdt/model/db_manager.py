@@ -288,7 +288,10 @@ def get_last_rated_game2(system):
                             WHERE system=$1
                             ORDER BY time desc
                             LIMIT 1""")(system)
-    return r[0]
+    if len(r) == 0:
+        return [None, None]
+    else:
+        return r[0]
 
 
 def get_cached_gameresults(limit, time, logfile, allow_guests=False,
@@ -611,50 +614,28 @@ def inserts(games):
             pd['turnorder'] = g.presults[pname].order
             rows['pres'].append([pd[k] for k in pres_keys])
 
-        ## Copy values from GainRet object.
-        #for gain in g.gains:
-        #    gaind = {}
-        #    gain_keys = ['logfile', 'cname', 'cpile', 'pname', 'turn']
-        #    for k in gain_keys:
-        #        gaind[k] = getattr(gain, k, None)
-        #    gaind['logfile'] = g.logfile
-        #    rows['gain'].append([gaind[k] for k in gain_keys])
-
-        ## Copy values from GainRet object.
-        #for ret in g.rets:
-        #    retd = {}
-        #    ret_keys = ['logfile', 'cname', 'cpile', 'pname', 'turn']
-        #    for k in ret_keys:
-        #        retd[k] = getattr(ret, k, None)
-        #    retd['logfile'] = g.logfile
-        #    rows['ret'].append([retd[k] for k in ret_keys])
-
     if len(games) == 0:
         return
 
-    # Insert game data
-    sql = """INSERT INTO game (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-          """ % tuple(game_keys)
-    _con.prepare(sql).load_rows(rows['game'])
+    x = _con.xact()
+    x.start()
+    try:
+        # Insert game data
+        sql = """INSERT INTO game (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+              """ % tuple(game_keys)
+        _con.prepare(sql).load_rows(rows['game'])
 
-    # Insert player data
-    sql = """INSERT INTO presult (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-          """ % tuple(pres_keys)
-    _con.prepare(sql).load_rows(rows['pres'])
+        # Insert player data
+        sql = """INSERT INTO presult (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+              """ % tuple(pres_keys)
+        _con.prepare(sql).load_rows(rows['pres'])
 
-    ## Insert card gained data
-    #sql = """INSERT INTO gain (%s,%s,%s,%s,%s)
-    #                VALUES ($1,$2,$3,$4,$5)
-    #      """ % tuple(gain_keys)
-    #_con.prepare(sql).load_rows(rows['gain'])
-
-    ## Insert card returned data
-    #sql = """INSERT INTO gain (%s,%s,%s,%s,%s)
-    #                VALUES ($1,$2,$3,$4,$5)
-    #      """ % tuple(gain_keys)
-    #_con.prepare(sql).load_rows(rows['ret'])
+        x.commit()
+    except Exception as e:
+        print(e)
+        x.rollback()
 
 
 def get_ts_rating_history(limit):
