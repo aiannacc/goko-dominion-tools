@@ -18,6 +18,10 @@ def record_ratings(rating_history, system):
                                     rh.numgames[pname],
                                     rh.last_gametime[pname],
                                     rh.last_logfile[pname])
+        if rh.numgames[pname] > 50000:
+            logger.error(('Player with 50k+ games: %s, %d, %s'
+                % (pname, rh.numgames[pname], rh.last_logfile[pname])))
+
     rh.clear_updated()
 
 
@@ -72,6 +76,12 @@ def rate_games_since(last_time, last_logfile, rhistories,
                     gr.pnames[j] = 'Burning Skull'
                 if gr.pnames[j] == 'hugovj':
                     gr.pnames[j] = 'Hugovj'
+                if gr.pnames[j] == 'the801':
+                    gr.pnames[j] = 'The 801'
+                if gr.pnames[j] == 'soulnet goko':
+                    gr.pnames[j] = 'soulnetgoko'
+                if gr.pnames[j] == 'Jared Grant':
+                    gr.pnames[j] = 'XD9'
             if i >= max_games:
                 break
             for rh in rhistories:
