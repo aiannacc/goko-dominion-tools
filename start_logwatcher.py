@@ -27,7 +27,6 @@ FILE_REGEX = re.compile("log\.(.*)\.(.*)\.txt")
 LOG_DIR = '/gokologs'                 # For linode server
 #LOG_DIR = '/mnt/raid/media/dominion/logs'  # For home server
 
-#RATING_SYSTEM_NAME = 'iso_regen'
 RATING_SYSTEM_NAME = 'isotropish'
 
 # Logging
@@ -38,13 +37,12 @@ ch.setLevel(LOGLEVEL)
 ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logger.addHandler(ch)
 
-# Make requests single-threaded
-dlsema = threading.BoundedSemaphore(value=1)
-
 # Parse with up to 6 threads
 parsesema = threading.BoundedSemaphore(value=6)
 
 s = requests.Session()
+#sproxies = {'http': 'socks5://127.0.0.1:9050',
+#            'https': 'socks5://127.0.0.1:9050'}
 #help(s)
 #print(s.__attrs__)
 
@@ -54,15 +52,14 @@ def download_log(logfile, dayurl, log_dir):
     url = dayurl + '/' + logfile
     logger.debug('Fetching %s' % url)
     try:
+        #r = s.get(url, headers=headers, timeout=60, stream=False, proxies=sproxies)
         r = s.get(url, headers=headers, timeout=60, stream=False)
         r.encoding = 'utf-8'
-        dlsema.release()
         gzip.open(log_dir + '/' + logfile, 'wt').write(r.text)
         logger.debug('Wrote log from %s' % url)
         return True
     except requests.exceptions.ConnectionError:
         # These are MaxRetryErrors
-        dlsema.release()
         return False
 
 
@@ -71,7 +68,9 @@ def download_new_logs(date):
     datestr = date.strftime('%Y%m%d')
     #dayurl = 'http://dominionlogs.goko.com/%s' % datestr
     dayurl = 'http://logs.prod.dominion.makingfun.com/%s' % datestr
+    #r = requests.get(dayurl, timeout=30, proxies=sproxies)
     r = requests.get(dayurl, timeout=30)
+    #print(r.text)
     remote_logs = LINK_REGEX.findall(r.text)
 
     # Determine which logs haven't already been downloaded
@@ -80,25 +79,18 @@ def download_new_logs(date):
         os.makedirs(log_dir)
     local_logs = os.listdir(log_dir)
     not_downloaded = set(remote_logs) - set(local_logs)
-    logger.info('Found %d new logs on Goko' % len(not_downloaded))
+    #n = 100
+    logger.info('Found %d new logs on Goko.' % (len(not_downloaded)))
+    #logger.info('Found %d new logs on Goko.  Downloading %d of them.' % (len(not_downloaded), n))
 
-    # Download logs in threads.  Restrict max number of connections using
-    # BoundedSemahore
-    i = 0
-    threads = []
+    # Download logs in a single thread.
+    #i = 0
     for lf in not_downloaded:
-        i += 1
-        dlsema.acquire()
-        t = threading.Thread(target=download_log,
-                             kwargs={'logfile': lf, 'dayurl': dayurl,
-                                     'log_dir': log_dir})
-        threads.append(t)
-        t.start()
-        # TODO: retry when download_log fails and return False
-
-    # Wait for downloading to finish
-    for t in threads:
-        t.join()
+        #if i < n:
+        #    i += 1
+        #else:
+        #    break
+        download_log(lf, dayurl, log_dir)
 
     logger.info('Finished downloading')
 
@@ -217,6 +209,50 @@ def rate_new_games(rhistory,
     logger.debug('Rated games through: %s, %s' % rhistory.get_latest_game())
     logger.debug('Last rated game: %s, %s' % (t, l))
 
+def normal_usage():
+    logger.info('Now watching for new logs to be posted to MF logserver.')
+    logger.info('Games played before 12:00 AM today will not be handled.')
+
+    rsys = rs.TrueSkillSystem(RATING_SYSTEM_NAME, mu=25, sigma=25,
+                              beta=25, tau=0.25,
+                              draw_probability=0.05, k=3) 
+
+    rhist = ru.get_rating_history_stub(rsys, RATING_SYSTEM_NAME)
+    next_day = datetime.datetime.now()
+    last_time = datetime.datetime.now()
+    while True:
+        # This ensures that we don't miss the very last logs posted before
+        # the date ticks over at midnight.  We're guaranteed to search for
+        # "yesterday's" logs at least once "today."
+        #
+        # NOTE we can still lose logs if the local system's time is ahead
+        # of Goko's server time.  It might be better to have a 10 minute
+        # window (12:00-12:10AM) in which we search for both yesterday's
+        # and today's logs.
+        #
+        next_day = datetime.datetime.now()
+        parsecount = 0
+        last_time = datetime.datetime.now()
+        try:
+            download_new_logs(next_day)
+            parsecount = parse_new_logs(next_day)
+        except:
+            # TODO: Do something about these errors
+            logger.error(sys.exc_info()[1])
+            logger.error(sys.exc_info()[2])
+            pass
+
+        logger.info('Rating new games')
+        rate_new_games(rhist, allow_guests=False, min_turns=2, only_2p=True)
+        logger.info('Finished.  Recording new ratings')
+        ru.record_ratings(rhist, RATING_SYSTEM_NAME)
+        logger.info('Finished.')
+
+        sec_delta = (datetime.datetime.now() - last_time).seconds
+        logger.info('Found %d new logs. Checking again in %d seconds.'
+                    % (parsecount, 30 - sec_delta))
+        if sec_delta < 30:
+            time.sleep(30 - sec_delta)
 
 if __name__ == '__main__':
     if len(sys.argv) == 3:
@@ -231,8 +267,18 @@ if __name__ == '__main__':
                 download_new_logs(date)
                 parse_new_logs(date)
                 date += datetime.timedelta(days=1)
+            normal_usage()
         else:
             logger.error('Check usage.')
+
+    elif len(sys.argv) == 2 and sys.argv[1] == 'regen':
+        while True:
+            rsys = rs.TrueSkillSystem('iso_regen', mu=25, sigma=25,
+                                      beta=25, tau=0.25,
+                                      draw_probability=0.05, k=3) 
+            rhist = ru.get_rating_history_stub(rsys, 'iso_regen')
+            rate_new_games(rhist, allow_guests=False, min_turns=2, only_2p=True)
+            ru.record_ratings(rhist, 'iso_regen')
 
     elif len(sys.argv) == 2:
         start_dir = sys.argv[1]
@@ -247,42 +293,4 @@ if __name__ == '__main__':
                     parse_new_logs(log_day)
 
     else:
-        logger.info('Now watching for new logs to be posted to MF logserver.')
-        logger.info('Games played before 12:00 AM today will not be handled.')
-
-        rsys = rs.TrueSkillSystem(RATING_SYSTEM_NAME, mu=25, sigma=25,
-                                  beta=25, tau=0.25,
-                                  draw_probability=0.05, k=3) 
-
-        rhist = ru.get_rating_history_stub(rsys, RATING_SYSTEM_NAME)
-        next_day = datetime.datetime.now()
-        while True:
-            # This ensures that we don't miss the very last logs posted before
-            # the date ticks over at midnight.  We're guaranteed to search for
-            # "yesterday's" logs at least once "today."
-            #
-            # NOTE we can still lose logs if the local system's time is ahead
-            # of Goko's server time.  It might be better to have a 10 minute
-            # window (12:00-12:10AM) in which we search for both yesterday's
-            # and today's logs.
-            #
-            next_day = datetime.datetime.now()
-            parsecount = 0
-            try:
-                download_new_logs(next_day)
-                parsecount = parse_new_logs(next_day)
-            except:
-                # TODO: Do something about these errors
-                logger.error(sys.exc_info()[1])
-                logger.error(sys.exc_info()[2])
-                pass
-
-            logger.info('Rating new games')
-            rate_new_games(rhist, allow_guests=False, min_turns=2, only_2p=True)
-            logger.info('Finished.  Recording new ratings')
-            ru.record_ratings(rhist, RATING_SYSTEM_NAME)
-            logger.info('Finished.')
-
-            logger.info('Found %d new logs. Checking again in 60 seconds.'
-                        % parsecount)
-            time.sleep(60)
+        normal_usage()
