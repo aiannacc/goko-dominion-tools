@@ -80,8 +80,8 @@ def rate_games_since(last_time, last_logfile, rhistories,
                     gr.pnames[j] = 'The 801'
                 if gr.pnames[j] == 'soulnet goko':
                     gr.pnames[j] = 'soulnetgoko'
-                if gr.pnames[j] == 'Jared Grant':
-                    gr.pnames[j] = 'XD9'
+                if gr.pnames[j] == 'Jared Grant' or gr.pnames[j] == 'XD9':
+                    gr.pnames[j] = 'XD9-2-'
             if i >= max_games:
                 break
             for rh in rhistories:
