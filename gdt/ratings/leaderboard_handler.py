@@ -65,8 +65,8 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
             ago = (datetime.datetime.now() - last_log_time_u).total_seconds()
             ago_d = int(ago / 60 / 60 / 24)
-            ago_h = int(ago / 60 / 60)
-            ago_m = int(ago / 60)
+            ago_h = int(ago / 60 / 60 % 24)
+            ago_m = int(ago / 60 % 60)
             ago_s = int(ago % 60)
             if ago_m < 60:
                 ago_full = 'Last recorded game finished %d min, %d sec ago' % (ago_m, ago_s)
