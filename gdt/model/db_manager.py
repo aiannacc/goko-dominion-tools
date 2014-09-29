@@ -18,7 +18,7 @@ from . import constants
 
 # Database connection object.
 # TODO: Initialized on first use instead of on load
-_con = postgresql.open(user='ai', host='localhost', database='goko')
+_con = postgresql.open(user='ai', host='gokosalvager.com', database='goko', password='RebuildScout')
 
 
 def prepare(conn, sql, d):
@@ -350,11 +350,18 @@ def get_multiplayer_scores(limit, time, logfile, allow_guests=False,
                            allow_bots=False, rating_system='pro',
                            include_unknown_rs=False, min_turns=0,
                            pcount=None):
+
+    # I just changed WHERE ($2::timestamp IS NULL OR g.time>=$2)
+    #             to WHERE ($2::timestamp IS NULL OR g.time>$2)
+    # in an attempt to eliminate the 50k games problem.  I'm not really sure
+    # if this logic is right.  I think I may end up sometimes dropping the
+    # game with the smaller logfile when two games have an identical timestamp.
+
     ps = _con.prepare(
         """SELECT g.time, g.logfile, p.pname, p.rank, g.pcount
              FROM game g
              JOIN presult p USING(logfile)
-            WHERE ($2::timestamp IS NULL OR g.time>=$2)
+            WHERE ($2::timestamp IS NULL OR g.time>$2)
               AND ($3::varchar IS NULL OR g.logfile!=$3)
               AND ($4::boolean OR $4 OR (NOT g.guest))
               AND ($5::boolean OR $5 OR (NOT g.bot))
