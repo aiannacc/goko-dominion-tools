@@ -81,6 +81,9 @@ shelter
 vp-chip
  { background-color:rgb(0,0,0) ; border-radius: 6px; padding: 0px 4px;
    color:rgb(255,255,255) ; }
+coin-token
+ { background-color:rgb(0,0,0) ; border-radius: 6px; padding: 0px 4px;
+   color:rgb(255,255,255) ; }
 treasure-victory
 { background: -moz-linear-gradient(top, rgb(253,225,100), rgb(146,193,125));
   background: -webkit-linear-gradient(top, rgb(253,225,100), rgb(146,193,125));
@@ -368,7 +371,11 @@ var types = {
 'Hovel':'shelter-reaction',
 'Necropolis':'action-shelter',
 'Tunnel':'victory-reaction',
+'VP chips':'vp-chip',
+'VP chip':'vp-chip',
 'victory point chips':'vp-chip',
+'coin tokens':'coin-token',
+'coin token':'coin-token',
 'Curse':'curse',
 'Candlestick Maker':'action',
 'Stonemason':'action',
@@ -385,7 +392,7 @@ var types = {
 'Soothsayer':'action-attack',
 }
 var possessed, newLogMode, newLogPlayers;
-var playerDecks = [], vpchips = [], playervp = [];
+var playerDecks = [], vpchips = [], playervp = [], cointokens = [];
 var vpoint = {
 'Estate':function() {return 1},
 'Colony':function() {return 10},
@@ -440,6 +447,12 @@ function updateDeck(player, action) {
     } else if (h = action.match(/^receives ([0-9]*) victory point chips$/)) {
 	vpchips[player]+=+h[1];
 	updateCards(player, []);
+    } else if (h = action.match(/^receives ([0-9]*) coin token[s]?$/)) {
+	cointokens[player]+=+h[1];
+	updateCards(player, []);
+    } else if (h = action.match(/^uses ([0-9]*) coin token[s]?$/)) {
+	cointokens[player]-=+h[1];
+	updateCards(player, []);
     } else if (h = action.match(/^plays Bishop$/)) {
 	vpchips[player]++;
 	updateCards(player, []);
@@ -483,12 +496,13 @@ function money(deck, cards) {
     return m*5/cards;
 }
 function format(x) {
+	var HasBaker = false ;
 	var pars = x.split('\n \n---');
 	var tmp = '';
 	var players = [];
 	var graphdata = {labels:[0],datasets:[]};
 	var graphmin = 0, graphmax = 10;
-	playerDecks = []; vpchips = []; playervp = [];
+	playerDecks = []; vpchips = []; playervp = []; cointokens = [];
 	newLogPlayers = 0;
 	tmp += '<p style="text-align:center"><a href="#Game Over"><button>End of the game</button></a></p>';
 	for (var i = 0; i < pars.length; i++) {
@@ -526,8 +540,24 @@ function format(x) {
 		    }
 		    var cur_vp = vp_in_deck(playerDecks[j]) + vpchips[j];
 		    tmp2+='<tr><td>' + tc + '</td><td>cards in deck</td></tr>';
-		    if (vpchips[j]) tmp2+='<tr><td>' + vpchips[j] + '</td><td>VP chips</td></tr>';
-		    tmp2+='<tr><td>' + cur_vp + '</td><td>victory points</td></tr>';
+		    if (vpchips[j])
+		    {
+		    	if(vpchips[j] == 1 || vpchips[j] == -1)
+		    		tmp2+='<tr><td>' + vpchips[j] + '</td><td>' + colorize('VP chip') + '</td></tr>';
+		    	else
+		    		tmp2+='<tr><td>' + vpchips[j] + '</td><td>' + colorize('VP chips') + '</td></tr>';
+		    }
+		    if (cointokens[j])
+		    {
+		    	if(cointokens[j] == 1 || cointokens[j] == -1)
+		    		tmp2+='<tr><td>' + cointokens[j] + '</td><td>' + colorize('coin token') + '</td></tr>';
+		    	else
+		    		tmp2+='<tr><td>' + cointokens[j] + '</td><td>' + colorize('coin tokens') + '</td></tr>';
+		    }
+		    if(cur_vp == 1 || cur_vp == -1)
+		    	tmp2+='<tr><td>' + cur_vp + '</td><td>victory point</td></tr>';
+		    else
+		    	tmp2+='<tr><td>' + cur_vp + '</td><td>victory points</td></tr>';
 		    graphdata.datasets[j].data.push(cur_vp);
 		    if (cur_vp > graphmax) graphmax = 5*Math.floor((cur_vp+4)/5);
 		    if (cur_vp < graphmin) graphmin = 5*Math.floor((cur_vp-4)/5);
@@ -542,11 +572,23 @@ function format(x) {
 		var line = lines[j];
 		var k;
 		tmp += '<tr>';
+		if (i == 0 && line.match(/Supply cards: /)) {
+			if(line.match(/Baker/))
+				HasBaker = true ;
+		}
+		if (i == 0 && line.match(/Black market deck cards: /)) {
+			if(line.match(/Baker/))
+				HasBaker = true ;
+		}
 		if (i == 0 && line.match(/- starting cards:/)) {
 		    var player = line.match(/(.*) - starting cards:/)[1];
 		    players.push(player);
 		    playerDecks.push({});
 		    vpchips.push(0);
+		    if(HasBaker)
+		    	cointokens.push(1) ;
+		    else
+		    	cointokens.push(0) ;
 		    graphdata.datasets.push({
 			fillColor:playercolors[players.length-1][0],
 			strokeColor:playercolors[players.length-1][1],
