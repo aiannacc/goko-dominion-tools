@@ -21,6 +21,8 @@ lock = threading.RLock()
 # WebSocket protocol for Client-Server communication
 #
 class MainWSH(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True
 
     def open(self):
         logging.debug('WS opened: %s' % id(self))

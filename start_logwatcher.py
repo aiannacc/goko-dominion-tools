@@ -27,7 +27,7 @@ FILE_REGEX = re.compile("log\.(.*)\.(.*)\.txt")
 LOG_DIR = '/gokologs'                 # For linode server
 #LOG_DIR = '/mnt/raid/media/dominion/logs'  # For home server
 
-RATING_SYSTEM_NAME = 'isotropish'
+RATING_SYSTEM_NAME = 'isotropish_nobots'
 
 # Logging
 logger = logging.getLogger('logwatcher')
@@ -192,7 +192,7 @@ def parse_new_logs(date):
 
 
 def rate_new_games(rhistory,
-                   allow_guests=True, allow_bots=True,
+                   allow_guests=True, allow_bots=False,
                    min_turns=0, only_2p=False):
     (l, t) = rhistory.get_latest_game()
     logger.debug('Last rated game: %s, %s' % (t, l))

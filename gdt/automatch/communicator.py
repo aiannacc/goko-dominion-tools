@@ -22,6 +22,9 @@ lock = threading.RLock()
 # WebSocket protocol for Client-Server communication
 #
 class AutomatchWSH(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True
+
     def open(self):
         """ Tell the AutomatchCommunicator about a newly-connected automatch
         client. """
@@ -131,7 +134,7 @@ class AutomatchCommunicator():
                 logging.debug(msg)
                 self.update_server_view()
         else:
-            logging.warn("Couldn't find websocket for %s to send message: %s")
+            logging.warn("Couldn't find websocket for %s to send message: %s" % (pname, msg))
 
     @synchronized(lock)
     def _send_message_to_all(self, pnames, msgtype, **kwargs):
@@ -266,7 +269,16 @@ class AutomatchCommunicator():
     @synchronized(lock)
     def _submit_seek(self, pname, msg):
         """ Forward a player's seek request to the AutomatchManager. """
+        logging.info('SUBMIT SEEK (Message):')
+        logging.info(msg)
+        for r in msg['seek']['requirements']:
+            c = r['rclass']
+            if c == 'VPCounter':
+                p = r['props']
+                if not hasattr(p, 'vpcounter'):
+                    p['vpcounter'] = None
         seek = Seek.from_dict(msg['seek'])
+        logging.info(seek)
         self.manager.submit_seek(pname, seek)
 
     # Server confirms receipt of a seek request and gives the player its id.

@@ -15,6 +15,8 @@ import postgresql
 from . import domgame
 from . import constants
 
+logger = logging.getLogger('logwatcher')
+
 
 # Database connection object.
 # TODO: Initialized on first use instead of on load
@@ -584,8 +586,10 @@ def insert_card_url(card, url):
 
 
 def insert_parsefail(time, logfile, error):
-    _con.prepare("""INSERT INTO parsefail VALUES ($1, $2, $3)
-                 """)(time, logfile, error)
+    logging.warn('Parsing failed for %s' % logfile)
+    logging.warn(error)
+    _con.prepare("""INSERT INTO parsefail VALUES ($1, $2)
+                 """)(time, logfile)
 
 
 def inserts(games):

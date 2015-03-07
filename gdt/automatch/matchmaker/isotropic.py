@@ -124,12 +124,18 @@ class IsotropicMatchmaker(Matchmaker):
 
                         # Assign VPON/VPOFF setting.  Note that all must agree,
                         # so we can use any of the non-None values in the seeks.
+                        # CAVEAT: There is a rare client-side bug that causes 
+                        #         seeks with {'VPCounter': {'props': {}}}.
+                        #         These should be treated as though they had
+                        #         vpcounter = None.
+                        # TODO: Implement this.
                         match.vpcounter = None
                         for s in match.seeks:
                             for r in s.requirements:
                                 if r.__class__.__name__ == 'VPCounter':
-                                    if r.vpcounter is not None:
-                                        match.vpcounter = r.vpcounter
+                                    if 'vpcounter' in dir(r):
+                                        if r.vpcounter is not None:
+                                            match.vpcounter = r.vpcounter
 
                         # Save match and remove seeking players
                         logging.info('Found match: ')

@@ -18,7 +18,7 @@ def record_ratings(rating_history, system):
                                     rh.numgames[pname],
                                     rh.last_gametime[pname],
                                     rh.last_logfile[pname])
-        if rh.numgames[pname] > 50000:
+        if rh.numgames[pname] > 50000 and not pname in ('Villager Bot', 'Serf Bot', 'Banker Bot', 'Lord Bottington', 'Warlord Bot', 'Defender Bot', 'Conqueror Bot'):
             logger.error(('Player with 50k+ games: %s, %d, %s'
                 % (pname, rh.numgames[pname], rh.last_logfile[pname])))
 
@@ -78,8 +78,12 @@ def rate_games_since(last_time, last_logfile, rhistories,
                     gr.pnames[j] = 'Hugovj'
                 if gr.pnames[j] == 'the801':
                     gr.pnames[j] = 'The 801'
+                if gr.pnames[j] == 'dnkywin':
+                    gr.pnames[j] = 'hsypsx'
                 if gr.pnames[j] == 'soulnet goko':
                     gr.pnames[j] = 'soulnetgoko'
+                if gr.pnames[j] == 'Jacob Coughlan':
+                    gr.pnames[j] = 'Jake the Yak'
                 if gr.pnames[j] == 'Jared Grant' or gr.pnames[j] == 'XD9':
                     gr.pnames[j] = 'XD9-2-'
             if i >= max_games:

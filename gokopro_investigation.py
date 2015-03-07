@@ -34,6 +34,11 @@ def ts_init_error(args, beta, tau, dp, rA2, rB1, rB2, scoreA):
 
 
 if __name__ == '__main__':
+    # Result
+    scoreA = 1
+    # Post-game ratings
+    rA2 = Rating(6815.568466240228, 262.8624518211366)
+    rB2 = Rating(3746.361372235074, 1026.5999719019248)
     # Game data for two experienced players with disparate ratings
     # Initial ratings
     rA1 = Rating(6809.432229001433, 261.9561557935375)

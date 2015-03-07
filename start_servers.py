@@ -14,6 +14,8 @@ import gdt
 from gdt.model import db_manager
 from gdt.ws.gsserver import MainWSH
 from gdt.automatch.communicator import AutomatchWSH
+from gdt.ratings.leaderboard_handler import LeaderboardHandlerNobots
+from gdt.ratings.leaderboard_query import LeaderboardQueryNobots
 from gdt.ratings.leaderboard_handler import LeaderboardHandler
 from gdt.ratings.leaderboard_query import LeaderboardQuery
 from gdt.logsearch.logsearch_handler import SearchHandler
@@ -29,6 +31,7 @@ class ComprehensiveApplication(tornado.web.Application):
             (r"/logsearch", SearchHandler),
             (r"/logsearch/", SearchHandler),
             (r"/query/leaderboard", LeaderboardQuery),
+            (r"/query/leaderboard_nobots", LeaderboardQueryNobots),
             (r"/query/gokoproratingquery", GokoProRatingQuery),
             (r"/kingdom", KingdomHandler),
             (r"/kingdom/", KingdomHandler),
@@ -36,6 +39,8 @@ class ComprehensiveApplication(tornado.web.Application):
             (r"/kingdomvisualize/", KingdomHandler),
             (r"/leaderboard", LeaderboardHandler),
             (r"/leaderboard/", LeaderboardHandler),
+            (r"/leaderboard_nobots", LeaderboardHandlerNobots),
+            (r"/leaderboard_nobots/", LeaderboardHandlerNobots),
             (r"/automatch", AutomatchWSH),
             (r"/gs/submit_avatar", AvatarUploadHandler),
             (r"/gs/websocket", MainWSH),
@@ -126,6 +131,8 @@ if __name__ == '__main__':
 
     ssl_options_gs = {
         "certfile": os.path.join("/etc/ssl/certs/", "gokosalvager_com.full.crt"),
+        #"certfile": os.path.join("/etc/ssl/certs/", "gokosalvager_com.crt")
+        #"certfile": os.path.join("/etc/ssl/certs/", "gokosalvager_com.crt"),
         "keyfile": os.path.join("/etc/ssl/private/", "key.pem")
     }
 
