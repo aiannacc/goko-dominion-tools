@@ -8,6 +8,7 @@ import datetime
 import logging
 import copy
 import math
+import io
 
 import trueskill
 import postgresql
@@ -20,7 +21,8 @@ logger = logging.getLogger('logwatcher')
 
 # Database connection object.
 # TODO: Initialized on first use instead of on load
-_con = postgresql.open(user='ai', host='gokosalvager.com', database='goko', password='RebuildScout')
+dbpass = open('dbpass').readline().strip();
+_con = postgresql.open(user='ai', host='gokosalvager.com', database='goko', password=dbpass)
 
 
 def prepare(conn, sql, d):
