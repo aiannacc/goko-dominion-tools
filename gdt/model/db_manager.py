@@ -278,7 +278,7 @@ def search_scores(search):
     return ps(logfiles)
 
 
-def get_last_rated_game(system='isotropish'):
+def get_last_rated_game(system='isotropish_nobots'):
     return _con.prepare("""SELECT time, logfile
                              FROM ts_rating2
                             WHERE system=$2
@@ -445,7 +445,7 @@ def fetch_ratings2(system, min_level=None, min_games=None, active_since=None,
 
 def fetch_ratings(min_level=None, min_games=None, active_since=None,
                   guest=True, offset=0, count=sys.maxsize, sortkey='level',
-                  system='isotropish'):
+                  system='isotropish_nobots'):
     # TODO: Fix the Boodaloo problem more elegantly
     q = """SELECT pname, (mu - 3 * sigma) as level, mu, sigma, numgames
              FROM ts_rating2
@@ -478,13 +478,13 @@ def fetch_ratings(min_level=None, min_games=None, active_since=None,
     return out
 
 
-def fetch_last_rated_log_time(system='isotropish'):
+def fetch_last_rated_log_time(system='isotropish_nobots'):
     return _con.prepare("""SELECT max(time) 
                              FROM ts_rating2
                             WHERE system=$1""")(system)[0]
 
 
-def get_all_ratings_by_id(system='isotropish'):
+def get_all_ratings_by_id(system='isotropish_nobots'):
     qrows = _con.prepare("""SELECT r.time, i.playerid,
                                    r.mu - 3 * r.sigma as level
                               FROM ts_rating2 r
@@ -501,7 +501,7 @@ def get_all_ratings_by_id(system='isotropish'):
     return (out, last_time)
 
 
-def get_new_ratings(since_time, system='isotropish'):
+def get_new_ratings(since_time, system='isotropish_nobots'):
     qrows = _con.prepare("""SELECT r.time, i.playerid,
                                    r.mu - 3 * r.sigma as level
                               FROM ts_rating2 r
@@ -518,7 +518,7 @@ def get_new_ratings(since_time, system='isotropish'):
     return (out, last_time)
 
 
-def get_rating_by_id(playerId, system='isotropish'):
+def get_rating_by_id(playerId, system='isotropish_nobots'):
     ps = _con.prepare("""SELECT r.mu, r.sigma, r.numgames
                             FROM ts_rating2 r
                             JOIN playerinfo i
@@ -533,7 +533,7 @@ def get_rating_by_id(playerId, system='isotropish'):
         return msn
 
 
-def get_rating(pname, system='isotropish'):
+def get_rating(pname, system='isotropish_nobots'):
     ps = _con.prepare("""SELECT mu, sigma, numgames
                             FROM ts_rating2
                            WHERE pname=$1
@@ -658,7 +658,7 @@ def get_ts_rating_history(limit):
                             LIMIT $1""")(limit)
 
 
-def get_game_count(pname, system='isotropish'):
+def get_game_count(pname, system='isotropish_nobots'):
     x = _con.prepare("""SELECT numgames
                           FROM ts_rating2
                          WHERE pname = $1

@@ -160,7 +160,7 @@ class SearchHandler(tornado.web.RequestHandler):
 
         # TODO: include overall record, total number of games
 
-        last_log_time_u = db_manager.get_last_rated_game2('isotropish')[0]
+        last_log_time_u = db_manager.get_last_rated_game2('isotropish_nobots')[0]
         if last_log_time_u is not None:
             last_log_time = pytz.timezone('US/Pacific').localize(last_log_time_u)
             last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
@@ -251,7 +251,7 @@ class SearchHandler(tornado.web.RequestHandler):
     def show_error(self, err_text, arg_str):
         #print('show_error')
 
-        last_log_time_u = db_manager.get_last_rated_game2('isotropish')[0]
+        last_log_time_u = db_manager.get_last_rated_game2('isotropish_nobots')[0]
         if last_log_time_u is not None:
             last_log_time = pytz.timezone('US/Pacific').localize(last_log_time_u)
             last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')

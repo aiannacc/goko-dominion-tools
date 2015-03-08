@@ -186,7 +186,7 @@ def parse_new_logs(date):
         for line in traceback.format_tb(failed[f][2]):
             logger.warn(line)
         time = failed_logtime[f]
-        db_manager.insert_parsefail(time, f, failed[logfile])
+        db_manager.insert_parsefail(time, f, failed[f][0].__name__)
 
     return total_inserted
 

@@ -66,10 +66,10 @@ class GokoProRatingQuery(tornado.web.RequestHandler):
             pgdraw = 1 - pgwin - pgloss
 
             player_name_A = self.get_argument('player_name_A')
-            r_a = db_manager.fetch_ts2_rating(player_name_A, 'isotropish')
+            r_a = db_manager.fetch_ts2_rating(player_name_A, 'isotropish_nobots')
 
             player_name_B = self.get_argument('player_name_B')
-            r_b = db_manager.fetch_ts2_rating(player_name_B, 'isotropish')
+            r_b = db_manager.fetch_ts2_rating(player_name_B, 'isotropish_nobots')
 
             piwin = isotropish.win_prob(r_a, r_b)
             piloss = isotropish.win_prob(r_b, r_a)

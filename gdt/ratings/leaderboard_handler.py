@@ -17,7 +17,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
 
     def get(self):
 
-        system_dbname = self.get_argument('system', 'isotropish')
+        system_dbname = self.get_argument('system', 'isotropish_nobots')
 
         # Get requested sort key
         sortkey = self.get_argument('sortkey', 'level')
@@ -59,7 +59,7 @@ class LeaderboardHandler(tornado.web.RequestHandler):
             rank = rank + 1
 
         # When ratings were last updated
-        last_log_time_u = db_manager.get_last_rated_game2('isotropish')[0]
+        last_log_time_u = db_manager.get_last_rated_game2('isotropish_nobots')[0]
         if last_log_time_u is not None:
             last_log_time = pytz.timezone('US/Pacific').localize(last_log_time_u)
             last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
