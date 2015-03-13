@@ -452,6 +452,8 @@ function updateDeck(player, action) {
 	updateCards(player, []);
     } else if (h = action.match(/^uses ([0-9]*) coin token[s]?$/)) {
 	cointokens[player]-=+h[1];
+	if(cointokens[player] < 0)
+		cointokens[player] = 0 ;
 	updateCards(player, []);
     } else if (h = action.match(/^plays Bishop$/)) {
 	vpchips[player]++;
