@@ -1,0 +1,53 @@
+<table> 
+<tbody style="width: 90%">
+  <tr>
+    <td colspan="5"> <%= new Date(g.log_time).toLocaleString() %> </td>
+    <td rowspan="9">
+      <img src="<%= colprovURL %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[5] %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[6] %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[7] %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[8] %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[9] %>" width="<%= card_width %>">
+      <% if (g.kingdom.length === 11) { %>
+        <img src="<%= g.cardURLs[10] %>" width="<%= card_width %>">
+      <% } %>
+      <br>
+      <img src="<%= shelestURL %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[0] %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[1] %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[2] %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[3] %>" width="<%= card_width %>">
+      <img src="<%= g.cardURLs[4] %>" width="<%= card_width %>">
+    </td>
+  </tr>
+
+  <tr>
+    <td></td>
+    <td><u>Rank</u></td>
+    <td><u>VP</u></td>
+    <td><u>Turns</u></td>
+  </tr>
+
+  <% _.each(g.results, function(r) { %>
+    <tr>
+      <td><%= r.name %></td>
+      <td><%= r.rank %></td>
+      <td><%= r.vps %></td>
+      <td><%= r.turns %></td>
+    </tr>
+  <% }); %>
+  <% for (var i=g.results.length; i<6; i++) { %>
+    <tr> <td>&nbsp;</td> </tr>
+  <% }; %>
+
+  <tr>
+    <td colspan="4">
+      <% logdf = g.log_dir + '/' + g.logfile; %>
+      <a href="http://dominionlogs.goko.com/<%= logdf %>">Raw Log</a>
+      <a href="/static/logprettifier.html?<%= logdf %>">Prettified Log</a>
+      <button id="<%= copyButtonID %>">Copy BBCode</button>
+    </td>
+  </tr>
+</tbody>
+</table>

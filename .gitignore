@@ -13,6 +13,9 @@ __pycache__
 
 *.csv
 *.out
+._*
+
+.DS_Store
 
 # Password file
 dbpass
@@ -25,4 +28,5 @@ web/static/extsrc
 web/static/dominiate
 web/static/gokosalvager
 web/static/avatars
+web/static/img
 analysis/

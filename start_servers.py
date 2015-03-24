@@ -32,6 +32,13 @@ class ComprehensiveApplication(tornado.web.Application):
             (r"/", SearchHandler),
             (r"/logsearch", SearchHandler),
             (r"/logsearch/", SearchHandler),
+
+            (r"/(logsearch.html)", DocumentSFH, {"path": "web/static"}),
+
+            (r"/script/(.*)", DocumentSFH, {"path": "web/static/script/"}),
+            (r"/img/(.*)", DocumentSFH, {"path": "web/static/img/"}),
+            (r"/css/(.*)", DocumentSFH, {"path": "web/static/css/"}),
+
             (r"/query/leaderboard", LeaderboardQueryNobots),
             (r"/query/gokoproratingquery", GokoProRatingQuery),
             (r"/kingdom", KingdomHandler),
