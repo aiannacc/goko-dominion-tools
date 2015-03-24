@@ -4,6 +4,8 @@ import sys
 import logging
 import os
 import json
+import socket
+
 from PIL import Image
 
 import tornado.web
@@ -121,18 +123,6 @@ if __name__ == '__main__':
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
 
-    ssl_options_ai = {
-        "certfile": os.path.join("/etc/ssl/certs/", "andrewiannaccone_com.full.crt"),
-        "keyfile": os.path.join("/etc/ssl/private/", "key.pem")
-    }
-
-    ssl_options_gs = {
-        "certfile": os.path.join("/etc/ssl/certs/", "gokosalvager_com.full.crt"),
-        #"certfile": os.path.join("/etc/ssl/certs/", "gokosalvager_com.crt")
-        #"certfile": os.path.join("/etc/ssl/certs/", "gokosalvager_com.crt"),
-        "keyfile": os.path.join("/etc/ssl/private/", "key.pem")
-    }
-
     if len(sys.argv) == 2 and sys.argv[1] == 'test':
         ports = [7080, 7443, 7888, 7889]
     else:
@@ -142,8 +132,18 @@ if __name__ == '__main__':
 
     app = ComprehensiveApplication()
     app.listen(ports[0], "", no_keep_alive=True)
-    app.listen(ports[1], "", ssl_options=ssl_options_gs, no_keep_alive=True)
-    app.listen(ports[2], "", ssl_options=ssl_options_gs, no_keep_alive=True) 
-    app.listen(ports[3], "", ssl_options=ssl_options_gs, no_keep_alive=True) 
+
+    if (socket.gethostname() == "li566-22"):
+        ssl_options_gs = {
+            "certfile": os.path.join("/etc/ssl/certs/", "gokosalvager_com.full.crt"),
+            "keyfile": os.path.join("/etc/ssl/private/", "key.pem")
+        }
+        app.listen(ports[1], "", ssl_options=ssl_options_gs, no_keep_alive=True)
+        app.listen(ports[2], "", ssl_options=ssl_options_gs, no_keep_alive=True) 
+        app.listen(ports[3], "", ssl_options=ssl_options_gs, no_keep_alive=True) 
+    else:
+        app.listen(ports[1], "", no_keep_alive=True)
+        app.listen(ports[2], "", no_keep_alive=True) 
+        app.listen(ports[3], "", no_keep_alive=True) 
 
     tornado.ioloop.IOLoop.instance().start()
