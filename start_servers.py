@@ -33,7 +33,8 @@ class ComprehensiveApplication(tornado.web.Application):
             (r"/logsearch", SearchHandler),
             (r"/logsearch/", SearchHandler),
 
-            (r"/(logsearch.html)", DocumentSFH, {"path": "web/static"}),
+            (r"/(logsearch\.html)", DocumentSFH, {"path": "web/static"}),
+            (r"/(favicon\.ico)", DocumentSFH, {"path": "web/static/img"}),
 
             (r"/script/(.*)", DocumentSFH, {"path": "web/static/script/"}),
             (r"/img/(.*)", DocumentSFH, {"path": "web/static/img/"}),
