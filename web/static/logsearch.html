@@ -1,106 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Dominion Log Search</title>
-    <meta http-equiv="Content-Type" content="text/html"; charset="utf-8">
+<head>
+<title>Dominion Log Search</title>
+<meta http-equiv="Content-Type" content="text/html"; charset="utf-8">
 
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js"></script>
 
-    <script src="/script/jquery.fcbkcomplete.js"></script>
-    <script src="/script/logsearch.js"></script>
+<script src="/script/jquery.fcbkcomplete.js"></script>
+<script src="/script/logsearch.js"></script>
 
 
-    <link rel="stylesheet" href="css/pepper-grinder/jquery-ui.css" />
-    <link rel="stylesheet" href="css/pepper-grinder/theme.css" />
-    <link rel="stylesheet" href="css/tbstyle.css" />
+<link rel="stylesheet" href="css/pepper-grinder/jquery-ui.css" />
+<link rel="stylesheet" href="css/pepper-grinder/theme.css" />
+<link rel="stylesheet" href="css/tbstyle.css" />
 
-    <style>
-      body {
-        /*
-        background-image:
-          url("static/themes/pepper-grinder/images/ui-bg_fine-grain_15_ffffff_60x60.png");
-        */
-        background-color: #f9f9f5;
-        font-family: 'Helvetica Neue', HelveticaNeue, Helvetica, Arial, sans-serif;
-        font-size: 15px;
-        line-height: 22.5px;
-      }
-      table, th, td {
-        border: 1px solid black;
-      }
+<style>
+body {
+  /*
+  background-image:
+  url("static/themes/pepper-grinder/images/ui-bg_fine-grain_15_ffffff_60x60.png");
+   */
+  background-color: #f9f9f5;
+  font-family: 'Helvetica Neue', HelveticaNeue, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 22.5px;
+}
+table, th, td {
+  border: 1px solid black;
+}
 
-      /*
-      .ui-buttonset .ui-button .ui-state-active
-      ui-bg_fine-grain_5_eff4fc_60x60.png
-      */
-    </style>
-  </head>
+/*
+.ui-buttonset .ui-button .ui-state-active
+ui-bg_fine-grain_5_eff4fc_60x60.png
+ */
+</style>
+</head>
 
-  <body>
+<body>
 
-    Log Search |
-    <a href='/kingdomvisualize'>Kingdom Visualizer</a> |
-    <a href='/leaderboard/'>Leaderboard</a> |
-    <a href='http://rspeer.github.io/dominiate/play.html'>Dominiate Simulator</a> |
-    <a href='https://github.com/aiannacc/Goko-Salvager/wiki'>Goko Salvager Extension</a>
-    <br>
-    <br>
+Log Search |
+<a href='/kingdomvisualize'>Kingdom Visualizer</a> |
+<a href='/leaderboard/'>Leaderboard</a> |
+<a href='http://rspeer.github.io/dominiate/play.html'>Dominiate Simulator</a> |
+<a href='https://github.com/aiannacc/Goko-Salvager/wiki'>Goko Salvager Extension</a>
+<br>
+<br>
 
-    <h3>Dominion Log Search</h3>
-      <div>
-        <form id="search-form">
-          <table id="search-table">
-            <tr>
-              <td>Player Name(s):</td>
-              <td colspan="5">
-                <select id="players" name="player_ids"></input>
-              </td>
-            </tr> 
+<h3>Dominion Log Search</h3>
+<div>
+  <form id="search-form">
+    <table id="search-table">
+      <tr>
+        <td>Player Name(s):</td>
+        <td colspan="5">
+          <select id="players" name="player_ids"></input>
+          </td>
+        </tr> 
 
-            <tr>
-              <td>Kingdom Cards:</td>
-              <td colspan="5">
-                <select id="kingdom" name="kingdom_cards"></input>
-              </td>
-            </tr>
+        <tr>
+          <td>Kingdom Cards:</td>
+          <td colspan="5">
+            <select id="kingdom" name="kingdom_cards"></input>
+            </td>
+          </tr>
 
-            <tr>
-              <td colspan="2">
-                <div id="rating-mode-format">
-                  <input type="checkbox" id="mode1" value="pro">
-                  <label for="mode1"><img src="/img/rating-mode/pro.gif" height="17" align="top"> Pro</label>
-                  <input type="checkbox" id="mode2" value="casual">
-                  <label for="mode2"><img src="/img/rating-mode/casual.gif" height="17" align="top"> Casual</label>
-                  <input type="checkbox" id="mode3" value="unrated">
-                  <label for="mode3"><img src="/img/rating-mode/unrated.gif" height="17" align="top"> Unrated</label>
-                  <input type="checkbox" id="mode4" value="adventure">
-                  <label for="mode4"><img src="/img/goko-owl.gif" height="17" align="top"> Adventures</label>
-                </div>
-              </td>
+          <tr>
+            <td colspan="2">
+              <div id="rating-mode-format">
+                <input type="checkbox" id="mode1" value="pro">
+                <label for="mode1"><img src="/img/rating-mode/pro.gif" height="17" align="top"> Pro</label>
+                <input type="checkbox" id="mode2" value="casual">
+                <label for="mode2"><img src="/img/rating-mode/casual.gif" height="17" align="top"> Casual</label>
+                <input type="checkbox" id="mode3" value="unrated">
+                <label for="mode3"><img src="/img/rating-mode/unrated.gif" height="17" align="top"> Unrated</label>
+                <input type="checkbox" id="mode4" value="adventure">
+                <label for="mode4"><img src="/img/goko-owl.gif" height="17" align="top"> Adventures</label>
+              </div>
+            </td>
 
-              <td>
-                <div id="num-players-format">
-                  <input type="checkbox" id="num-players1" value="pro">
-                  <label for="num-players1">Solo</label>
-                  <input type="checkbox" id="num-players2" value="pro">
-                  <label for="num-players2">1-vs-1</label>
-                  <input type="checkbox" id="num-players3" value="pro">
-                  <label for="num-players3">3P</label>
-                  <input type="checkbox" id="num-players4" value="pro">
-                  <label for="num-players4">4P</label>
-                  <input type="checkbox" id="num-players5" value="pro">
-                  <label for="num-players5">5P</label>
-                  <input type="checkbox" id="num-players6" value="pro">
-                  <label for="num-players6">6P</label>
-                </div>
-              </td>
-              <td>
-                <input type="button" id="submit-search" value="Search" />
-                <input type="button" id="cancel-search" value="Cancel" />
-              </td>
-            </tr>
+            <td>
+              <div id="num-players-format">
+                <input type="checkbox" id="num-players1" value="pro">
+                <label for="num-players1">Solo</label>
+                <input type="checkbox" id="num-players2" value="pro">
+                <label for="num-players2">1-vs-1</label>
+                <input type="checkbox" id="num-players3" value="pro">
+                <label for="num-players3">3P</label>
+                <input type="checkbox" id="num-players4" value="pro">
+                <label for="num-players4">4P</label>
+                <input type="checkbox" id="num-players5" value="pro">
+                <label for="num-players5">5P</label>
+                <input type="checkbox" id="num-players6" value="pro">
+                <label for="num-players6">6P</label>
+              </div>
+            </td>
+            <td>
+              <input type="button" id="submit-search" value="Search" />
+              <input type="button" id="cancel-search" value="Cancel" />
+            </td>
+          </tr>
         </table>
       </form>    
     </div>
@@ -109,82 +109,82 @@
       <h3>More Options</h3>
       <div>
         <form id="more-options-form">
-        <table>
+          <table>
 
-          <tr>
-            <td>Date:</td>
-            <td><input class="datepicker" type="text" id="start-date" name="start_date" /></td>
-            <td>to</td>
-            <td><input class="datepicker" type="text" id="end-date" name="end_date" /></td>
-          </tr>
+            <tr>
+              <td>Date:</td>
+              <td><input class="datepicker" type="text" id="start-date" name="start_date" /></td>
+              <td>to</td>
+              <td><input class="datepicker" type="text" id="end-date" name="end_date" /></td>
+            </tr>
 
-          <tr>
-            <td colspan="5">
-              Game length:
-              <input type="number" name="min_turns" min="0"/>
-              to
-              <input type="number" name="max_turns" min="0" validate/>
-              turns
-            </td>
-          </tr>
+            <tr>
+              <td colspan="5">
+                Game length:
+                <input type="number" name="min_turns" min="0"/>
+                to
+                <input type="number" name="max_turns" min="0" validate/>
+                turns
+              </td>
+            </tr>
 
-          <tr>
-            <td colspan="4">Include Games with:
-          </tr>
+            <tr>
+              <td colspan="4">Include Games with:
+              </tr>
 
-          <tr>
-            <td></td>
-            <td><input type="radio" name="colonies_used" value="yes"/>Colonies</td>
-            <td><input type="radio" name="colonies_used" value="no"/>Provinces</td>
-            <td><input type="radio" name="colonies_used" value="null"/>Either</td>
-          </tr>
+              <tr>
+                <td></td>
+                <td><input type="radio" name="colonies_used" value="yes"/>Colonies</td>
+                <td><input type="radio" name="colonies_used" value="no"/>Provinces</td>
+                <td><input type="radio" name="colonies_used" value="null"/>Either</td>
+              </tr>
 
-          <tr>
-            <td></td>
-            <td><input type="radio" name="shelters_used" value="yes"/>Shelters</td>
-            <td><input type="radio" name="shelters_used" value="no"/>Estates</td>
-            <td><input type="radio" name="shelters_used" value="null"/>Either</td>
-          </tr>
+              <tr>
+                <td></td>
+                <td><input type="radio" name="shelters_used" value="yes"/>Shelters</td>
+                <td><input type="radio" name="shelters_used" value="no"/>Estates</td>
+                <td><input type="radio" name="shelters_used" value="null"/>Either</td>
+              </tr>
 
-          <tr>
-            <td></td>
-            <td><input type="radio" name="bot_played" value="yes"/>Bots</td>
-            <td><input type="radio" name="bot_played" value="no"/>No Bots</td>
-            <td><input type="radio" name="bot_played" value="null"/>Either</td>
-          </tr>
+              <tr>
+                <td></td>
+                <td><input type="radio" name="bot_played" value="yes"/>Bots</td>
+                <td><input type="radio" name="bot_played" value="no"/>No Bots</td>
+                <td><input type="radio" name="bot_played" value="null"/>Either</td>
+              </tr>
 
-          <tr>
-            <td></td>
-            <td><input type="radio" name="guest_played" value="yes"/>Guests</td>
-            <td><input type="radio" name="guest_played" value="no"/>No Guests</td>
-            <td><input type="radio" name="guest_played" value="null"/>Either</td>
-          </tr>
+              <tr>
+                <td></td>
+                <td><input type="radio" name="guest_played" value="yes"/>Guests</td>
+                <td><input type="radio" name="guest_played" value="no"/>No Guests</td>
+                <td><input type="radio" name="guest_played" value="null"/>Either</td>
+              </tr>
 
-          <tr>
-            <td colspan="4">
-              Exclude Kingdom Cards:
-              <select id="nonkingdom" name="nonkingdom_cards"></input>
-            </td>
-          </tr>
+              <tr>
+                <td colspan="4">
+                  Exclude Kingdom Cards:
+                  <select id="nonkingdom" name="nonkingdom_cards"></input>
+                  </td>
+                </tr>
 
-          <tr>
-            <input type="checkbox" name="rating_mode" value="unknown" /> Unknown 
-          </tr>
+                <tr>
+                  <input type="checkbox" name="rating_mode" value="unknown" /> Unknown 
+                </tr>
 
-        </table>
-        <br>
+              </table>
+              <br>
 
-        Results per page:
-        <input id="limit" type="number" name="limit" min="1" max="1000" />
-        <br>
+              Results per page:
+              <input id="limit" type="number" name="limit" min="1" max="1000" />
+              <br>
 
-        Card Width:
-        <input type="number" name="card-width" min="20" max="400" />
-        <br>
+              Card Width:
+              <input type="number" name="card-width" min="20" max="400" />
+              <br>
 
-        <input type="button" id="save-params" name="save-params" value="Save Settings as Defaults" />
-        </form>    
-      </div>
-    </div>
-  </body>
-</html>
+              <input type="button" id="save-params" name="save-params" value="Save Settings as Defaults" />
+            </form>    
+          </div>
+        </div>
+        </body>
+        </html>
