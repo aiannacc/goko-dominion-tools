@@ -3,13 +3,11 @@
 import datetime
 import time
 import re
-import pytz
 
 import tornado.web
 import tornado.template
 
 from ..model import constants
-from ..model import domgame
 from ..model import db_manager
 
 
@@ -75,9 +73,7 @@ class SearchHandler(tornado.web.RequestHandler):
                             (p, arg_str[p]), arg_str)
             return
 
-
         # TODO: log the logsearch request
-
         if (arg['p1name'] and arg['p1name'] == 'ai'):
             arg['p1name'] = 'Andrew Iannaccone'
         if (arg['p1name'] and arg['p1name'] == 'scsn'):
@@ -92,7 +88,7 @@ class SearchHandler(tornado.web.RequestHandler):
         arg['enddate'] = arg['enddate'] + datetime.timedelta(days=1)
 
         # Parse the kingdom search field
-        #print(arg_str['supply'])
+        # print(arg_str['supply'])
         x = self.parse_supply(arg_str['supply'])
         if x:
             (sup, shel, col, err) = x
@@ -155,35 +151,35 @@ class SearchHandler(tornado.web.RequestHandler):
             if len(games) == 0:
                 self.show_error("No matching games found.", arg_str)
                 return
-            #print('Result Count: %d' % len(games))
+            # print('Result Count: %d' % len(games))
         elapsed = time.time() - start
 
         # TODO: include overall record, total number of games
 
-        last_log_time_u = db_manager.get_last_rated_game2('isotropish_nobots')[0]
+        last_log_time_u = (
+            db_manager.get_last_rated_game2('isotropish_nobots')[0])
         if last_log_time_u is not None:
-            last_log_time = pytz.timezone('US/Pacific').localize(last_log_time_u)
-            last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
             ago = (datetime.datetime.now() - last_log_time_u).total_seconds()
             ago_d = int(ago / 60 / 60 / 24)
             ago_h = int(ago / 60 / 60)
             ago_m = int(ago / 60)
             ago_s = int(ago % 60)
             if ago_m < 60:
-                ago_full = 'Last recorded game finished %d min, %d sec ago' % (ago_m, ago_s)
+                ago_full = ('Last recorded game finished %d min, %d sec ago'
+                            % (ago_m, ago_s))
             elif ago_h < 24:
-                ago_full = ('Last recorded game finished %d hr, %d min ago.  Either the Goko/MF '
-                + 'server is down or something is wrong on my end.') % (ago_h, ago_m)
+                ago_full = ('Last recorded game finished %d hr, %d min ago.  '
+                            'Either the Goko/MF server is down or something '
+                            'is wrong on my end.') % (ago_h, ago_m)
             else:
-                ago_full = ('Last recorded game finished %d days ago.  Either my server is '
-                + 'busted or I\'m regenerating the leaderboard right now.') % (ago_d)
+                ago_full = ('Last recorded game finished %d days ago.  '
+                            'Either my server is busted or I\'m regenerating '
+                            'the leaderboard right now.') % (ago_d)
         else:
-            last_log_time_str = None
             ago_m = None
             ago_s = None
             ago_full = ''
 
-        #print('show_result')
         out = tornado.template.Loader('.').load("web/logsearch.html").generate(
             title='Goko Log Search',
             error_text=None,
@@ -249,32 +245,30 @@ class SearchHandler(tornado.web.RequestHandler):
         return (out, shelters, colony, error)
 
     def show_error(self, err_text, arg_str):
-        #print('show_error')
 
-        last_log_time_u = db_manager.get_last_rated_game2('isotropish_nobots')[0]
+        last_log_time_u = (
+            db_manager.get_last_rated_game2('isotropish_nobots')[0])
         if last_log_time_u is not None:
-            last_log_time = pytz.timezone('US/Pacific').localize(last_log_time_u)
-            last_log_time_str = last_log_time.strftime('%a, %b %d at %I:%M %p %Z')
             ago = (datetime.datetime.now() - last_log_time_u).total_seconds()
             ago_d = int(ago / 60 / 60 / 24)
             ago_h = int(ago / 60 / 60)
             ago_m = int(ago / 60)
             ago_s = int(ago % 60)
             if ago_m < 60:
-                ago_full = 'Last recorded game finished %d min, %d sec ago' % (ago_m, ago_s)
+                ago_full = ('Last recorded game finished %d min, '
+                            '%d sec ago') % (ago_m, ago_s)
             elif ago_h < 24:
-                ago_full = ('Last recorded game finished %d hr, %d min ago.  Either the Goko/MF '
-                + 'server is down or something is wrong on my end.') % (ago_h, ago_m)
+                ago_full = ('Last recorded game finished %d hr, %d min ago.  '
+                            'Either the Goko/MF server is down or something '
+                            'is wrong on my end.') % (ago_h, ago_m)
             else:
-                ago_full = ('Last recorded game finished %d days ago.  Either my server is '
-                + 'busted or I\'m regenerating the leaderboard right now.') % (ago_d)
+                ago_full = ('Last recorded game finished %d days ago.  '
+                            'Either my server is busted or I\'m regenerating '
+                            'the leaderboard right now.') % (ago_d)
         else:
-            last_log_time_str = None
             ago_m = None
             ago_s = None
             ago_full = ''
-
-
 
         out = tornado.template.Loader('.').load("web/logsearch.html").generate(
             title='Goko Log Search',
